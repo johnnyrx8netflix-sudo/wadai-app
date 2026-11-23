@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ sheet.staff.full_name }} のスキルシート詳細 | wadai</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f0f2f5;
+            color: #222;
+            margin: 0;
+            padding: 20px;
+        }
+        .wrap {
+            max-width: 820px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 28px 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-top: 6px solid #03787c;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #03787c;
+            font-weight: 700;
+        }
+        h1 {
+            margin: 0 0 20px;
+            font-size: 1.35rem;
+        }
+        .sec {
+            font-size: 1.05rem;
+            font-weight: 700;
+            background: #e6f4f4;
+            color: #035c5f;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 22px 0 12px;
+        }
+        dl {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 8px 14px;
+            margin: 0;
+            font-size: 0.94rem;
+        }
+        dt {
+            font-weight: 700;
+            color: #475569;
+        }
+        dd {
+            margin: 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        @media (max-width: 600px) {
+            dl {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="top-bar">
+            <a href="{% url 'skill_sheet_list' %}" class="back-link">← 一覧に戻る</a>
+            <span>登録日: {{ sheet.staff.created_at|date:"Y/m/d H:i" }}</span>
+        </div>
+
+        <h1>{{ sheet.staff.full_name }} のスキルシート</h1>
+
+        <div class="sec">基本情報</div>
+        <dl>
+            <dt>ステータス</dt><dd>{{ sheet.staff.get_status_display }}</dd>
+            <dt>名前</dt><dd>{{ sheet.staff.full_name }}</dd>
+            <dt>年齢</dt><dd>{{ sheet.staff.age|default:"-" }}</dd>
+            <dt>携帯番号</dt><dd>{{ sheet.staff.phone }}</dd>
+            <dt>郵便番号</dt><dd>{{ sheet.staff.postal_code|default:"-" }}</dd>
+            <dt>住所</dt><dd>{{ sheet.staff.address|default:"-" }}</dd>
+            <dt>性別</dt><dd>{{ sheet.staff.get_gender_display|default:"-" }}</dd>
+            <dt>生年月日</dt><dd>{{ sheet.staff.birth_date|default:"-" }}</dd>
+            <dt>国籍</dt><dd>{{ sheet.staff.get_nationality_display|default:"-" }}</dd>
+            <dt>ビザの種類</dt><dd>{{ sheet.staff.get_visa_type_display|default:"-" }}</dd>
+        </dl>
+
+        <div class="sec">通勤・勤務条件</div>
+        <dl>
+            <dt>日本車免許</dt><dd>{{ sheet.get_drivers_license_display|default:"-" }}</dd>
+            <dt>通勤方法</dt><dd>{{ sheet.get_commute_method_display|default:"-" }} {% if sheet.commute_other %}({{ sheet.commute_other }}){% endif %}</dd>
+            <dt>残業</dt><dd>{{ sheet.get_overtime_display|default:"-" }}</dd>
+            <dt>休日出勤</dt><dd>{{ sheet.get_holiday_work_display|default:"-" }}</dd>
+            <dt>早出</dt><dd>{{ sheet.get_early_shift_display|default:"-" }}</dd>
+            <dt>希望勤務時間</dt><dd>{{ sheet.preferred_shift|default:"-" }}</dd>
+        </dl>
+
+        <div class="sec">職歴 ①</div>
+        <dl>
+            <dt>会社名</dt><dd>{{ sheet.wh1_company|default:"-" }}</dd>
+            <dt>業務内容</dt><dd>{{ sheet.wh1_job|default:"-" }}</dd>
+            <dt>期間</dt><dd>{{ sheet.wh1_period|default:"-" }}</dd>
+            <dt>派遣会社</dt><dd>{{ sheet.wh1_agency|default:"-" }}</dd>
+            <dt>時給</dt><dd>{{ sheet.wh1_wage|default:"-" }}</dd>
+            <dt>退職理由</dt><dd>{{ sheet.get_wh1_reason_display|default:"-" }} {% if sheet.wh1_reason_other %}({{ sheet.wh1_reason_other }}){% endif %}</dd>
+        </dl>
+
+        {% if sheet.wh2_company or sheet.wh2_job or sheet.wh2_period %}
+        <div class="sec">職歴 ②</div>
+        <dl>
+            <dt>会社名</dt><dd>{{ sheet.wh2_company|default:"-" }}</dd>
+            <dt>業務内容</dt><dd>{{ sheet.wh2_job|default:"-" }}</dd>
+            <dt>期間</dt><dd>{{ sheet.wh2_period|default:"-" }}</dd>
+            <dt>派遣会社</dt><dd>{{ sheet.wh2_agency|default:"-" }}</dd>
+            <dt>時給</dt><dd>{{ sheet.wh2_wage|default:"-" }}</dd>
+            <dt>退職理由</dt><dd>{{ sheet.get_wh2_reason_display|default:"-" }} {% if sheet.wh2_reason_other %}({{ sheet.wh2_reason_other }}){% endif %}</dd>
+        </dl>
+        {% endif %}
+
+        {% if sheet.wh3_company or sheet.wh3_job or sheet.wh3_period %}
+        <div class="sec">職歴 ③</div>
+        <dl>
+            <dt>会社名</dt><dd>{{ sheet.wh3_company|default:"-" }}</dd>
+            <dt>業務内容</dt><dd>{{ sheet.wh3_job|default:"-" }}</dd>
+            <dt>期間</dt><dd>{{ sheet.wh3_period|default:"-" }}</dd>
+            <dt>派遣会社</dt><dd>{{ sheet.wh3_agency|default:"-" }}</dd>
+            <dt>時給</dt><dd>{{ sheet.wh3_wage|default:"-" }}</dd>
+            <dt>退職理由</dt><dd>{{ sheet.get_wh3_reason_display|default:"-" }} {% if sheet.wh3_reason_other %}({{ sheet.wh3_reason_other }}){% endif %}</dd>
+        </dl>
+        {% endif %}
+
+        <div class="sec">日本語力・作業服</div>
+        <dl>
+            <dt>日本語レベル（話す）</dt><dd>{{ sheet.jp_speaking|default:"-" }}</dd>
+            <dt>日本語 読み</dt><dd>{{ sheet.jp_reading|default:"-" }}</dd>
+            <dt>日本語 書き</dt><dd>{{ sheet.jp_writing|default:"-" }}</dd>
+            <dt>上着</dt><dd>{{ sheet.uniform_jacket|default:"-" }}</dd>
+            <dt>ズボン</dt><dd>{{ sheet.uniform_pants|default:"-" }}</dd>
+            <dt>安全靴</dt><dd>{{ sheet.safety_shoes|default:"-" }}</dd>
+        </dl>
+    </div>
+</body>
+</html>

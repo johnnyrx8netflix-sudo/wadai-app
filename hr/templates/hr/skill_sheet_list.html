@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スキルシート一覧（スタッフ専用） | wadai</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f0f2f5;
+            color: #222;
+            margin: 0;
+            padding: 20px;
+        }
+        .wrap {
+            max-width: 1120px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-top: 6px solid #03787c;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.35rem;
+        }
+        .sub-badge {
+            background: #e6f4f4;
+            color: #035c5f;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .filter-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: #f8fafc;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 18px;
+        }
+        .filter-box input, .filter-box select {
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background: #fff;
+        }
+        .filter-box input[type="text"] {
+            min-width: 220px;
+            flex: 1;
+        }
+        .btn {
+            display: inline-block;
+            padding: 9px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background: #03787c;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #025e61;
+        }
+        .btn-reset {
+            background: #e2e8f0;
+            color: #334155;
+        }
+        .btn-detail {
+            background: #eef7f8;
+            color: #035c5f;
+            border: 1px solid #03787c;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+        .table-wrap {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+        th, td {
+            padding: 11px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            white-space: nowrap;
+        }
+        th {
+            background: #f1f5f9;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        tr:hover td {
+            background: #f9fbfb;
+        }
+        .empty-msg {
+            text-align: center;
+            padding: 36px 12px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="header-row">
+            <h1>スキルシート一覧</h1>
+            <span class="sub-badge">スタッフ専用（{{ sheets|length }}件）</span>
+        </div>
+
+        <form method="get" class="filter-box">
+            <input type="text" name="q" value="{{ q }}" placeholder="名前・電話番号・住所・職歴で検索">
+            <select name="nationality">
+                <option value="">すべての国籍</option>
+                {% for val, label in nationality_choices %}
+                    <option value="{{ val }}" {% if selected_nationality == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <select name="status">
+                <option value="">すべてのステータス</option>
+                {% for val, label in status_choices %}
+                    <option value="{{ val }}" {% if selected_status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">絞り込む</button>
+            <a href="{% url 'skill_sheet_list' %}" class="btn btn-reset">リセット</a>
+        </form>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>登録日</th>
+                        <th>名前</th>
+                        <th>年齢</th>
+                        <th>国籍</th>
+                        <th>ビザ</th>
+                        <th>電話番号</th>
+                        <th>希望勤務時間</th>
+                        <th>ステータス</th>
+                        <th>確認</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sheet in sheets %}
+                    <tr>
+                        <td>{{ sheet.staff.created_at|date:"Y/m/d" }}</td>
+                        <td><strong>{{ sheet.staff.full_name }}</strong></td>
+                        <td>{% if sheet.staff.age %}{{ sheet.staff.age }}歳{% else %}-{% endif %}</td>
+                        <td>{{ sheet.staff.get_nationality_display|default:"-" }}</td>
+                        <td>{{ sheet.staff.get_visa_type_display|default:"-" }}</td>
+                        <td>{{ sheet.staff.phone }}</td>
+                        <td>{{ sheet.preferred_shift|default:"-" }}</td>
+                        <td>{{ sheet.staff.get_status_display }}</td>
+                        <td>
+                            <a href="{% url 'skill_sheet_detail' sheet.pk %}" class="btn btn-detail">詳細</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="empty-msg">該当するスキルシートはありません。</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
