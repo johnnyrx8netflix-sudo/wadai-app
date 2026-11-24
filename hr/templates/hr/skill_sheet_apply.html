@@ -37,6 +37,15 @@
             }
         };
 
+        // 年齢フィールドを生年月日フィールドの直後に移動する
+        function moveAgeAfterBirthDate() {
+            const birthBox = document.querySelector('#skillsheet-form .field[data-field="birth_date"]');
+            const ageBox = document.querySelector('#skillsheet-form .field[data-field="age"]');
+            if (birthBox && ageBox && birthBox.nextElementSibling !== ageBox) {
+                birthBox.insertAdjacentElement("afterend", ageBox);
+            }
+        }
+
         function pickLangPart(rawText, lang) {
             if (!rawText) return rawText;
             const trimmed = rawText.trim();
@@ -230,11 +239,11 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            moveAgeAfterBirthDate();
             snapshotOriginalTexts();
 
             const birthInput = document.getElementById("id_birth_date");
             if (birthInput) {
-                // 既存の8桁値（例: 19900515）があれば YYYY-MM-DD に変換してカレンダーに反映
                 const digitsOnly = birthInput.value.replace(/\D/g, "");
                 if (/^\d{8}$/.test(digitsOnly)) {
                     birthInput.value = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 6)}-${digitsOnly.slice(6, 8)}`;
