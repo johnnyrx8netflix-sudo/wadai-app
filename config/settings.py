@@ -14,7 +14,7 @@ if allowed_hosts_env:
 elif DEBUG:
     ALLOWED_HOSTS = ["*"]
 else:
-    ALLOWED_HOSTS = [".onrender.com", "localhost", "127.0.0.1"]
+    ALLOWED_HOSTS = ["wadai-app-5w2q.onrender.com", ".onrender.com", "localhost", "127.0.0.1"]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://wadai-app-5w2q.onrender.com",
