@@ -1,230 +1,15 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>和大サポート - スキルシート登録</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f0f2f5;
-            color: #222;
-            margin: 0;
-            padding: 20px;
-        }
-        .wrap {
-            max-width: 820px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 28px 24px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            border-top: 6px solid #03787c;
-        }
-        h1 {
-            margin: 0 0 12px;
-            font-size: 1.35rem;
-            color: #111827;
-        }
-        .lang-screen {
-            text-align: center;
-            padding: 24px 8px;
-        }
-        .lang-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 22px;
-        }
-        .lang-btn {
-            min-width: 150px;
-            padding: 14px 24px;
-            font-size: 1rem;
-            font-weight: 700;
-            border: 2px solid #03787c;
-            background: #e6f4f4;
-            color: #035c5f;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .lang-btn:hover {
-            background: #03787c;
-            color: #fff;
-        }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .sub-btn {
-            background: #e6f4f4;
-            color: #035c5f;
-            border: 1px solid #03787c;
-            padding: 7px 14px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-        .sub-btn:hover {
-            background: #03787c;
-            color: #fff;
-        }
-        .field {
-            margin-bottom: 16px;
-            padding: 14px;
-            background: #fafafa;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-        }
-        label {
-            display: block;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 6px;
-            font-size: 0.95rem;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 0.96rem;
-            background: #fff;
-            color: #111827;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #03787c;
-            box-shadow: 0 0 0 3px rgba(3, 120, 124, 0.12);
-        }
-        .auto-filled {
-            background: #e6f4f4 !important;
-            border-color: #03787c !important;
-        }
-        .hint {
-            font-size: 0.82rem;
-            color: #64748b;
-            margin-top: 5px;
-        }
-        .hint.status-ok {
-            color: #035c5f;
-            font-weight: 700;
-        }
-        .hint.status-err {
-            color: #b91c1c;
-            font-weight: 600;
-        }
-        .submit-btn {
-            width: 100%;
-            background: #03787c;
-            color: #fff;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 1.05rem;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 18px;
-        }
-        .submit-btn:hover {
-            background: #025f62;
-        }
-        .notice {
-            background: #e6f4f4;
-            border: 1px solid #03787c;
-            color: #035c5f;
-            padding: 14px 16px;
-            border-radius: 8px;
-            margin-bottom: 18px;
-            font-weight: 700;
-        }
-        .err-text {
-            color: #b91c1c;
-            font-size: 0.85rem;
-            margin-top: 4px;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="wrap">
-        <!-- 言語選択スタート画面 -->
-        <div id="lang-screen" class="lang-screen {% if submitted or form.errors %}hidden{% endif %}">
-            <h1>和大サポート - Wadai Support</h1>
-            <p class="hint">言語を選択してください / Escolha o idioma / Select Language</p>
-            <div class="lang-buttons">
-                <button type="button" class="lang-btn" onclick="startForm('ja')">日本語</button>
-                <button type="button" class="lang-btn" onclick="startForm('pt')">Português</button>
-                <button type="button" class="lang-btn" onclick="startForm('en')">English</button>
-            </div>
-        </div>
-
-        <!-- フォーム画面 -->
-        <div id="form-screen" class="{% if not submitted and not form.errors %}hidden{% endif %}">
-            <div class="top-bar">
-                <h1 id="form-title">和大サポート - スキルシート</h1>
-                <button type="button" id="lang-switch-btn" class="sub-btn" onclick="backToLang()">言語変更</button>
-            </div>
-
-            {% if submitted %}
-                <div id="done-notice" class="notice">
-                    登録が完了しました。ご入力ありがとうございます。
-                </div>
-            {% endif %}
-
-            {% if form.non_field_errors %}
-                <div class="notice" style="background:#fef2f2;border-color:#dc2626;color:#991b1b;">
-                    {{ form.non_field_errors }}
-                </div>
-            {% endif %}
-
-            <form method="post" id="skillsheet-form">
-                {% csrf_token %}
-                {% for field in form %}
-                    <div class="field" data-field="{{ field.name }}">
-                        {{ field.label_tag }}
-                        {{ field }}
-                        {% if field.name == "birth_date" %}
-                            <div id="birth-hint" class="hint"></div>
-                        {% elif field.name == "age" %}
-                            <div id="age-hint" class="hint"></div>
-                        {% elif field.name == "postal_code" %}
-                            <div id="postal-hint" class="hint"></div>
-                        {% elif field.name == "address" %}
-                            <div id="address-hint" class="hint"></div>
-                        {% endif %}
-                        {% if field.errors %}
-                            <div class="err-text">{{ field.errors }}</div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-                <button type="submit" id="submit-btn" class="submit-btn">送信する</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
+<script>
         const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
 
         const uiTexts = {
             ja: {
-                title: "和大サポート - スキルシート",
+                title: "スキルシート入力フォーム",
                 switchLang: "言語変更",
                 submit: "送信する",
                 done: "登録が完了しました。ご入力ありがとうございます。",
                 birthHint: "生年月日を選ぶと年齢が自動で入ります（直接入力もできます）",
                 ageHint: "生年月日から自動計算されます",
-                postalHint: "郵便番号（7桁）を入れると住所が自動で入ります",
+                postalHint: "郵便番号（7桁）を入れると自動でハイフンと住所が入ります",
                 addressHint: "郵便番号から自動入力されます（番地・建物名は追記してください）",
                 ageCalculated: "生年月日から自動計算しました",
                 postalFound: "郵便番号から住所を自動入力しました",
@@ -238,7 +23,7 @@
                 done: "Cadastro concluído com sucesso. Obrigado!",
                 birthHint: "Escolha a data de nascimento para preencher a idade automaticamente",
                 ageHint: "Calculado automaticamente pela data de nascimento",
-                postalHint: "Digite o CEP (7 dígitos) para preencher o endereço automaticamente",
+                postalHint: "Digite o CEP (7 dígitos) para inserir o hífen e o endereço automaticamente",
                 addressHint: "Preenchido pelo CEP (adicione o número e complemento)",
                 ageCalculated: "Idade calculada automaticamente",
                 postalFound: "Endereço preenchido automaticamente pelo CEP",
@@ -252,7 +37,7 @@
                 done: "Registration completed. Thank you!",
                 birthHint: "Select your birth date to fill age automatically",
                 ageHint: "Calculated automatically from birth date",
-                postalHint: "Enter 7-digit postal code to fill address automatically",
+                postalHint: "Enter 7-digit postal code to auto-insert hyphen and address",
                 addressHint: "Auto-filled from postal code (add street number / building if needed)",
                 ageCalculated: "Age calculated automatically",
                 postalFound: "Address filled automatically from postal code",
@@ -260,6 +45,14 @@
                 postalErr: "Auto-lookup failed. Please enter address manually."
             }
         };
+
+        function formatPostalHyphen(rawValue) {
+            const digits = (rawValue || "").replace(/\D/g, "").slice(0, 7);
+            if (digits.length > 3) {
+                return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+            }
+            return digits;
+        }
 
         function moveAgeAfterBirthDate() {
             const birthBox = document.querySelector('#skillsheet-form .field[data-field="birth_date"]');
@@ -418,15 +211,28 @@
             }
         }
 
-        async function lookupAddressByPostal() {
+        async function handlePostalInput() {
             const postalInput = document.getElementById("id_postal_code");
             const addressInput = document.getElementById("id_address");
             const pHint = document.getElementById("postal-hint");
             const addrHint = document.getElementById("address-hint");
             if (!postalInput || !addressInput) return;
 
-            const zip = postalInput.value.replace(/\D/g, "");
-            if (zip.length !== 7) return;
+            const formatted = formatPostalHyphen(postalInput.value);
+            if (postalInput.value !== formatted) {
+                postalInput.value = formatted;
+            }
+
+            const zip = formatted.replace(/\D/g, "");
+            if (zip.length < 7) {
+                if (pHint) {
+                    delete pHint.dataset.autoState;
+                    const lang = localStorage.getItem("skillsheet_lang") || "ja";
+                    pHint.textContent = (uiTexts[lang] || uiTexts.ja).postalHint;
+                    pHint.className = "hint";
+                }
+                return;
+            }
 
             const lang = localStorage.getItem("skillsheet_lang") || "ja";
             const t = uiTexts[lang] || uiTexts.ja;
@@ -523,11 +329,12 @@
 
             const postalInput = document.getElementById("id_postal_code");
             if (postalInput) {
-                postalInput.addEventListener("input", lookupAddressByPostal);
-                postalInput.addEventListener("change", lookupAddressByPostal);
-                postalInput.addEventListener("blur", lookupAddressByPostal);
+                if (postalInput.value) {
+                    postalInput.value = formatPostalHyphen(postalInput.value);
+                }
+                postalInput.addEventListener("input", handlePostalInput);
+                postalInput.addEventListener("change", handlePostalInput);
+                postalInput.addEventListener("blur", handlePostalInput);
             }
         });
     </script>
-</body>
-</html>
