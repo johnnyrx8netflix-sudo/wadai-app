@@ -201,7 +201,7 @@
                 switchLang: "言語変更",
                 submit: "送信する",
                 done: "登録が完了しました。ご入力ありがとうございます。",
-                birthHint: "例: 19900515（8桁で入力すると年齢が自動計算されます）",
+                birthHint: "カレンダーから生年月日を選ぶと年齢が自動計算されます",
                 postalHint: "例: 4313101（7桁入力すると住所が自動入力されます）",
                 postalFound: "住所を自動入力しました。",
                 postalNotFound: "該当する住所が見つかりませんでした。手入力してください。",
@@ -212,7 +212,7 @@
                 switchLang: "Mudar idioma",
                 submit: "Enviar",
                 done: "Cadastro concluído com sucesso. Obrigado!",
-                birthHint: "Ex.: 19900515 (a idade será calculada automaticamente)",
+                birthHint: "Escolha a data de nascimento no calendário para calcular a idade",
                 postalHint: "Ex.: 4313101 (o endereço será preenchido automaticamente)",
                 postalFound: "Endereço preenchido automaticamente.",
                 postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
@@ -223,7 +223,7 @@
                 switchLang: "Change language",
                 submit: "Submit",
                 done: "Registration completed. Thank you!",
-                birthHint: "Ex: 19900515 (age is calculated automatically)",
+                birthHint: "Pick your birth date from the calendar to calculate age automatically",
                 postalHint: "Ex: 4313101 (address is filled automatically)",
                 postalFound: "Address filled automatically.",
                 postalNotFound: "Postal code not found. Please enter address manually.",
@@ -231,11 +231,15 @@
             }
         };
 
-        // 元の "日本語 / Português / English" 文字列から選択言語のパートだけを抜き出す
         function pickLangPart(rawText, lang) {
             if (!rawText) return rawText;
             const trimmed = rawText.trim();
-            if (trimmed === "---------" || trimmed === "" || /^\d+%$/.test(trimmed) || /^(S|M|L|LL|3L|4L|5L|0h|1h|2h|3h)$/.test(trimmed)) {
+            if (
+                trimmed === "---------" ||
+                trimmed === "" ||
+                /^\d+%$/.test(trimmed) ||
+                /^(S|M|L|LL|3L|4L|5L|0h|1h|2h|3h)$/.test(trimmed)
+            ) {
                 return trimmed;
             }
             const parts = trimmed.split(" / ");
@@ -243,14 +247,12 @@
                 return trimmed;
             }
             const idx = LANG_INDEX[lang] ?? 0;
-            // 2つしかない場合（例: "はい / Yes"）は日本語は0、英語/ポルトガル語は最後を使う
             if (parts.length === 2) {
                 return lang === "ja" ? parts[0].trim() : parts[1].trim();
             }
             return (parts[idx] || parts[0]).trim();
         }
 
-        // 初回読み込み時に元の日本語/多言語テキストを保持しておく
         function snapshotOriginalTexts() {
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
                 if (!lbl.dataset.orig) {
@@ -309,18 +311,29 @@
             document.getElementById("lang-screen").classList.remove("hidden");
         }
 
-        // 生年月日 (YYYYMMDD / YYYY-MM-DD / YYYY/MM/DD) から年齢を自動計算
+        // 生年月日（カレンダー type="date" または YYYYMMDD）から年齢を自動計算
         function calcAgeFromBirthDate() {
             const birthInput = document.getElementById("id_birth_date");
             const ageInput = document.getElementById("id_age");
             if (!birthInput || !ageInput) return;
 
-            const digits = birthInput.value.replace(/\D/g, "");
-            if (digits.length !== 8) return;
+            const val = birthInput.value.trim();
+            if (!val) return;
 
-            const year = parseInt(digits.slice(0, 4), 10);
-            const month = parseInt(digits.slice(4, 6), 10);
-            const day = parseInt(digits.slice(6, 8), 10);
+            let year, month, day;
+
+            if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+                const parts = val.split("-");
+                year = parseInt(parts[0], 10);
+                month = parseInt(parts[1], 10);
+                day = parseInt(parts[2], 10);
+            } else {
+                const digits = val.replace(/\D/g, "");
+                if (digits.length !== 8) return;
+                year = parseInt(digits.slice(0, 4), 10);
+                month = parseInt(digits.slice(4, 6), 10);
+                day = parseInt(digits.slice(6, 8), 10);
+            }
 
             if (month < 1 || month > 12 || day < 1 || day > 31) return;
 
@@ -336,7 +349,7 @@
             }
         }
 
-        // 郵便番号から住所を自動入力（zipcloud -> 失敗時は postcodejp API にフォールバック）
+        // 郵便番号から住所を自動入力
         async function lookupAddressByPostal() {
             const postalInput = document.getElementById("id_postal_code");
             const addressInput = document.getElementById("id_address");
@@ -400,15 +413,20 @@
         document.addEventListener("DOMContentLoaded", () => {
             snapshotOriginalTexts();
 
-            const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
-            applyLang(savedLang);
-
             const birthInput = document.getElementById("id_birth_date");
             if (birthInput) {
+                birthInput.type = "date";
+                birthInput.min = "1920-01-01";
+                birthInput.max = new Date().toISOString().split("T")[0];
                 birthInput.addEventListener("input", calcAgeFromBirthDate);
                 birthInput.addEventListener("change", calcAgeFromBirthDate);
-                birthInput.addEventListener("blur", calcAgeFromBirthDate);
+                if (birthInput.value) {
+                    calcAgeFromBirthDate();
+                }
             }
+
+            const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
+            applyLang(savedLang);
 
             const postalInput = document.getElementById("id_postal_code");
             if (postalInput) {
