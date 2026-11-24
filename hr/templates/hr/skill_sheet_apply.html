@@ -451,34 +451,45 @@
             const t = uiTexts[lang] || uiTexts.ja;
 
             let fullAddress = "";
-            let networkFailed = false;
+            let anySuccess = false;
 
             try {
                 const res = await fetch(`/api/postal-lookup/?zipcode=${encodeURIComponent(zip)}`);
                 if (res.ok) {
+                    anySuccess = true;
                     const data = await res.json();
                     if (data && data.ok && data.address) {
                         fullAddress = data.address;
                     }
-                } else {
-                    networkFailed = true;
                 }
-            } catch (e) {
-                networkFailed = true;
-            }
+            } catch (e) {}
 
             if (!fullAddress) {
                 try {
                     const res2 = await fetch(`https://zipcloud.ibsnet.co.jp/api/api/json?zipcode=${zip}`);
                     if (res2.ok) {
+                        anySuccess = true;
                         const data2 = await res2.json();
                         if (data2.results && data2.results.length > 0) {
                             const r = data2.results[0];
                             fullAddress = `${r.address1 || ""}${r.address2 || ""}${r.address3 || ""}`;
                         }
-                        networkFailed = false;
                     }
                 } catch (e2) {}
+            }
+
+            if (!fullAddress) {
+                try {
+                    const res3 = await fetch(`https://apis.postcode-jp.com/api/v5/postcodes/${zip}`);
+                    if (res3.ok) {
+                        anySuccess = true;
+                        const data3 = await res3.json();
+                        const item = Array.isArray(data3) ? data3[0] : (data3.data && data3.data[0]);
+                        if (item) {
+                            fullAddress = `${item.pref || ""}${item.city || ""}${item.town || ""}`;
+                        }
+                    }
+                } catch (e3) {}
             }
 
             if (fullAddress) {
@@ -499,7 +510,7 @@
                 }
             } else if (pHint) {
                 pHint.dataset.autoState = "err";
-                pHint.textContent = networkFailed ? t.postalErr : t.postalNotFound;
+                pHint.textContent = anySuccess ? t.postalNotFound : t.postalErr;
                 pHint.className = "hint status-err";
             }
         }
