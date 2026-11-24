@@ -1,217 +1,4 @@
-<script>
-        const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
-
-        const uiTexts = {
-            ja: {
-                title: "スキルシート入力フォーム",
-                switchLang: "言語変更",
-                submit: "送信する",
-                done: "登録が完了しました。ご入力ありがとうございます。",
-                birthHint: "生年月日を選ぶと年齢が自動で入ります（直接入力もできます）",
-                ageHint: "生年月日から自動計算されます",
-                postalHint: "郵便番号（7桁）を入れると自動でハイフンと住所が入ります",
-                addressHint: "郵便番号から自動入力されます（番地・建物名は追記してください）",
-                ageCalculated: "生年月日から自動計算しました",
-                postalFound: "郵便番号から住所を自動入力しました",
-                postalNotFound: "該当する住所が見つかりませんでした。手入力してください。",
-                postalErr: "自動検索に失敗しました。住所を手入力してください。"
-            },
-            pt: {
-                title: "Wadai Support - Skill Sheet",
-                switchLang: "Mudar idioma",
-                submit: "Enviar",
-                done: "Cadastro concluído com sucesso. Obrigado!",
-                birthHint: "Escolha a data de nascimento para preencher a idade automaticamente",
-                ageHint: "Calculado automaticamente pela data de nascimento",
-                postalHint: "Digite o CEP (7 dígitos) para inserir o hífen e o endereço automaticamente",
-                addressHint: "Preenchido pelo CEP (adicione o número e complemento)",
-                ageCalculated: "Idade calculada automaticamente",
-                postalFound: "Endereço preenchido automaticamente pelo CEP",
-                postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
-                postalErr: "Falha na busca automática. Digite o endereço manualmente."
-            },
-            en: {
-                title: "Wadai Support - Skill Sheet",
-                switchLang: "Change language",
-                submit: "Submit",
-                done: "Registration completed. Thank you!",
-                birthHint: "Select your birth date to fill age automatically",
-                ageHint: "Calculated automatically from birth date",
-                postalHint: "Enter 7-digit postal code to auto-insert hyphen and address",
-                addressHint: "Auto-filled from postal code (add street number / building if needed)",
-                ageCalculated: "Age calculated automatically",
-                postalFound: "Address filled automatically from postal code",
-                postalNotFound: "Postal code not found. Please enter address manually.",
-                postalErr: "Auto-lookup failed. Please enter address manually."
-            }
-        };
-
-        function formatPostalHyphen(rawValue) {
-            const digits = (rawValue || "").replace(/\D/g, "").slice(0, 7);
-            if (digits.length > 3) {
-                return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-            }
-            return digits;
-        }
-
-        function moveAgeAfterBirthDate() {
-            const birthBox = document.querySelector('#skillsheet-form .field[data-field="birth_date"]');
-            const ageBox = document.querySelector('#skillsheet-form .field[data-field="age"]');
-            if (birthBox && ageBox && birthBox.nextElementSibling !== ageBox) {
-                birthBox.insertAdjacentElement("afterend", ageBox);
-            }
-        }
-
-        function pickLangPart(rawText, lang) {
-            if (!rawText) return rawText;
-            const trimmed = rawText.trim();
-            if (
-                trimmed === "---------" ||
-                trimmed === "" ||
-                /^\d+%$/.test(trimmed) ||
-                /^(S|M|L|LL|3L|4L|5L|0h|1h|2h|3h)$/.test(trimmed)
-            ) {
-                return trimmed;
-            }
-            const parts = trimmed.split(" / ");
-            if (parts.length === 1) return trimmed;
-            const idx = LANG_INDEX[lang] ?? 0;
-            if (parts.length === 2) {
-                return lang === "ja" ? parts[0].trim() : parts[1].trim();
-            }
-            return (parts[idx] || parts[0]).trim();
-        }
-
-        function snapshotOriginalTexts() {
-            document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
-                if (!lbl.dataset.orig) lbl.dataset.orig = lbl.textContent;
-            });
-            document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
-                if (!opt.dataset.orig) opt.dataset.orig = opt.textContent;
-            });
-        }
-
-        function applyLang(lang) {
-            const safeLang = uiTexts[lang] ? lang : "ja";
-            const t = uiTexts[safeLang];
-
-            document.getElementById("form-title").textContent = t.title;
-            document.getElementById("lang-switch-btn").textContent = t.switchLang;
-            document.getElementById("submit-btn").textContent = t.submit;
-
-            const doneEl = document.getElementById("done-notice");
-            if (doneEl) doneEl.textContent = t.done;
-
-            const bHint = document.getElementById("birth-hint");
-            if (bHint) bHint.textContent = t.birthHint;
-
-            const aHint = document.getElementById("age-hint");
-            if (aHint && !aHint.dataset.autoState) {
-                aHint.textContent = t.ageHint;
-                aHint.className = "hint";
-            }
-
-            const pHint = document.getElementById("postal-hint");
-            if (pHint && !pHint.dataset.autoState) {
-                pHint.textContent = t.postalHint;
-                pHint.className = "hint";
-            }
-
-            const addrHint = document.getElementById("address-hint");
-            if (addrHint && !addrHint.dataset.autoState) {
-                addrHint.textContent = t.addressHint;
-                addrHint.className = "hint";
-            }
-
-            document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
-                if (lbl.dataset.orig) lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang);
-            });
-
-            document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
-                if (opt.dataset.orig) opt.textContent = pickLangPart(opt.dataset.orig, safeLang);
-            });
-        }
-
-        function startForm(lang) {
-            localStorage.setItem("skillsheet_lang", lang);
-            applyLang(lang);
-            document.getElementById("lang-screen").classList.add("hidden");
-            document.getElementById("form-screen").classList.remove("hidden");
-        }
-
-        function backToLang() {
-            document.getElementById("form-screen").classList.add("hidden");
-            document.getElementById("lang-screen").classList.remove("hidden");
-        }
-
-        function calcAgeFromBirthDate() {
-            const birthInput = document.getElementById("id_birth_date");
-            const ageInput = document.getElementById("id_age");
-            const aHint = document.getElementById("age-hint");
-            if (!birthInput || !ageInput) return;
-
-            const val = birthInput.value.trim();
-            if (!val) {
-                ageInput.value = "";
-                ageInput.classList.remove("auto-filled");
-                if (aHint) {
-                    delete aHint.dataset.autoState;
-                    const lang = localStorage.getItem("skillsheet_lang") || "ja";
-                    aHint.textContent = (uiTexts[lang] || uiTexts.ja).ageHint;
-                    aHint.className = "hint";
-                }
-                return;
-            }
-
-            let year, month, day;
-            if (/^(\d{4})-(\d{2})-(\d{2})$/.test(val)) {
-                const parts = val.split("-");
-                year = parseInt(parts[0], 10);
-                month = parseInt(parts[1], 10);
-                day = parseInt(parts[2], 10);
-            } else {
-                const digits = val.replace(/\D/g, "");
-                if (digits.length !== 8) return;
-                year = parseInt(digits.slice(0, 4), 10);
-                month = parseInt(digits.slice(4, 6), 10);
-                day = parseInt(digits.slice(6, 8), 10);
-            }
-
-            if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return;
-
-            const birthDateObj = new Date(year, month - 1, day);
-            if (
-                birthDateObj.getFullYear() !== year ||
-                birthDateObj.getMonth() !== month - 1 ||
-                birthDateObj.getDate() !== day
-            ) {
-                return;
-            }
-
-            const today = new Date();
-            let age = today.getFullYear() - year;
-            const mDiff = (today.getMonth() + 1) - month;
-            if (mDiff < 0 || (mDiff === 0 && today.getDate() < day)) {
-                age--;
-            }
-
-            if (age >= 0 && age <= 120) {
-                ageInput.value = String(age);
-                ageInput.classList.add("auto-filled");
-                ageInput.dispatchEvent(new Event("input", { bubbles: true }));
-                ageInput.dispatchEvent(new Event("change", { bubbles: true }));
-
-                if (aHint) {
-                    const lang = localStorage.getItem("skillsheet_lang") || "ja";
-                    const t = uiTexts[lang] || uiTexts.ja;
-                    aHint.dataset.autoState = "ok";
-                    aHint.textContent = `${t.ageCalculated}: ${age}`;
-                    aHint.className = "hint status-ok";
-                }
-            }
-        }
-
-        async function handlePostalInput() {
+async function handlePostalInput() {
             const postalInput = document.getElementById("id_postal_code");
             const addressInput = document.getElementById("id_address");
             const pHint = document.getElementById("postal-hint");
@@ -238,36 +25,34 @@
             const t = uiTexts[lang] || uiTexts.ja;
 
             let fullAddress = "";
+            let networkFailed = false;
 
             try {
-                const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/api/json?zipcode=${zip}`);
+                const res = await fetch(`/api/postal-lookup/?zipcode=${encodeURIComponent(zip)}`);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.results && data.results.length > 0) {
-                        const r = data.results[0];
-                        fullAddress = `${r.address1 || ""}${r.address2 || ""}${r.address3 || ""}`;
+                    if (data && data.ok && data.address) {
+                        fullAddress = data.address;
                     }
+                } else {
+                    networkFailed = true;
                 }
-            } catch (e) {}
+            } catch (e) {
+                networkFailed = true;
+            }
 
             if (!fullAddress) {
                 try {
-                    const res2 = await fetch(`https://apis.postcode-jp.com/api/v5/postcodes/${zip}`);
+                    const res2 = await fetch(`https://zipcloud.ibsnet.co.jp/api/api/json?zipcode=${zip}`);
                     if (res2.ok) {
                         const data2 = await res2.json();
-                        const item = Array.isArray(data2) ? data2[0] : (data2.data && data2.data[0]);
-                        if (item) {
-                            fullAddress = `${item.pref || ""}${item.city || ""}${item.town || ""}`;
+                        if (data2.results && data2.results.length > 0) {
+                            const r = data2.results[0];
+                            fullAddress = `${r.address1 || ""}${r.address2 || ""}${r.address3 || ""}`;
                         }
+                        networkFailed = false;
                     }
-                } catch (e2) {
-                    if (pHint) {
-                        pHint.dataset.autoState = "err";
-                        pHint.textContent = t.postalErr;
-                        pHint.className = "hint status-err";
-                    }
-                    return;
-                }
+                } catch (e2) {}
             }
 
             if (fullAddress) {
@@ -288,53 +73,7 @@
                 }
             } else if (pHint) {
                 pHint.dataset.autoState = "err";
-                pHint.textContent = t.postalNotFound;
+                pHint.textContent = networkFailed ? t.postalErr : t.postalNotFound;
                 pHint.className = "hint status-err";
             }
         }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            moveAgeAfterBirthDate();
-            snapshotOriginalTexts();
-
-            const birthInput = document.getElementById("id_birth_date");
-            if (birthInput) {
-                const digitsOnly = birthInput.value.replace(/\D/g, "");
-                if (/^\d{8}$/.test(digitsOnly)) {
-                    birthInput.value = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 6)}-${digitsOnly.slice(6, 8)}`;
-                }
-
-                birthInput.type = "date";
-                birthInput.min = "1920-01-01";
-                const now = new Date();
-                const yyyy = now.getFullYear();
-                const mm = String(now.getMonth() + 1).padStart(2, "0");
-                const dd = String(now.getDate()).padStart(2, "0");
-                birthInput.max = `${yyyy}-${mm}-${dd}`;
-
-                birthInput.addEventListener("change", calcAgeFromBirthDate);
-                birthInput.addEventListener("input", () => {
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(birthInput.value)) {
-                        calcAgeFromBirthDate();
-                    }
-                });
-
-                if (birthInput.value) {
-                    calcAgeFromBirthDate();
-                }
-            }
-
-            const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
-            applyLang(savedLang);
-
-            const postalInput = document.getElementById("id_postal_code");
-            if (postalInput) {
-                if (postalInput.value) {
-                    postalInput.value = formatPostalHyphen(postalInput.value);
-                }
-                postalInput.addEventListener("input", handlePostalInput);
-                postalInput.addEventListener("change", handlePostalInput);
-                postalInput.addEventListener("blur", handlePostalInput);
-            }
-        });
-    </script>
