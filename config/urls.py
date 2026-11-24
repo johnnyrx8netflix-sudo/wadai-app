@@ -1,6 +1,7 @@
-from django.urls import path
-from . import views
+from django.contrib import admin
+from django.urls import path, include
 
 urlpatterns = [
-    path("skill-sheet/", views.skill_sheet_apply, name="skill_sheet_apply"),
+    path("admin/", admin.site.urls),
+    path("", include("hr.urls")),
 ]
