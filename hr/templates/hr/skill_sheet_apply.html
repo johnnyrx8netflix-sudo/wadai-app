@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スキルシート登録 | wadai</title>
+    <title>和大サポート - スキルシート登録</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -24,10 +24,11 @@
         h1 {
             margin: 0 0 12px;
             font-size: 1.35rem;
+            color: #111827;
         }
         .lang-screen {
             text-align: center;
-            padding: 20px 0;
+            padding: 24px 8px;
         }
         .lang-buttons {
             display: flex;
@@ -37,7 +38,8 @@
             margin-top: 22px;
         }
         .lang-btn {
-            padding: 13px 24px;
+            min-width: 150px;
+            padding: 14px 24px;
             font-size: 1rem;
             font-weight: 700;
             border: 2px solid #03787c;
@@ -56,52 +58,69 @@
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            margin-bottom: 14px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
         }
         .sub-btn {
             background: #e6f4f4;
             color: #035c5f;
             border: 1px solid #03787c;
-            padding: 6px 12px;
+            padding: 7px 14px;
             border-radius: 6px;
             font-size: 0.85rem;
             font-weight: 700;
             cursor: pointer;
         }
+        .sub-btn:hover {
+            background: #03787c;
+            color: #fff;
+        }
         .field {
-            margin-bottom: 14px;
+            margin-bottom: 16px;
+            padding: 14px;
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
         }
         label {
             display: block;
             font-weight: 700;
-            color: #334155;
-            margin-bottom: 5px;
-            font-size: 0.92rem;
+            color: #1f2937;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
         }
-        input, select {
+        input, select, textarea {
             width: 100%;
-            padding: 9px 11px;
+            padding: 10px 12px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             box-sizing: border-box;
-            font-size: 0.95rem;
+            font-size: 0.96rem;
             background: #fff;
+            color: #111827;
         }
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #03787c;
+            box-shadow: 0 0 0 3px rgba(3, 120, 124, 0.12);
+        }
+        .auto-filled {
+            background: #e6f4f4 !important;
+            border-color: #03787c !important;
         }
         .hint {
             font-size: 0.82rem;
             color: #64748b;
-            margin-top: 4px;
+            margin-top: 5px;
         }
         .hint.status-ok {
             color: #035c5f;
-            font-weight: 600;
+            font-weight: 700;
         }
         .hint.status-err {
             color: #b91c1c;
+            font-weight: 600;
         }
         .submit-btn {
             width: 100%;
@@ -113,7 +132,7 @@
             font-size: 1.05rem;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 16px;
+            margin-top: 18px;
         }
         .submit-btn:hover {
             background: #025f62;
@@ -122,10 +141,15 @@
             background: #e6f4f4;
             border: 1px solid #03787c;
             color: #035c5f;
-            padding: 14px;
+            padding: 14px 16px;
             border-radius: 8px;
             margin-bottom: 18px;
-            font-weight: 600;
+            font-weight: 700;
+        }
+        .err-text {
+            color: #b91c1c;
+            font-size: 0.85rem;
+            margin-top: 4px;
         }
         .hidden {
             display: none;
@@ -134,9 +158,10 @@
 </head>
 <body>
     <div class="wrap">
+        <!-- 言語選択スタート画面 -->
         <div id="lang-screen" class="lang-screen {% if submitted or form.errors %}hidden{% endif %}">
-            <h1>言語を選択してください / Escolha o idioma / Select Language</h1>
-            <p class="hint">入力を開始する言語を選んでください / Selecione o idioma para começar / Choose your language to start</p>
+            <h1>和大サポート - Wadai Support</h1>
+            <p class="hint">言語を選択してください / Escolha o idioma / Select Language</p>
             <div class="lang-buttons">
                 <button type="button" class="lang-btn" onclick="startForm('ja')">日本語</button>
                 <button type="button" class="lang-btn" onclick="startForm('pt')">Português</button>
@@ -144,15 +169,22 @@
             </div>
         </div>
 
+        <!-- フォーム画面 -->
         <div id="form-screen" class="{% if not submitted and not form.errors %}hidden{% endif %}">
             <div class="top-bar">
-                <h1 id="form-title">スキルシート入力フォーム</h1>
+                <h1 id="form-title">和大サポート - スキルシート</h1>
                 <button type="button" id="lang-switch-btn" class="sub-btn" onclick="backToLang()">言語変更</button>
             </div>
 
             {% if submitted %}
                 <div id="done-notice" class="notice">
                     登録が完了しました。ご入力ありがとうございます。
+                </div>
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="notice" style="background:#fef2f2;border-color:#dc2626;color:#991b1b;">
+                    {{ form.non_field_errors }}
                 </div>
             {% endif %}
 
@@ -164,11 +196,15 @@
                         {{ field }}
                         {% if field.name == "birth_date" %}
                             <div id="birth-hint" class="hint"></div>
+                        {% elif field.name == "age" %}
+                            <div id="age-hint" class="hint"></div>
                         {% elif field.name == "postal_code" %}
                             <div id="postal-hint" class="hint"></div>
+                        {% elif field.name == "address" %}
+                            <div id="address-hint" class="hint"></div>
                         {% endif %}
                         {% if field.errors %}
-                            <div style="color: #b91c1c; font-size: 0.85rem; margin-top: 4px;">{{ field.errors }}</div>
+                            <div class="err-text">{{ field.errors }}</div>
                         {% endif %}
                     </div>
                 {% endfor %}
@@ -182,35 +218,44 @@
 
         const uiTexts = {
             ja: {
-                title: "スキルシート入力フォーム",
+                title: "和大サポート - スキルシート",
                 switchLang: "言語変更",
                 submit: "送信する",
                 done: "登録が完了しました。ご入力ありがとうございます。",
-                birthHint: "カレンダーから生年月日を選ぶと年齢が自動計算されます",
-                postalHint: "例: 4313101（7桁入力すると住所が自動入力されます）",
-                postalFound: "住所を自動入力しました。",
+                birthHint: "生年月日を選ぶと年齢が自動で入ります（直接入力もできます）",
+                ageHint: "生年月日から自動計算されます",
+                postalHint: "郵便番号（7桁）を入れると住所が自動で入ります",
+                addressHint: "郵便番号から自動入力されます（番地・建物名は追記してください）",
+                ageCalculated: "生年月日から自動計算しました",
+                postalFound: "郵便番号から住所を自動入力しました",
                 postalNotFound: "該当する住所が見つかりませんでした。手入力してください。",
                 postalErr: "自動検索に失敗しました。住所を手入力してください。"
             },
             pt: {
-                title: "Formulário de Skill Sheet",
+                title: "Wadai Support - Skill Sheet",
                 switchLang: "Mudar idioma",
                 submit: "Enviar",
                 done: "Cadastro concluído com sucesso. Obrigado!",
-                birthHint: "Escolha a data de nascimento no calendário para calcular a idade",
-                postalHint: "Ex.: 4313101 (o endereço será preenchido automaticamente)",
-                postalFound: "Endereço preenchido automaticamente.",
+                birthHint: "Escolha a data de nascimento para preencher a idade automaticamente",
+                ageHint: "Calculado automaticamente pela data de nascimento",
+                postalHint: "Digite o CEP (7 dígitos) para preencher o endereço automaticamente",
+                addressHint: "Preenchido pelo CEP (adicione o número e complemento)",
+                ageCalculated: "Idade calculada automaticamente",
+                postalFound: "Endereço preenchido automaticamente pelo CEP",
                 postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
                 postalErr: "Falha na busca automática. Digite o endereço manualmente."
             },
             en: {
-                title: "Skill Sheet Application Form",
+                title: "Wadai Support - Skill Sheet",
                 switchLang: "Change language",
                 submit: "Submit",
                 done: "Registration completed. Thank you!",
-                birthHint: "Pick your birth date from the calendar to calculate age automatically",
-                postalHint: "Ex: 4313101 (address is filled automatically)",
-                postalFound: "Address filled automatically.",
+                birthHint: "Select your birth date to fill age automatically",
+                ageHint: "Calculated automatically from birth date",
+                postalHint: "Enter 7-digit postal code to fill address automatically",
+                addressHint: "Auto-filled from postal code (add street number / building if needed)",
+                ageCalculated: "Age calculated automatically",
+                postalFound: "Address filled automatically from postal code",
                 postalNotFound: "Postal code not found. Please enter address manually.",
                 postalErr: "Auto-lookup failed. Please enter address manually."
             }
@@ -267,10 +312,22 @@
             const bHint = document.getElementById("birth-hint");
             if (bHint) bHint.textContent = t.birthHint;
 
+            const aHint = document.getElementById("age-hint");
+            if (aHint && !aHint.dataset.autoState) {
+                aHint.textContent = t.ageHint;
+                aHint.className = "hint";
+            }
+
             const pHint = document.getElementById("postal-hint");
-            if (pHint && !pHint.dataset.locked) {
+            if (pHint && !pHint.dataset.autoState) {
                 pHint.textContent = t.postalHint;
                 pHint.className = "hint";
+            }
+
+            const addrHint = document.getElementById("address-hint");
+            if (addrHint && !addrHint.dataset.autoState) {
+                addrHint.textContent = t.addressHint;
+                addrHint.className = "hint";
             }
 
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
@@ -297,11 +354,19 @@
         function calcAgeFromBirthDate() {
             const birthInput = document.getElementById("id_birth_date");
             const ageInput = document.getElementById("id_age");
+            const aHint = document.getElementById("age-hint");
             if (!birthInput || !ageInput) return;
 
             const val = birthInput.value.trim();
             if (!val) {
                 ageInput.value = "";
+                ageInput.classList.remove("auto-filled");
+                if (aHint) {
+                    delete aHint.dataset.autoState;
+                    const lang = localStorage.getItem("skillsheet_lang") || "ja";
+                    aHint.textContent = (uiTexts[lang] || uiTexts.ja).ageHint;
+                    aHint.className = "hint";
+                }
                 return;
             }
 
@@ -339,7 +404,17 @@
 
             if (age >= 0 && age <= 120) {
                 ageInput.value = String(age);
+                ageInput.classList.add("auto-filled");
+                ageInput.dispatchEvent(new Event("input", { bubbles: true }));
                 ageInput.dispatchEvent(new Event("change", { bubbles: true }));
+
+                if (aHint) {
+                    const lang = localStorage.getItem("skillsheet_lang") || "ja";
+                    const t = uiTexts[lang] || uiTexts.ja;
+                    aHint.dataset.autoState = "ok";
+                    aHint.textContent = `${t.ageCalculated}: ${age}`;
+                    aHint.className = "hint status-ok";
+                }
             }
         }
 
@@ -347,6 +422,7 @@
             const postalInput = document.getElementById("id_postal_code");
             const addressInput = document.getElementById("id_address");
             const pHint = document.getElementById("postal-hint");
+            const addrHint = document.getElementById("address-hint");
             if (!postalInput || !addressInput) return;
 
             const zip = postalInput.value.replace(/\D/g, "");
@@ -380,6 +456,7 @@
                     }
                 } catch (e2) {
                     if (pHint) {
+                        pHint.dataset.autoState = "err";
                         pHint.textContent = t.postalErr;
                         pHint.className = "hint status-err";
                     }
@@ -389,13 +466,22 @@
 
             if (fullAddress) {
                 addressInput.value = fullAddress;
+                addressInput.classList.add("auto-filled");
                 addressInput.dispatchEvent(new Event("input", { bubbles: true }));
                 addressInput.dispatchEvent(new Event("change", { bubbles: true }));
+
                 if (pHint) {
-                    pHint.textContent = `${t.postalFound} (${fullAddress})`;
+                    pHint.dataset.autoState = "ok";
+                    pHint.textContent = `${t.postalFound}: ${fullAddress}`;
                     pHint.className = "hint status-ok";
                 }
+                if (addrHint) {
+                    addrHint.dataset.autoState = "ok";
+                    addrHint.textContent = t.addressHint;
+                    addrHint.className = "hint status-ok";
+                }
             } else if (pHint) {
+                pHint.dataset.autoState = "err";
                 pHint.textContent = t.postalNotFound;
                 pHint.className = "hint status-err";
             }
