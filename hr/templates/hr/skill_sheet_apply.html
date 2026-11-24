@@ -32,15 +32,17 @@
             margin-bottom: 8px;
         }
         .brand-logo {
-            width: 52px;
-            height: 52px;
+            width: 44px;
+            height: 44px;
             object-fit: contain;
-            border-radius: 10px;
+            border-radius: 50%;
             flex-shrink: 0;
+            display: inline-block;
+            background: #fff;
         }
         .brand-logo.lg {
-            width: 84px;
-            height: 84px;
+            width: 80px;
+            height: 80px;
         }
         h1 {
             margin: 0;
@@ -207,7 +209,12 @@
     <div class="wrap">
         <div id="lang-screen" class="lang-screen {% if submitted or form.errors %}hidden{% endif %}">
             <div class="brand-header center">
-                <img src="/static/hr/img/wadai-logo.png" alt="和大サポート ロゴ" class="brand-logo lg" onerror="this.style.display='none'">
+                <img
+                    src="/static/hr/img/wadai-logo.png"
+                    data-fallbacks="/static/wadai-logo.png|/static/hr/img/wadai-logo.jpg|/static/hr/img/wadai-logo.jpeg"
+                    alt="和大サポート ロゴ"
+                    class="brand-logo lg js-wadai-logo"
+                >
                 <h1>和大サポート - Wadai Support</h1>
             </div>
             <p class="hint">言語を選択してください / Escolha o idioma / Select Language</p>
@@ -221,7 +228,12 @@
         <div id="form-screen" class="{% if not submitted and not form.errors %}hidden{% endif %}">
             <div class="top-bar">
                 <div class="brand-header">
-                    <img src="/static/hr/img/wadai-logo.png" alt="和大サポート ロゴ" class="brand-logo" onerror="this.style.display='none'">
+                    <img
+                        src="/static/hr/img/wadai-logo.png"
+                        data-fallbacks="/static/wadai-logo.png|/static/hr/img/wadai-logo.jpg|/static/hr/img/wadai-logo.jpeg"
+                        alt="和大サポート ロゴ"
+                        class="brand-logo js-wadai-logo"
+                    >
                     <h1 id="form-title">和大サポート - スキルシート</h1>
                 </div>
                 <button type="button" id="lang-switch-btn" class="sub-btn" onclick="backToLang()">言語変更</button>
@@ -269,6 +281,36 @@
     <script>
         const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
         let basePostalAddress = "";
+
+        const FALLBACK_LOGO_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">' +
+            '<circle cx="60" cy="60" r="54" fill="#03787c"/>' +
+            '<text x="60" y="77" text-anchor="middle" fill="#ffffff" font-family="Arial,sans-serif" font-size="56" font-weight="bold">W</text>' +
+            '</svg>'
+        );
+
+        function initLogoFallback() {
+            document.querySelectorAll("img.js-wadai-logo").forEach((img) => {
+                const candidates = [
+                    img.getAttribute("src"),
+                    ...(img.dataset.fallbacks || "").split("|").filter(Boolean),
+                    FALLBACK_LOGO_SVG
+                ];
+                let idx = 0;
+
+                const tryNext = () => {
+                    idx += 1;
+                    if (idx < candidates.length) {
+                        img.src = candidates[idx];
+                    }
+                };
+
+                img.addEventListener("error", tryNext);
+                if (img.complete && img.naturalWidth === 0) {
+                    tryNext();
+                }
+            });
+        }
 
         const SHIFT_OPTIONS = [
             { value: "day", ja: "昼勤のみ", pt: "Diurno", en: "Day shift" },
@@ -1018,6 +1060,7 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            initLogoFallback();
             ensureStreetAddressField();
             ensureWorkingHoursField();
             reorderFields();
