@@ -105,9 +105,18 @@
             border-color: #03787c;
             box-shadow: 0 0 0 3px rgba(3, 120, 124, 0.12);
         }
+        input[readonly] {
+            background: #eef2f6 !important;
+            color: #334155 !important;
+            cursor: not-allowed;
+        }
         .auto-filled {
             background: #e6f4f4 !important;
             border-color: #03787c !important;
+        }
+        .auto-filled[readonly] {
+            background: #e6f4f4 !important;
+            color: #0f172a !important;
         }
         .hint {
             font-size: 0.82rem;
@@ -213,6 +222,7 @@
 
     <script>
         const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
+        let basePostalAddress = "";
 
         const uiTexts = {
             ja: {
@@ -223,11 +233,14 @@
                 birthHint: "生年月日を選ぶと年齢が自動で入ります（直接入力もできます）",
                 ageHint: "生年月日から自動計算されます",
                 postalHint: "郵便番号（7桁）を入れると自動でハイフンと住所が入ります",
-                addressHint: "郵便番号から自動入力されます（番地・建物名は追記してください）",
+                addressHint: "郵便番号から自動入力されます（訂正不可・番地は下の欄へ入力してください）",
+                streetLabel: "続きの番地・建物名 / Número e complemento / Street & Building",
+                streetPlaceholder: "例：1-2-3 ○○マンション 101号室",
+                streetHint: "番地・部屋番号などを入力してください",
                 ageCalculated: "生年月日から自動計算しました",
                 postalFound: "郵便番号から住所を自動入力しました",
-                postalNotFound: "該当する住所が見つかりませんでした。手入力してください。",
-                postalErr: "自動検索に失敗しました。住所を手入力してください。"
+                postalNotFound: "該当する住所が見つかりませんでした。住所・番地を手入力してください。",
+                postalErr: "自動検索に失敗しました。住所・番地を手入力してください。"
             },
             pt: {
                 title: "Wadai Support - Skill Sheet",
@@ -237,7 +250,10 @@
                 birthHint: "Escolha a data de nascimento para preencher a idade automaticamente",
                 ageHint: "Calculado automaticamente pela data de nascimento",
                 postalHint: "Digite o CEP (7 dígitos) para inserir o hífen e o endereço automaticamente",
-                addressHint: "Preenchido pelo CEP (adicione o número e complemento)",
+                addressHint: "Preenchido automaticamente pelo CEP (não editável; informe o número abaixo)",
+                streetLabel: "Número e complemento / 続きの番地・建物名 / Street & Building",
+                streetPlaceholder: "Ex.: Rua Exemplo, 123, Apto 12",
+                streetHint: "Digite o número da casa/prédio e complemento",
                 ageCalculated: "Idade calculada automaticamente",
                 postalFound: "Endereço preenchido automaticamente pelo CEP",
                 postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
@@ -251,7 +267,10 @@
                 birthHint: "Select your birth date to fill age automatically",
                 ageHint: "Calculated automatically from birth date",
                 postalHint: "Enter 7-digit postal code to auto-insert hyphen and address",
-                addressHint: "Auto-filled from postal code (add street number / building if needed)",
+                addressHint: "Auto-filled from postal code (locked; enter street & building below)",
+                streetLabel: "Street Address & Building / 続きの番地・建物名 / Número e complemento",
+                streetPlaceholder: "e.g., 1-2-3 Sample St, Apt 101",
+                streetHint: "Enter street number, building name, or room number",
                 ageCalculated: "Age calculated automatically",
                 postalFound: "Address filled automatically from postal code",
                 postalNotFound: "Postal code not found. Please enter address manually.",
@@ -272,6 +291,70 @@
             const ageBox = document.querySelector('#skillsheet-form .field[data-field="age"]');
             if (birthBox && ageBox && birthBox.nextElementSibling !== ageBox) {
                 birthBox.insertAdjacentElement("afterend", ageBox);
+            }
+        }
+
+        function ensureStreetAddressField() {
+            const addressBox = document.querySelector('#skillsheet-form .field[data-field="address"]');
+            const addressInput = document.getElementById("id_address");
+            if (!addressBox || !addressInput) return;
+
+            if (!addressInput.hasAttribute("readonly")) {
+                addressInput.setAttribute("readonly", "readonly");
+            }
+
+            if (!document.getElementById("street-address-box")) {
+                const streetBox = document.createElement("div");
+                streetBox.id = "street-address-box";
+                streetBox.className = "field";
+
+                const lbl = document.createElement("label");
+                lbl.id = "street-address-label";
+                lbl.setAttribute("for", "id_street_address");
+                lbl.textContent = uiTexts.ja.streetLabel;
+
+                const inp = document.createElement("input");
+                inp.type = "text";
+                inp.id = "id_street_address";
+                inp.name = "street_address";
+                inp.placeholder = uiTexts.ja.streetPlaceholder;
+
+                const hint = document.createElement("div");
+                hint.id = "street-address-hint";
+                hint.className = "hint";
+                hint.textContent = uiTexts.ja.streetHint;
+
+                streetBox.appendChild(lbl);
+                streetBox.appendChild(inp);
+                streetBox.appendChild(hint);
+
+                addressBox.insertAdjacentElement("afterend", streetBox);
+
+                inp.addEventListener("input", syncCombinedAddress);
+                inp.addEventListener("change", syncCombinedAddress);
+            }
+        }
+
+        function syncCombinedAddress() {
+            const addressInput = document.getElementById("id_address");
+            const streetInput = document.getElementById("id_street_address");
+            if (!addressInput) return;
+
+            const streetVal = streetInput ? streetInput.value.trim() : "";
+            if (basePostalAddress) {
+                addressInput.value = streetVal ? `${basePostalAddress} ${streetVal}` : basePostalAddress;
+            } else if (!addressInput.readOnly) {
+                addressInput.value = streetVal;
+            }
+        }
+
+        function setAddressLocked(locked) {
+            const addressInput = document.getElementById("id_address");
+            if (!addressInput) return;
+            if (locked) {
+                addressInput.setAttribute("readonly", "readonly");
+            } else {
+                addressInput.removeAttribute("readonly");
             }
         }
 
@@ -335,6 +418,15 @@
                 addrHint.textContent = t.addressHint;
                 addrHint.className = "hint";
             }
+
+            const stLbl = document.getElementById("street-address-label");
+            if (stLbl) stLbl.textContent = t.streetLabel;
+
+            const stInp = document.getElementById("id_street_address");
+            if (stInp) stInp.placeholder = t.streetPlaceholder;
+
+            const stHint = document.getElementById("street-address-hint");
+            if (stHint) stHint.textContent = t.streetHint;
 
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
                 if (lbl.dataset.orig) lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang);
@@ -438,6 +530,8 @@
 
             const zip = formatted.replace(/\D/g, "");
             if (zip.length < 7) {
+                basePostalAddress = "";
+                setAddressLocked(true);
                 if (pHint) {
                     delete pHint.dataset.autoState;
                     const lang = localStorage.getItem("skillsheet_lang") || "ja";
@@ -493,7 +587,9 @@
             }
 
             if (fullAddress) {
-                addressInput.value = fullAddress;
+                basePostalAddress = fullAddress;
+                setAddressLocked(true);
+                syncCombinedAddress();
                 addressInput.classList.add("auto-filled");
                 addressInput.dispatchEvent(new Event("input", { bubbles: true }));
                 addressInput.dispatchEvent(new Event("change", { bubbles: true }));
@@ -508,15 +604,26 @@
                     addrHint.textContent = t.addressHint;
                     addrHint.className = "hint status-ok";
                 }
-            } else if (pHint) {
-                pHint.dataset.autoState = "err";
-                pHint.textContent = anySuccess ? t.postalNotFound : t.postalErr;
-                pHint.className = "hint status-err";
+
+                const streetInput = document.getElementById("id_street_address");
+                if (streetInput) {
+                    streetInput.focus();
+                }
+            } else {
+                basePostalAddress = "";
+                setAddressLocked(false);
+                addressInput.classList.remove("auto-filled");
+                if (pHint) {
+                    pHint.dataset.autoState = "err";
+                    pHint.textContent = anySuccess ? t.postalNotFound : t.postalErr;
+                    pHint.className = "hint status-err";
+                }
             }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
             moveAgeAfterBirthDate();
+            ensureStreetAddressField();
             snapshotOriginalTexts();
 
             const birthInput = document.getElementById("id_birth_date");
@@ -557,6 +664,13 @@
                 postalInput.addEventListener("input", handlePostalInput);
                 postalInput.addEventListener("change", handlePostalInput);
                 postalInput.addEventListener("blur", handlePostalInput);
+            }
+
+            const formEl = document.getElementById("skillsheet-form");
+            if (formEl) {
+                formEl.addEventListener("submit", () => {
+                    syncCombinedAddress();
+                });
             }
         });
     </script>
