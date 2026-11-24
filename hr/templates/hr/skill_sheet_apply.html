@@ -109,6 +109,13 @@
             color: #64748b;
             margin-top: 4px;
         }
+        .hint.status-ok {
+            color: #035c5f;
+            font-weight: 600;
+        }
+        .hint.status-err {
+            color: #b91c1c;
+        }
         .submit-btn {
             width: 100%;
             background: #03787c;
@@ -155,27 +162,25 @@
         <div id="form-screen" class="{% if not submitted and not form.errors %}hidden{% endif %}">
             <div class="top-bar">
                 <h1 id="form-title">スキルシート入力フォーム</h1>
-                <button type="button" class="sub-btn" onclick="backToLang()">言語変更 / Idioma / Language</button>
+                <button type="button" id="lang-switch-btn" class="sub-btn" onclick="backToLang()">言語変更</button>
             </div>
 
             {% if submitted %}
-                <div class="notice">
-                    登録が完了しました。ご入力ありがとうございます。<br>
-                    Cadastro concluído com sucesso. Obrigado!<br>
-                    Registration completed. Thank you!
+                <div id="done-notice" class="notice">
+                    登録が完了しました。ご入力ありがとうございます。
                 </div>
             {% endif %}
 
-            <form method="post">
+            <form method="post" id="skillsheet-form">
                 {% csrf_token %}
                 {% for field in form %}
                     <div class="field" data-field="{{ field.name }}">
                         {{ field.label_tag }}
                         {{ field }}
                         {% if field.name == "birth_date" %}
-                            <div id="birth-hint" class="hint">例: 19900515（8桁で入力すると年齢が自動計算されます）</div>
+                            <div id="birth-hint" class="hint"></div>
                         {% elif field.name == "postal_code" %}
-                            <div id="postal-hint" class="hint">例: 4300926（7桁で入力すると住所が自動入力されます）</div>
+                            <div id="postal-hint" class="hint"></div>
                         {% endif %}
                         {% if field.errors %}
                             <div style="color: #b91c1c; font-size: 0.85rem; margin-top: 4px;">{{ field.errors }}</div>
@@ -188,26 +193,109 @@
     </div>
 
     <script>
+        const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
+
         const uiTexts = {
             ja: {
                 title: "スキルシート入力フォーム",
+                switchLang: "言語変更",
                 submit: "送信する",
+                done: "登録が完了しました。ご入力ありがとうございます。",
                 birthHint: "例: 19900515（8桁で入力すると年齢が自動計算されます）",
-                postalHint: "例: 4300926（7桁で入力すると住所が自動入力されます）"
+                postalHint: "例: 4313101（7桁入力すると住所が自動入力されます）",
+                postalFound: "住所を自動入力しました。",
+                postalNotFound: "該当する住所が見つかりませんでした。手入力してください。",
+                postalErr: "自動検索に失敗しました。住所を手入力してください。"
             },
             pt: {
                 title: "Formulário de Skill Sheet",
+                switchLang: "Mudar idioma",
                 submit: "Enviar",
+                done: "Cadastro concluído com sucesso. Obrigado!",
                 birthHint: "Ex.: 19900515 (a idade será calculada automaticamente)",
-                postalHint: "Ex.: 4300926 (o endereço será preenchido automaticamente)"
+                postalHint: "Ex.: 4313101 (o endereço será preenchido automaticamente)",
+                postalFound: "Endereço preenchido automaticamente.",
+                postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
+                postalErr: "Falha na busca automática. Digite o endereço manualmente."
             },
             en: {
                 title: "Skill Sheet Application Form",
+                switchLang: "Change language",
                 submit: "Submit",
+                done: "Registration completed. Thank you!",
                 birthHint: "Ex: 19900515 (age is calculated automatically)",
-                postalHint: "Ex: 4300926 (address is filled automatically)"
+                postalHint: "Ex: 4313101 (address is filled automatically)",
+                postalFound: "Address filled automatically.",
+                postalNotFound: "Postal code not found. Please enter address manually.",
+                postalErr: "Auto-lookup failed. Please enter address manually."
             }
         };
+
+        // 元の "日本語 / Português / English" 文字列から選択言語のパートだけを抜き出す
+        function pickLangPart(rawText, lang) {
+            if (!rawText) return rawText;
+            const trimmed = rawText.trim();
+            if (trimmed === "---------" || trimmed === "" || /^\d+%$/.test(trimmed) || /^(S|M|L|LL|3L|4L|5L|0h|1h|2h|3h)$/.test(trimmed)) {
+                return trimmed;
+            }
+            const parts = trimmed.split(" / ");
+            if (parts.length === 1) {
+                return trimmed;
+            }
+            const idx = LANG_INDEX[lang] ?? 0;
+            // 2つしかない場合（例: "はい / Yes"）は日本語は0、英語/ポルトガル語は最後を使う
+            if (parts.length === 2) {
+                return lang === "ja" ? parts[0].trim() : parts[1].trim();
+            }
+            return (parts[idx] || parts[0]).trim();
+        }
+
+        // 初回読み込み時に元の日本語/多言語テキストを保持しておく
+        function snapshotOriginalTexts() {
+            document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
+                if (!lbl.dataset.orig) {
+                    lbl.dataset.orig = lbl.textContent;
+                }
+            });
+            document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
+                if (!opt.dataset.orig) {
+                    opt.dataset.orig = opt.textContent;
+                }
+            });
+        }
+
+        function applyLang(lang) {
+            const safeLang = uiTexts[lang] ? lang : "ja";
+            const t = uiTexts[safeLang];
+
+            document.getElementById("form-title").textContent = t.title;
+            document.getElementById("lang-switch-btn").textContent = t.switchLang;
+            document.getElementById("submit-btn").textContent = t.submit;
+
+            const doneEl = document.getElementById("done-notice");
+            if (doneEl) doneEl.textContent = t.done;
+
+            const bHint = document.getElementById("birth-hint");
+            if (bHint) bHint.textContent = t.birthHint;
+
+            const pHint = document.getElementById("postal-hint");
+            if (pHint && !pHint.dataset.locked) {
+                pHint.textContent = t.postalHint;
+                pHint.className = "hint";
+            }
+
+            document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
+                if (lbl.dataset.orig) {
+                    lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang);
+                }
+            });
+
+            document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
+                if (opt.dataset.orig) {
+                    opt.textContent = pickLangPart(opt.dataset.orig, safeLang);
+                }
+            });
+        }
 
         function startForm(lang) {
             localStorage.setItem("skillsheet_lang", lang);
@@ -221,17 +309,7 @@
             document.getElementById("lang-screen").classList.remove("hidden");
         }
 
-        function applyLang(lang) {
-            const t = uiTexts[lang] || uiTexts.ja;
-            document.getElementById("form-title").textContent = t.title;
-            document.getElementById("submit-btn").textContent = t.submit;
-            const bHint = document.getElementById("birth-hint");
-            const pHint = document.getElementById("postal-hint");
-            if (bHint) bHint.textContent = t.birthHint;
-            if (pHint) pHint.textContent = t.postalHint;
-        }
-
-        // 生年月日 (YYYYMMDD) から年齢を自動計算
+        // 生年月日 (YYYYMMDD / YYYY-MM-DD / YYYY/MM/DD) から年齢を自動計算
         function calcAgeFromBirthDate() {
             const birthInput = document.getElementById("id_birth_date");
             const ageInput = document.getElementById("id_age");
@@ -248,52 +326,95 @@
 
             const today = new Date();
             let age = today.getFullYear() - year;
-            const mDiff = today.getMonth() + 1 - month;
+            const mDiff = (today.getMonth() + 1) - month;
             if (mDiff < 0 || (mDiff === 0 && today.getDate() < day)) {
                 age--;
             }
             if (age >= 0 && age <= 120) {
                 ageInput.value = age;
+                ageInput.dispatchEvent(new Event("change", { bubbles: true }));
             }
         }
 
-        // 郵便番号から住所を自動入力
+        // 郵便番号から住所を自動入力（zipcloud -> 失敗時は postcodejp API にフォールバック）
         async function lookupAddressByPostal() {
             const postalInput = document.getElementById("id_postal_code");
             const addressInput = document.getElementById("id_address");
+            const pHint = document.getElementById("postal-hint");
             if (!postalInput || !addressInput) return;
 
             const zip = postalInput.value.replace(/\D/g, "");
             if (zip.length !== 7) return;
 
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const t = uiTexts[lang] || uiTexts.ja;
+
+            let fullAddress = "";
+
             try {
                 const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/api/json?zipcode=${zip}`);
-                const data = await res.json();
-                if (data.results && data.results.length > 0) {
-                    const r = data.results[0];
-                    addressInput.value = `${r.address1}${r.address2}${r.address3}`;
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.results && data.results.length > 0) {
+                        const r = data.results[0];
+                        fullAddress = `${r.address1 || ""}${r.address2 || ""}${r.address3 || ""}`;
+                    }
                 }
             } catch (e) {
-                // 通信エラー時はそのまま
+                // フォールバックへ進む
+            }
+
+            if (!fullAddress) {
+                try {
+                    const res2 = await fetch(`https://apis.postcode-jp.com/api/v5/postcodes/${zip}`);
+                    if (res2.ok) {
+                        const data2 = await res2.json();
+                        const item = Array.isArray(data2) ? data2[0] : (data2.data && data2.data[0]);
+                        if (item) {
+                            fullAddress = `${item.pref || ""}${item.city || ""}${item.town || ""}`;
+                        }
+                    }
+                } catch (e2) {
+                    if (pHint) {
+                        pHint.textContent = t.postalErr;
+                        pHint.className = "hint status-err";
+                    }
+                    return;
+                }
+            }
+
+            if (fullAddress) {
+                addressInput.value = fullAddress;
+                addressInput.dispatchEvent(new Event("input", { bubbles: true }));
+                addressInput.dispatchEvent(new Event("change", { bubbles: true }));
+                if (pHint) {
+                    pHint.textContent = `${t.postalFound} (${fullAddress})`;
+                    pHint.className = "hint status-ok";
+                }
+            } else if (pHint) {
+                pHint.textContent = t.postalNotFound;
+                pHint.className = "hint status-err";
             }
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            const savedLang = localStorage.getItem("skillsheet_lang");
-            if (savedLang) {
-                applyLang(savedLang);
-            }
+            snapshotOriginalTexts();
+
+            const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
+            applyLang(savedLang);
 
             const birthInput = document.getElementById("id_birth_date");
             if (birthInput) {
                 birthInput.addEventListener("input", calcAgeFromBirthDate);
                 birthInput.addEventListener("change", calcAgeFromBirthDate);
+                birthInput.addEventListener("blur", calcAgeFromBirthDate);
             }
 
             const postalInput = document.getElementById("id_postal_code");
             if (postalInput) {
                 postalInput.addEventListener("input", lookupAddressByPostal);
                 postalInput.addEventListener("change", lookupAddressByPostal);
+                postalInput.addEventListener("blur", lookupAddressByPostal);
             }
         });
     </script>
