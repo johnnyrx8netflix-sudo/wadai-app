@@ -224,6 +224,22 @@
         const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
         let basePostalAddress = "";
 
+        const FIELD_ORDER = [
+            "full_name",
+            "gender",
+            "marital_status",
+            "birth_date",
+            "age",
+            "phone",
+            "postal_code",
+            "address",
+            "street_address",
+            "nationality",
+            "visa_type",
+            "drivers_license",
+            "commute_method"
+        ];
+
         const uiTexts = {
             ja: {
                 title: "和大サポート - スキルシート",
@@ -278,20 +294,17 @@
             }
         };
 
+        function stripLeadingNumber(rawText) {
+            if (!rawText) return rawText;
+            return rawText.replace(/^\s*\d+\s*[\.\．\)\）\-:：]?\s*/, "");
+        }
+
         function formatPostalHyphen(rawValue) {
             const digits = (rawValue || "").replace(/\D/g, "").slice(0, 7);
             if (digits.length > 3) {
                 return `${digits.slice(0, 3)}-${digits.slice(3)}`;
             }
             return digits;
-        }
-
-        function moveAgeAfterBirthDate() {
-            const birthBox = document.querySelector('#skillsheet-form .field[data-field="birth_date"]');
-            const ageBox = document.querySelector('#skillsheet-form .field[data-field="age"]');
-            if (birthBox && ageBox && birthBox.nextElementSibling !== ageBox) {
-                birthBox.insertAdjacentElement("afterend", ageBox);
-            }
         }
 
         function ensureStreetAddressField() {
@@ -307,6 +320,7 @@
                 const streetBox = document.createElement("div");
                 streetBox.id = "street-address-box";
                 streetBox.className = "field";
+                streetBox.dataset.field = "street_address";
 
                 const lbl = document.createElement("label");
                 lbl.id = "street-address-label";
@@ -335,6 +349,75 @@
             }
         }
 
+        function reorderFields() {
+            const formEl = document.getElementById("skillsheet-form");
+            const submitBtn = document.getElementById("submit-btn");
+            if (!formEl || !submitBtn) return;
+
+            const allBoxes = Array.from(formEl.querySelectorAll(".field[data-field]"));
+            const boxMap = new Map();
+            allBoxes.forEach((box) => {
+                boxMap.set(box.dataset.field, box);
+            });
+
+            FIELD_ORDER.forEach((fieldName) => {
+                const box = boxMap.get(fieldName);
+                if (box) {
+                    formEl.insertBefore(box, submitBtn);
+                    boxMap.delete(fieldName);
+                }
+            });
+
+            boxMap.forEach((box) => {
+                formEl.insertBefore(box, submitBtn);
+            });
+        }
+
+        function isJapaneseNationality(natEl) {
+            if (!natEl) return false;
+            const rawVal = (natEl.value || "").trim().toLowerCase();
+            let optText = "";
+            if (natEl.tagName === "SELECT" && natEl.selectedIndex >= 0) {
+                const opt = natEl.options[natEl.selectedIndex];
+                optText = ((opt.dataset.orig || opt.textContent) || "").trim().toLowerCase();
+            }
+            const combined = `${rawVal} ${optText}`;
+            return (
+                combined.includes("日本") ||
+                combined.includes("japan") ||
+                combined.includes("japão") ||
+                combined.includes("japao") ||
+                rawVal === "jp" ||
+                rawVal === "jpn"
+            );
+        }
+
+        function updateVisaVisibility() {
+            const natEl = document.getElementById("id_nationality");
+            const visaBox = document.querySelector('#skillsheet-form .field[data-field="visa_type"]');
+            const visaInput = document.getElementById("id_visa_type");
+            if (!natEl || !visaBox) return;
+
+            const hasValue = Boolean((natEl.value || "").trim());
+            const isJapanese = isJapaneseNationality(natEl);
+
+            if (!hasValue || isJapanese) {
+                visaBox.classList.add("hidden");
+                if (visaInput) {
+                    visaInput.required = false;
+                    if (isJapanese) {
+                        if (visaInput.tagName === "SELECT") {
+                            visaInput.selectedIndex = 0;
+                        } else {
+                            visaInput.value = "";
+                        }
+                    }
+                }
+            } else {
+                visaBox.classList.remove("hidden");
+            }
+        }
+
         function syncCombinedAddress() {
             const addressInput = document.getElementById("id_address");
             const streetInput = document.getElementById("id_street_address");
@@ -360,7 +443,8 @@
 
         function pickLangPart(rawText, lang) {
             if (!rawText) return rawText;
-            const trimmed = rawText.trim();
+            const cleaned = stripLeadingNumber(rawText);
+            const trimmed = cleaned.trim();
             if (
                 trimmed === "---------" ||
                 trimmed === "" ||
@@ -380,7 +464,9 @@
 
         function snapshotOriginalTexts() {
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
-                if (!lbl.dataset.orig) lbl.dataset.orig = lbl.textContent;
+                if (!lbl.dataset.orig) {
+                    lbl.dataset.orig = stripLeadingNumber(lbl.textContent);
+                }
             });
             document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
                 if (!opt.dataset.orig) opt.dataset.orig = opt.textContent;
@@ -435,6 +521,8 @@
             document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
                 if (opt.dataset.orig) opt.textContent = pickLangPart(opt.dataset.orig, safeLang);
             });
+
+            updateVisaVisibility();
         }
 
         function startForm(lang) {
@@ -622,9 +710,15 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            moveAgeAfterBirthDate();
             ensureStreetAddressField();
+            reorderFields();
             snapshotOriginalTexts();
+
+            const natEl = document.getElementById("id_nationality");
+            if (natEl) {
+                natEl.addEventListener("change", updateVisaVisibility);
+                natEl.addEventListener("input", updateVisaVisibility);
+            }
 
             const birthInput = document.getElementById("id_birth_date");
             if (birthInput) {
@@ -655,6 +749,7 @@
 
             const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
             applyLang(savedLang);
+            updateVisaVisibility();
 
             const postalInput = document.getElementById("id_postal_code");
             if (postalInput) {
@@ -670,6 +765,7 @@
             if (formEl) {
                 formEl.addEventListener("submit", () => {
                     syncCombinedAddress();
+                    updateVisaVisibility();
                 });
             }
         });
