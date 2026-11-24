@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -21,8 +22,29 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             border-top: 6px solid #03787c;
         }
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-header.center {
+            flex-direction: column;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        .brand-logo {
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .brand-logo.lg {
+            width: 84px;
+            height: 84px;
+        }
         h1 {
-            margin: 0 0 12px;
+            margin: 0;
             font-size: 1.35rem;
             color: #111827;
         }
@@ -93,17 +115,25 @@
         input, select, textarea {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #eab308;
             border-radius: 6px;
             box-sizing: border-box;
             font-size: 0.96rem;
-            background: #fff;
-            color: #111827;
+            background-color: #fef9c3;
+            color: #713f12;
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #0284c7;
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.14);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.16);
+        }
+        input.is-empty,
+        select.is-empty,
+        textarea.is-empty,
+        select.is-unselected {
+            background-color: #fef9c3 !important;
+            border-color: #eab308 !important;
+            color: #713f12 !important;
         }
         input.is-filled,
         select.is-filled,
@@ -112,22 +142,20 @@
             border-color: #0284c7 !important;
             color: #0c4a6e !important;
         }
-        select.is-unselected {
-            background-color: #fffbeb !important;
-            border-color: #f59e0b !important;
-            color: #92400e !important;
-        }
-        input[readonly] {
-            background: #eef2f6 !important;
-            color: #334155 !important;
+        input[readonly].is-empty,
+        .auto-filled.is-empty {
+            background-color: #fef9c3 !important;
+            border-color: #eab308 !important;
+            color: #713f12 !important;
             cursor: not-allowed;
         }
         input[readonly].is-filled,
-        .auto-filled,
-        .auto-filled[readonly] {
+        input[readonly].auto-filled,
+        .auto-filled.is-filled {
             background-color: #e0f2fe !important;
             border-color: #0284c7 !important;
             color: #0c4a6e !important;
+            cursor: not-allowed;
         }
         .hint {
             font-size: 0.82rem;
@@ -179,7 +207,10 @@
 <body>
     <div class="wrap">
         <div id="lang-screen" class="lang-screen {% if submitted or form.errors %}hidden{% endif %}">
-            <h1>和大サポート - Wadai Support</h1>
+            <div class="brand-header center">
+                <img src="{% static 'hr/img/wadai-logo.png' %}" alt="和大サポート ロゴ" class="brand-logo lg" onerror="this.style.display='none'">
+                <h1>和大サポート - Wadai Support</h1>
+            </div>
             <p class="hint">言語を選択してください / Escolha o idioma / Select Language</p>
             <div class="lang-buttons">
                 <button type="button" class="lang-btn" onclick="startForm('ja')">日本語</button>
@@ -190,7 +221,10 @@
 
         <div id="form-screen" class="{% if not submitted and not form.errors %}hidden{% endif %}">
             <div class="top-bar">
-                <h1 id="form-title">和大サポート - スキルシート</h1>
+                <div class="brand-header">
+                    <img src="{% static 'hr/img/wadai-logo.png' %}" alt="和大サポート ロゴ" class="brand-logo" onerror="this.style.display='none'">
+                    <h1 id="form-title">和大サポート - スキルシート</h1>
+                </div>
                 <button type="button" id="lang-switch-btn" class="sub-btn" onclick="backToLang()">言語変更</button>
             </div>
 
@@ -342,21 +376,18 @@
             const digits = (rawValue || "").replace(/\D/g, "").slice(0, 11);
             if (!digits) return "";
 
-            // 050 / 070 / 080 / 090 (11桁: 3-4-4、途中経過も自然に整形)
             if (/^0[5789]0/.test(digits)) {
                 if (digits.length <= 3) return digits;
                 if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
                 return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
             }
 
-            // 03 / 06 などの2桁市外局番
             if (/^0[36]/.test(digits)) {
                 if (digits.length <= 2) return digits;
                 if (digits.length <= 6) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
                 return `${digits.slice(0, 2)}-${digits.slice(2, 6)}-${digits.slice(6)}`;
             }
 
-            // その他（3桁市外局番など）
             if (digits.length <= 3) return digits;
             if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
             return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
@@ -369,10 +400,10 @@
                 const val = (el.value || "").trim();
                 const isUnselected = !val || val === "---------";
                 if (isUnselected) {
-                    el.classList.add("is-unselected");
+                    el.classList.add("is-empty", "is-unselected");
                     el.classList.remove("is-filled");
                 } else {
-                    el.classList.remove("is-unselected");
+                    el.classList.remove("is-empty", "is-unselected");
                     el.classList.add("is-filled");
                 }
                 return;
@@ -380,9 +411,11 @@
 
             const hasVal = Boolean((el.value || "").trim());
             if (hasVal) {
+                el.classList.remove("is-empty");
                 el.classList.add("is-filled");
             } else {
                 el.classList.remove("is-filled");
+                el.classList.add("is-empty");
             }
         }
 
