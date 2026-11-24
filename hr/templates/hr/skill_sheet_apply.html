@@ -102,31 +102,32 @@
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #03787c;
-            box-shadow: 0 0 0 3px rgba(3, 120, 124, 0.12);
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.14);
+        }
+        input.is-filled,
+        select.is-filled,
+        textarea.is-filled {
+            background-color: #e0f2fe !important;
+            border-color: #0284c7 !important;
+            color: #0c4a6e !important;
         }
         select.is-unselected {
             background-color: #fffbeb !important;
             border-color: #f59e0b !important;
             color: #92400e !important;
         }
-        select.is-selected {
-            background-color: #f0fdfa !important;
-            border-color: #03787c !important;
-            color: #0f172a !important;
-        }
         input[readonly] {
             background: #eef2f6 !important;
             color: #334155 !important;
             cursor: not-allowed;
         }
-        .auto-filled {
-            background: #e6f4f4 !important;
-            border-color: #03787c !important;
-        }
+        input[readonly].is-filled,
+        .auto-filled,
         .auto-filled[readonly] {
-            background: #e6f4f4 !important;
-            color: #0f172a !important;
+            background-color: #e0f2fe !important;
+            border-color: #0284c7 !important;
+            color: #0c4a6e !important;
         }
         .hint {
             font-size: 0.82rem;
@@ -134,7 +135,7 @@
             margin-top: 5px;
         }
         .hint.status-ok {
-            color: #035c5f;
+            color: #0369a1;
             font-weight: 700;
         }
         .hint.status-err {
@@ -215,6 +216,8 @@
                             <div id="birth-hint" class="hint"></div>
                         {% elif field.name == "age" %}
                             <div id="age-hint" class="hint"></div>
+                        {% elif field.name == "phone" %}
+                            <div id="phone-hint" class="hint"></div>
                         {% elif field.name == "postal_code" %}
                             <div id="postal-hint" class="hint"></div>
                         {% elif field.name == "address" %}
@@ -265,8 +268,9 @@
                 switchLang: "言語変更",
                 submit: "送信する",
                 done: "登録が完了しました。ご入力ありがとうございます。",
-                birthHint: "生年月日を選ぶと年齢が自動で入ります（直接入力もできます）",
-                ageHint: "生年月日から自動計算されます",
+                birthHint: "生年月日を選ぶと年齢が自動で入ります",
+                ageHint: "生年月日から自動計算されます（訂正不可）",
+                phoneHint: "数字のみ入力すると自動でハイフンが入ります",
                 postalHint: "郵便番号（7桁）を入れると自動でハイフンと住所が入ります",
                 addressHint: "郵便番号から自動入力されます（訂正不可・番地は下の欄へ入力してください）",
                 streetLabel: "続きの番地・建物名 / Número e complemento / Street & Building",
@@ -285,7 +289,8 @@
                 submit: "Enviar",
                 done: "Cadastro concluído com sucesso. Obrigado!",
                 birthHint: "Escolha a data de nascimento para preencher a idade automaticamente",
-                ageHint: "Calculado automaticamente pela data de nascimento",
+                ageHint: "Calculado automaticamente pela data de nascimento (não editável)",
+                phoneHint: "Digite apenas números; o hífen é inserido automaticamente",
                 postalHint: "Digite o CEP (7 dígitos) para inserir o hífen e o endereço automaticamente",
                 addressHint: "Preenchido automaticamente pelo CEP (não editável; informe o número abaixo)",
                 streetLabel: "Número e complemento / 続きの番地・建物名 / Street & Building",
@@ -304,7 +309,8 @@
                 submit: "Submit",
                 done: "Registration completed. Thank you!",
                 birthHint: "Select your birth date to fill age automatically",
-                ageHint: "Calculated automatically from birth date",
+                ageHint: "Calculated automatically from birth date (locked)",
+                phoneHint: "Enter digits only; hyphens are added automatically",
                 postalHint: "Enter 7-digit postal code to auto-insert hyphen and address",
                 addressHint: "Auto-filled from postal code (locked; enter street & building below)",
                 streetLabel: "Street Address & Building / 続きの番地・建物名 / Número e complemento",
@@ -332,30 +338,117 @@
             return digits;
         }
 
-        function updateSelectHighlight(sel) {
-            if (!sel) return;
-            const val = (sel.value || "").trim();
-            if (!val || val === "---------") {
-                sel.classList.add("is-unselected");
-                sel.classList.remove("is-selected");
+        function formatPhoneHyphen(rawValue) {
+            const digits = (rawValue || "").replace(/\D/g, "").slice(0, 11);
+            if (!digits) return "";
+
+            // 050 / 070 / 080 / 090 (11桁: 3-4-4、途中経過も自然に整形)
+            if (/^0[5789]0/.test(digits)) {
+                if (digits.length <= 3) return digits;
+                if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+                return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+            }
+
+            // 03 / 06 などの2桁市外局番
+            if (/^0[36]/.test(digits)) {
+                if (digits.length <= 2) return digits;
+                if (digits.length <= 6) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+                return `${digits.slice(0, 2)}-${digits.slice(2, 6)}-${digits.slice(6)}`;
+            }
+
+            // その他（3桁市外局番など）
+            if (digits.length <= 3) return digits;
+            if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+            return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+        }
+
+        function updateFieldFillHighlight(el) {
+            if (!el || el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
+
+            if (el.tagName === "SELECT") {
+                const val = (el.value || "").trim();
+                const isUnselected = !val || val === "---------";
+                if (isUnselected) {
+                    el.classList.add("is-unselected");
+                    el.classList.remove("is-filled");
+                } else {
+                    el.classList.remove("is-unselected");
+                    el.classList.add("is-filled");
+                }
+                return;
+            }
+
+            const hasVal = Boolean((el.value || "").trim());
+            if (hasVal) {
+                el.classList.add("is-filled");
             } else {
-                sel.classList.remove("is-unselected");
-                sel.classList.add("is-selected");
+                el.classList.remove("is-filled");
             }
         }
 
-        function initSelectStyling() {
-            document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
-                Array.from(sel.options).forEach((opt) => {
-                    const txt = (opt.textContent || "").trim();
-                    if (/^-+$/.test(txt)) {
-                        opt.textContent = "";
-                        opt.dataset.orig = "";
-                    }
-                });
-                updateSelectHighlight(sel);
-                sel.addEventListener("change", () => updateSelectHighlight(sel));
+        function initFieldFillHighlight() {
+            document.querySelectorAll("#skillsheet-form input, #skillsheet-form select, #skillsheet-form textarea").forEach((el) => {
+                if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
+
+                if (el.tagName === "SELECT") {
+                    Array.from(el.options).forEach((opt) => {
+                        const txt = (opt.textContent || "").trim();
+                        if (/^-+$/.test(txt)) {
+                            opt.textContent = "";
+                            opt.dataset.orig = "";
+                        }
+                    });
+                }
+
+                updateFieldFillHighlight(el);
+                el.addEventListener("input", () => updateFieldFillHighlight(el));
+                el.addEventListener("change", () => updateFieldFillHighlight(el));
+                el.addEventListener("blur", () => updateFieldFillHighlight(el));
             });
+        }
+
+        function lockAgeField() {
+            const ageInput = document.getElementById("id_age");
+            if (!ageInput) return;
+            ageInput.setAttribute("readonly", "readonly");
+            ageInput.setAttribute("inputmode", "numeric");
+            ageInput.addEventListener("keydown", (e) => {
+                if (e.key !== "Tab") {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        function configureNumericInputs() {
+            const phoneInput = document.getElementById("id_phone");
+            if (phoneInput) {
+                phoneInput.setAttribute("inputmode", "numeric");
+                phoneInput.setAttribute("pattern", "[0-9-]*");
+                if (phoneInput.value) {
+                    phoneInput.value = formatPhoneHyphen(phoneInput.value);
+                    updateFieldFillHighlight(phoneInput);
+                }
+                const onPhoneInput = () => {
+                    const formatted = formatPhoneHyphen(phoneInput.value);
+                    if (phoneInput.value !== formatted) {
+                        phoneInput.value = formatted;
+                    }
+                    updateFieldFillHighlight(phoneInput);
+                };
+                phoneInput.addEventListener("input", onPhoneInput);
+                phoneInput.addEventListener("change", onPhoneInput);
+                phoneInput.addEventListener("blur", onPhoneInput);
+            }
+
+            const postalInput = document.getElementById("id_postal_code");
+            if (postalInput) {
+                postalInput.setAttribute("inputmode", "numeric");
+                postalInput.setAttribute("pattern", "[0-9-]*");
+                if (postalInput.value) {
+                    postalInput.value = formatPostalHyphen(postalInput.value);
+                    updateFieldFillHighlight(postalInput);
+                }
+            }
         }
 
         function ensureStreetAddressField() {
@@ -395,15 +488,21 @@
 
                 addressBox.insertAdjacentElement("afterend", streetBox);
 
-                inp.addEventListener("input", syncCombinedAddress);
-                inp.addEventListener("change", syncCombinedAddress);
+                inp.addEventListener("input", () => {
+                    syncCombinedAddress();
+                    updateFieldFillHighlight(inp);
+                });
+                inp.addEventListener("change", () => {
+                    syncCombinedAddress();
+                    updateFieldFillHighlight(inp);
+                });
             }
         }
 
         function syncPreferredShiftFromSelect() {
             const sel = document.getElementById("id_preferred_working_hours");
             const origShiftEl = document.getElementById("id_preferred_shift");
-            updateSelectHighlight(sel);
+            updateFieldFillHighlight(sel);
             if (!sel || !origShiftEl) return;
 
             const selectedOpt = sel.options[sel.selectedIndex];
@@ -424,7 +523,6 @@
         }
 
         function ensureWorkingHoursField() {
-            // 既存の重複フィールド（preferred_shift）があれば非表示にして同期元・同期先にする
             const legacyBox = document.querySelector('#skillsheet-form .field[data-field="preferred_shift"]');
             if (legacyBox) {
                 legacyBox.classList.add("hidden");
@@ -496,7 +594,7 @@
                     o.textContent = o.dataset[safeLang] || o.dataset.ja;
                 }
             });
-            updateSelectHighlight(sel);
+            updateFieldFillHighlight(sel);
         }
 
         function reorderFields() {
@@ -561,7 +659,7 @@
                         } else {
                             visaInput.value = "";
                         }
-                        updateSelectHighlight(visaInput);
+                        updateFieldFillHighlight(visaInput);
                     }
                 }
             } else {
@@ -580,6 +678,7 @@
             } else if (!addressInput.readOnly) {
                 addressInput.value = streetVal;
             }
+            updateFieldFillHighlight(addressInput);
         }
 
         function setAddressLocked(locked) {
@@ -590,6 +689,7 @@
             } else {
                 addressInput.removeAttribute("readonly");
             }
+            updateFieldFillHighlight(addressInput);
         }
 
         function pickLangPart(rawText, lang) {
@@ -647,6 +747,9 @@
                 aHint.className = "hint";
             }
 
+            const phHint = document.getElementById("phone-hint");
+            if (phHint) phHint.textContent = t.phoneHint;
+
             const pHint = document.getElementById("postal-hint");
             if (pHint && !pHint.dataset.autoState) {
                 pHint.textContent = t.postalHint;
@@ -687,7 +790,7 @@
             });
 
             document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
-                updateSelectHighlight(sel);
+                updateFieldFillHighlight(sel);
             });
 
             updateVisaVisibility();
@@ -715,6 +818,7 @@
             if (!val) {
                 ageInput.value = "";
                 ageInput.classList.remove("auto-filled");
+                updateFieldFillHighlight(ageInput);
                 if (aHint) {
                     delete aHint.dataset.autoState;
                     const lang = localStorage.getItem("skillsheet_lang") || "ja";
@@ -759,6 +863,7 @@
             if (age >= 0 && age <= 120) {
                 ageInput.value = String(age);
                 ageInput.classList.add("auto-filled");
+                updateFieldFillHighlight(ageInput);
                 ageInput.dispatchEvent(new Event("input", { bubbles: true }));
                 ageInput.dispatchEvent(new Event("change", { bubbles: true }));
 
@@ -783,6 +888,7 @@
             if (postalInput.value !== formatted) {
                 postalInput.value = formatted;
             }
+            updateFieldFillHighlight(postalInput);
 
             const zip = formatted.replace(/\D/g, "");
             if (zip.length < 7) {
@@ -847,6 +953,7 @@
                 setAddressLocked(true);
                 syncCombinedAddress();
                 addressInput.classList.add("auto-filled");
+                updateFieldFillHighlight(addressInput);
                 addressInput.dispatchEvent(new Event("input", { bubbles: true }));
                 addressInput.dispatchEvent(new Event("change", { bubbles: true }));
 
@@ -869,6 +976,7 @@
                 basePostalAddress = "";
                 setAddressLocked(false);
                 addressInput.classList.remove("auto-filled");
+                updateFieldFillHighlight(addressInput);
                 if (pHint) {
                     pHint.dataset.autoState = "err";
                     pHint.textContent = anySuccess ? t.postalNotFound : t.postalErr;
@@ -882,7 +990,9 @@
             ensureWorkingHoursField();
             reorderFields();
             snapshotOriginalTexts();
-            initSelectStyling();
+            initFieldFillHighlight();
+            lockAgeField();
+            configureNumericInputs();
 
             const natEl = document.getElementById("id_nationality");
             if (natEl) {
@@ -905,11 +1015,15 @@
                 const dd = String(now.getDate()).padStart(2, "0");
                 birthInput.max = `${yyyy}-${mm}-${dd}`;
 
-                birthInput.addEventListener("change", calcAgeFromBirthDate);
+                birthInput.addEventListener("change", () => {
+                    calcAgeFromBirthDate();
+                    updateFieldFillHighlight(birthInput);
+                });
                 birthInput.addEventListener("input", () => {
                     if (/^\d{4}-\d{2}-\d{2}$/.test(birthInput.value)) {
                         calcAgeFromBirthDate();
                     }
+                    updateFieldFillHighlight(birthInput);
                 });
 
                 if (birthInput.value) {
@@ -923,9 +1037,6 @@
 
             const postalInput = document.getElementById("id_postal_code");
             if (postalInput) {
-                if (postalInput.value) {
-                    postalInput.value = formatPostalHyphen(postalInput.value);
-                }
                 postalInput.addEventListener("input", handlePostalInput);
                 postalInput.addEventListener("change", handlePostalInput);
                 postalInput.addEventListener("blur", handlePostalInput);
