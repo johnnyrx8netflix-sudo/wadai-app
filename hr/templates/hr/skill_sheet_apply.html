@@ -105,6 +105,16 @@
             border-color: #03787c;
             box-shadow: 0 0 0 3px rgba(3, 120, 124, 0.12);
         }
+        select.is-unselected {
+            background-color: #fffbeb !important;
+            border-color: #f59e0b !important;
+            color: #92400e !important;
+        }
+        select.is-selected {
+            background-color: #f0fdfa !important;
+            border-color: #03787c !important;
+            color: #0f172a !important;
+        }
         input[readonly] {
             background: #eef2f6 !important;
             color: #334155 !important;
@@ -117,36 +127,6 @@
         .auto-filled[readonly] {
             background: #e6f4f4 !important;
             color: #0f172a !important;
-        }
-        .check-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 8px;
-        }
-        .check-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            background: #fff;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-bottom: 0;
-        }
-        .check-item:hover {
-            border-color: #03787c;
-            background: #f4fafa;
-        }
-        .check-item input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            margin: 0;
-            flex-shrink: 0;
-            accent-color: #03787c;
-            cursor: pointer;
         }
         .hint {
             font-size: 0.82rem;
@@ -276,8 +256,7 @@
             "visa_type",
             "drivers_license",
             "commute_method",
-            "preferred_working_hours",
-            "preferred_shift"
+            "preferred_working_hours"
         ];
 
         const uiTexts = {
@@ -294,7 +273,7 @@
                 streetPlaceholder: "例：1-2-3 ○○マンション 101号室",
                 streetHint: "番地・部屋番号などを入力してください",
                 workingHoursLabel: "希望勤務時間",
-                workingHoursHint: "該当する勤務帯を選択してください（複数選択可）",
+                workingHoursHint: "希望する勤務時間を選択してください",
                 ageCalculated: "生年月日から自動計算しました",
                 postalFound: "郵便番号から住所を自動入力しました",
                 postalNotFound: "該当する住所が見つかりませんでした。住所・番地を手入力してください。",
@@ -313,7 +292,7 @@
                 streetPlaceholder: "Ex.: Rua Exemplo, 123, Apto 12",
                 streetHint: "Digite o número da casa/prédio e complemento",
                 workingHoursLabel: "Horário de trabalho desejado",
-                workingHoursHint: "Selecione o turno desejado (pode marcar mais de um)",
+                workingHoursHint: "Selecione o horário de trabalho desejado",
                 ageCalculated: "Idade calculada automaticamente",
                 postalFound: "Endereço preenchido automaticamente pelo CEP",
                 postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
@@ -332,7 +311,7 @@
                 streetPlaceholder: "e.g., 1-2-3 Sample St, Apt 101",
                 streetHint: "Enter street number, building name, or room number",
                 workingHoursLabel: "Preferred working hours",
-                workingHoursHint: "Select your preferred working shifts (multiple allowed)",
+                workingHoursHint: "Select your preferred working hours",
                 ageCalculated: "Age calculated automatically",
                 postalFound: "Address filled automatically from postal code",
                 postalNotFound: "Postal code not found. Please enter address manually.",
@@ -351,6 +330,32 @@
                 return `${digits.slice(0, 3)}-${digits.slice(3)}`;
             }
             return digits;
+        }
+
+        function updateSelectHighlight(sel) {
+            if (!sel) return;
+            const val = (sel.value || "").trim();
+            if (!val || val === "---------") {
+                sel.classList.add("is-unselected");
+                sel.classList.remove("is-selected");
+            } else {
+                sel.classList.remove("is-unselected");
+                sel.classList.add("is-selected");
+            }
+        }
+
+        function initSelectStyling() {
+            document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
+                Array.from(sel.options).forEach((opt) => {
+                    const txt = (opt.textContent || "").trim();
+                    if (/^-+$/.test(txt)) {
+                        opt.textContent = "";
+                        opt.dataset.orig = "";
+                    }
+                });
+                updateSelectHighlight(sel);
+                sel.addEventListener("change", () => updateSelectHighlight(sel));
+            });
         }
 
         function ensureStreetAddressField() {
@@ -395,33 +400,37 @@
             }
         }
 
-        function syncPreferredShiftField() {
-            const checkedBoxes = Array.from(
-                document.querySelectorAll('#working-hours-box input[type="checkbox"]:checked')
-            );
-            const selectedLabelsJa = checkedBoxes.map((cb) => cb.dataset.ja || cb.value);
-            const joined = selectedLabelsJa.join(" / ");
+        function syncPreferredShiftFromSelect() {
+            const sel = document.getElementById("id_preferred_working_hours");
+            const origShiftEl = document.getElementById("id_preferred_shift");
+            updateSelectHighlight(sel);
+            if (!sel || !origShiftEl) return;
 
-            const shiftEl = document.getElementById("id_preferred_shift");
-            if (!shiftEl) return;
+            const selectedOpt = sel.options[sel.selectedIndex];
+            const chosenJa = selectedOpt ? (selectedOpt.dataset.ja || selectedOpt.textContent || "") : "";
 
-            if (shiftEl.tagName === "SELECT") {
-                const firstVal = checkedBoxes.length > 0 ? (checkedBoxes[0].dataset.ja || checkedBoxes[0].value) : "";
-                const matched = Array.from(shiftEl.options).find((opt) => {
+            if (origShiftEl.tagName === "SELECT") {
+                const matched = Array.from(origShiftEl.options).find((opt) => {
                     const txt = (opt.dataset.orig || opt.textContent || "").trim();
-                    return opt.value === firstVal || txt.includes(firstVal);
+                    return opt.value === sel.value || txt.includes(chosenJa);
                 });
                 if (matched) {
-                    shiftEl.value = matched.value;
+                    origShiftEl.value = matched.value;
                 }
             } else {
-                shiftEl.value = joined;
+                origShiftEl.value = chosenJa;
             }
-            shiftEl.dispatchEvent(new Event("change", { bubbles: true }));
+            origShiftEl.dispatchEvent(new Event("change", { bubbles: true }));
         }
 
         function ensureWorkingHoursField() {
-            if (document.getElementById("working-hours-box")) return;
+            // 既存の重複フィールド（preferred_shift）があれば非表示にして同期元・同期先にする
+            const legacyBox = document.querySelector('#skillsheet-form .field[data-field="preferred_shift"]');
+            if (legacyBox) {
+                legacyBox.classList.add("hidden");
+            }
+
+            if (document.getElementById("id_preferred_working_hours")) return;
 
             const box = document.createElement("div");
             box.id = "working-hours-box";
@@ -430,35 +439,32 @@
 
             const lbl = document.createElement("label");
             lbl.id = "working-hours-label";
+            lbl.setAttribute("for", "id_preferred_working_hours");
             lbl.textContent = uiTexts.ja.workingHoursLabel;
 
-            const list = document.createElement("div");
-            list.className = "check-list";
+            const sel = document.createElement("select");
+            sel.id = "id_preferred_working_hours";
+            sel.name = "preferred_working_hours";
 
-            SHIFT_OPTIONS.forEach((opt, idx) => {
-                const itemLbl = document.createElement("label");
-                itemLbl.className = "check-item";
-                itemLbl.setAttribute("for", `id_work_shift_${idx}`);
+            const emptyOpt = document.createElement("option");
+            emptyOpt.value = "";
+            emptyOpt.textContent = "";
+            emptyOpt.dataset.ja = "";
+            emptyOpt.dataset.pt = "";
+            emptyOpt.dataset.en = "";
+            sel.appendChild(emptyOpt);
 
-                const cb = document.createElement("input");
-                cb.type = "checkbox";
-                cb.id = `id_work_shift_${idx}`;
-                cb.name = "preferred_working_hours";
-                cb.value = opt.value;
-                cb.dataset.ja = opt.ja;
-                cb.dataset.pt = opt.pt;
-                cb.dataset.en = opt.en;
-
-                const span = document.createElement("span");
-                span.className = "work-shift-text";
-                span.textContent = opt.ja;
-
-                cb.addEventListener("change", syncPreferredShiftField);
-
-                itemLbl.appendChild(cb);
-                itemLbl.appendChild(span);
-                list.appendChild(itemLbl);
+            SHIFT_OPTIONS.forEach((opt) => {
+                const o = document.createElement("option");
+                o.value = opt.value;
+                o.textContent = opt.ja;
+                o.dataset.ja = opt.ja;
+                o.dataset.pt = opt.pt;
+                o.dataset.en = opt.en;
+                sel.appendChild(o);
             });
+
+            sel.addEventListener("change", syncPreferredShiftFromSelect);
 
             const hint = document.createElement("div");
             hint.id = "working-hours-hint";
@@ -466,17 +472,14 @@
             hint.textContent = uiTexts.ja.workingHoursHint;
 
             box.appendChild(lbl);
-            box.appendChild(list);
+            box.appendChild(sel);
             box.appendChild(hint);
 
-            const anchorBox =
-                document.querySelector('#skillsheet-form .field[data-field="preferred_shift"]') ||
-                document.querySelector('#skillsheet-form .field[data-field="commute_method"]');
-
+            const commuteBox = document.querySelector('#skillsheet-form .field[data-field="commute_method"]');
             const formEl = document.getElementById("skillsheet-form");
             const submitBtn = document.getElementById("submit-btn");
-            if (anchorBox) {
-                anchorBox.insertAdjacentElement("afterend", box);
+            if (commuteBox) {
+                commuteBox.insertAdjacentElement("afterend", box);
             } else if (formEl && submitBtn) {
                 formEl.insertBefore(box, submitBtn);
             }
@@ -484,13 +487,16 @@
 
         function applyWorkingHoursLang(lang) {
             const safeLang = uiTexts[lang] ? lang : "ja";
-            document.querySelectorAll("#working-hours-box .check-item").forEach((itemLbl) => {
-                const cb = itemLbl.querySelector('input[type="checkbox"]');
-                const span = itemLbl.querySelector(".work-shift-text");
-                if (cb && span) {
-                    span.textContent = cb.dataset[safeLang] || cb.dataset.ja;
+            const sel = document.getElementById("id_preferred_working_hours");
+            if (!sel) return;
+            Array.from(sel.options).forEach((o) => {
+                if (o.value === "") {
+                    o.textContent = "";
+                } else {
+                    o.textContent = o.dataset[safeLang] || o.dataset.ja;
                 }
             });
+            updateSelectHighlight(sel);
         }
 
         function reorderFields() {
@@ -555,6 +561,7 @@
                         } else {
                             visaInput.value = "";
                         }
+                        updateSelectHighlight(visaInput);
                     }
                 }
             } else {
@@ -613,7 +620,10 @@
                 }
             });
             document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
-                if (!opt.dataset.orig) opt.dataset.orig = opt.textContent;
+                if (!opt.dataset.orig) {
+                    const txt = (opt.textContent || "").trim();
+                    opt.dataset.orig = /^-+$/.test(txt) ? "" : opt.textContent;
+                }
             });
         }
 
@@ -671,7 +681,13 @@
             });
 
             document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
-                if (opt.dataset.orig) opt.textContent = pickLangPart(opt.dataset.orig, safeLang);
+                if (opt.dataset.orig !== undefined) {
+                    opt.textContent = pickLangPart(opt.dataset.orig, safeLang);
+                }
+            });
+
+            document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
+                updateSelectHighlight(sel);
             });
 
             updateVisaVisibility();
@@ -866,6 +882,7 @@
             ensureWorkingHoursField();
             reorderFields();
             snapshotOriginalTexts();
+            initSelectStyling();
 
             const natEl = document.getElementById("id_nationality");
             if (natEl) {
@@ -918,7 +935,7 @@
             if (formEl) {
                 formEl.addEventListener("submit", () => {
                     syncCombinedAddress();
-                    syncPreferredShiftField();
+                    syncPreferredShiftFromSelect();
                     updateVisaVisibility();
                 });
             }
