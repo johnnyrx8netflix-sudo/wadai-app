@@ -118,6 +118,36 @@
             background: #e6f4f4 !important;
             color: #0f172a !important;
         }
+        .check-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 0;
+        }
+        .check-item:hover {
+            border-color: #03787c;
+            background: #f4fafa;
+        }
+        .check-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            flex-shrink: 0;
+            accent-color: #03787c;
+            cursor: pointer;
+        }
         .hint {
             font-size: 0.82rem;
             color: #64748b;
@@ -224,6 +254,14 @@
         const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
         let basePostalAddress = "";
 
+        const SHIFT_OPTIONS = [
+            { value: "day", ja: "昼勤のみ", pt: "Diurno", en: "Day shift" },
+            { value: "night", ja: "夜勤のみ", pt: "Noturno", en: "Night shift" },
+            { value: "two_shift", ja: "2交代", pt: "2 turnos", en: "Two-shift rotation" },
+            { value: "three_shift", ja: "3交代", pt: "3 turnos", en: "Three-shift rotation" },
+            { value: "no_preference", ja: "特に選ばない", pt: "Sem preferência", en: "No preference" }
+        ];
+
         const FIELD_ORDER = [
             "full_name",
             "gender",
@@ -237,7 +275,9 @@
             "nationality",
             "visa_type",
             "drivers_license",
-            "commute_method"
+            "commute_method",
+            "preferred_working_hours",
+            "preferred_shift"
         ];
 
         const uiTexts = {
@@ -253,6 +293,8 @@
                 streetLabel: "続きの番地・建物名 / Número e complemento / Street & Building",
                 streetPlaceholder: "例：1-2-3 ○○マンション 101号室",
                 streetHint: "番地・部屋番号などを入力してください",
+                workingHoursLabel: "希望勤務時間",
+                workingHoursHint: "該当する勤務帯を選択してください（複数選択可）",
                 ageCalculated: "生年月日から自動計算しました",
                 postalFound: "郵便番号から住所を自動入力しました",
                 postalNotFound: "該当する住所が見つかりませんでした。住所・番地を手入力してください。",
@@ -270,6 +312,8 @@
                 streetLabel: "Número e complemento / 続きの番地・建物名 / Street & Building",
                 streetPlaceholder: "Ex.: Rua Exemplo, 123, Apto 12",
                 streetHint: "Digite o número da casa/prédio e complemento",
+                workingHoursLabel: "Horário de trabalho desejado",
+                workingHoursHint: "Selecione o turno desejado (pode marcar mais de um)",
                 ageCalculated: "Idade calculada automaticamente",
                 postalFound: "Endereço preenchido automaticamente pelo CEP",
                 postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
@@ -287,6 +331,8 @@
                 streetLabel: "Street Address & Building / 続きの番地・建物名 / Número e complemento",
                 streetPlaceholder: "e.g., 1-2-3 Sample St, Apt 101",
                 streetHint: "Enter street number, building name, or room number",
+                workingHoursLabel: "Preferred working hours",
+                workingHoursHint: "Select your preferred working shifts (multiple allowed)",
                 ageCalculated: "Age calculated automatically",
                 postalFound: "Address filled automatically from postal code",
                 postalNotFound: "Postal code not found. Please enter address manually.",
@@ -347,6 +393,104 @@
                 inp.addEventListener("input", syncCombinedAddress);
                 inp.addEventListener("change", syncCombinedAddress);
             }
+        }
+
+        function syncPreferredShiftField() {
+            const checkedBoxes = Array.from(
+                document.querySelectorAll('#working-hours-box input[type="checkbox"]:checked')
+            );
+            const selectedLabelsJa = checkedBoxes.map((cb) => cb.dataset.ja || cb.value);
+            const joined = selectedLabelsJa.join(" / ");
+
+            const shiftEl = document.getElementById("id_preferred_shift");
+            if (!shiftEl) return;
+
+            if (shiftEl.tagName === "SELECT") {
+                const firstVal = checkedBoxes.length > 0 ? (checkedBoxes[0].dataset.ja || checkedBoxes[0].value) : "";
+                const matched = Array.from(shiftEl.options).find((opt) => {
+                    const txt = (opt.dataset.orig || opt.textContent || "").trim();
+                    return opt.value === firstVal || txt.includes(firstVal);
+                });
+                if (matched) {
+                    shiftEl.value = matched.value;
+                }
+            } else {
+                shiftEl.value = joined;
+            }
+            shiftEl.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+
+        function ensureWorkingHoursField() {
+            if (document.getElementById("working-hours-box")) return;
+
+            const box = document.createElement("div");
+            box.id = "working-hours-box";
+            box.className = "field";
+            box.dataset.field = "preferred_working_hours";
+
+            const lbl = document.createElement("label");
+            lbl.id = "working-hours-label";
+            lbl.textContent = uiTexts.ja.workingHoursLabel;
+
+            const list = document.createElement("div");
+            list.className = "check-list";
+
+            SHIFT_OPTIONS.forEach((opt, idx) => {
+                const itemLbl = document.createElement("label");
+                itemLbl.className = "check-item";
+                itemLbl.setAttribute("for", `id_work_shift_${idx}`);
+
+                const cb = document.createElement("input");
+                cb.type = "checkbox";
+                cb.id = `id_work_shift_${idx}`;
+                cb.name = "preferred_working_hours";
+                cb.value = opt.value;
+                cb.dataset.ja = opt.ja;
+                cb.dataset.pt = opt.pt;
+                cb.dataset.en = opt.en;
+
+                const span = document.createElement("span");
+                span.className = "work-shift-text";
+                span.textContent = opt.ja;
+
+                cb.addEventListener("change", syncPreferredShiftField);
+
+                itemLbl.appendChild(cb);
+                itemLbl.appendChild(span);
+                list.appendChild(itemLbl);
+            });
+
+            const hint = document.createElement("div");
+            hint.id = "working-hours-hint";
+            hint.className = "hint";
+            hint.textContent = uiTexts.ja.workingHoursHint;
+
+            box.appendChild(lbl);
+            box.appendChild(list);
+            box.appendChild(hint);
+
+            const anchorBox =
+                document.querySelector('#skillsheet-form .field[data-field="preferred_shift"]') ||
+                document.querySelector('#skillsheet-form .field[data-field="commute_method"]');
+
+            const formEl = document.getElementById("skillsheet-form");
+            const submitBtn = document.getElementById("submit-btn");
+            if (anchorBox) {
+                anchorBox.insertAdjacentElement("afterend", box);
+            } else if (formEl && submitBtn) {
+                formEl.insertBefore(box, submitBtn);
+            }
+        }
+
+        function applyWorkingHoursLang(lang) {
+            const safeLang = uiTexts[lang] ? lang : "ja";
+            document.querySelectorAll("#working-hours-box .check-item").forEach((itemLbl) => {
+                const cb = itemLbl.querySelector('input[type="checkbox"]');
+                const span = itemLbl.querySelector(".work-shift-text");
+                if (cb && span) {
+                    span.textContent = cb.dataset[safeLang] || cb.dataset.ja;
+                }
+            });
         }
 
         function reorderFields() {
@@ -513,6 +657,14 @@
 
             const stHint = document.getElementById("street-address-hint");
             if (stHint) stHint.textContent = t.streetHint;
+
+            const whLbl = document.getElementById("working-hours-label");
+            if (whLbl) whLbl.textContent = t.workingHoursLabel;
+
+            const whHint = document.getElementById("working-hours-hint");
+            if (whHint) whHint.textContent = t.workingHoursHint;
+
+            applyWorkingHoursLang(safeLang);
 
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
                 if (lbl.dataset.orig) lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang);
@@ -711,6 +863,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             ensureStreetAddressField();
+            ensureWorkingHoursField();
             reorderFields();
             snapshotOriginalTexts();
 
@@ -765,6 +918,7 @@
             if (formEl) {
                 formEl.addEventListener("submit", () => {
                     syncCombinedAddress();
+                    syncPreferredShiftField();
                     updateVisaVisibility();
                 });
             }
