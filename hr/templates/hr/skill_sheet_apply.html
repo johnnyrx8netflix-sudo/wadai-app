@@ -142,21 +142,24 @@
             width: 100%;
             max-width: 100%;
             min-width: 0;
+            min-height: 44px;
             padding: 10px 12px;
             border: 1px solid #f87171;
             border-radius: 6px;
             box-sizing: border-box;
             font-size: 0.96rem;
+            line-height: 1.4;
             background-color: #fee2e2;
             color: #991b1b;
         }
         input[type="date"] {
-            -webkit-appearance: none;
-            appearance: none;
             display: block;
             width: 100%;
             max-width: 100%;
             min-width: 0;
+            min-height: 44px;
+            padding: 10px 12px;
+            line-height: 1.4;
             box-sizing: border-box;
         }
         input:focus, select:focus, textarea:focus {
@@ -255,8 +258,10 @@
                 padding: 10px;
             }
             input, select, textarea, input[type="date"] {
-                padding: 9px 10px;
-                font-size: 0.92rem;
+                min-height: 44px;
+                padding: 10px 10px;
+                font-size: 0.95rem;
+                line-height: 1.4;
             }
         }
     </style>
@@ -369,6 +374,7 @@
                 streetHint: "番地・部屋番号などを入力してください",
                 workingHoursLabel: "希望勤務時間",
                 workingHoursHint: "希望する勤務時間を選択してください",
+                shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
                 ageCalculated: "生年月日から自動計算しました",
                 postalFound: "郵便番号から住所を自動入力しました",
@@ -390,6 +396,7 @@
                 streetHint: "Digite o número da casa/prédio e complemento",
                 workingHoursLabel: "Horário de trabalho desejado",
                 workingHoursHint: "Selecione o horário de trabalho desejado",
+                shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
                 ageCalculated: "Idade calculada automaticamente",
                 postalFound: "Endereço preenchido automaticamente pelo CEP",
@@ -411,6 +418,7 @@
                 streetHint: "Enter street number, building name, or room number",
                 workingHoursLabel: "Preferred working hours",
                 workingHoursHint: "Select your preferred working hours",
+                shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
                 ageCalculated: "Age calculated automatically",
                 postalFound: "Address filled automatically from postal code",
@@ -501,25 +509,34 @@
         }
 
         function findShoeFieldBox() {
-            const byName = document.querySelector('#skillsheet-form .field[data-field*="shoe"]');
-            if (byName) return byName;
+            const keywords = ["shoe", "foot", "kutu", "kutsu", "靴", "calçado", "calcado", "sapato"];
+            const allBoxes = Array.from(document.querySelectorAll("#skillsheet-form .field"));
 
-            let matched = null;
-            document.querySelectorAll("#skillsheet-form .field").forEach((box) => {
-                if (matched) return;
+            for (const box of allBoxes) {
                 const fieldName = (box.dataset.field || "").toLowerCase();
-                const lbl = box.querySelector("label");
-                const lblText = lbl ? ((lbl.dataset.orig || lbl.textContent) || "").trim() : "";
-                if (
-                    fieldName.includes("foot") ||
-                    fieldName.includes("kutu") ||
-                    fieldName.includes("kutsu") ||
-                    lblText.includes("靴")
-                ) {
-                    matched = box;
+                if (keywords.some((k) => fieldName.includes(k))) {
+                    return box;
                 }
-            });
-            return matched;
+            }
+
+            for (const box of allBoxes) {
+                const lbl = box.querySelector("label");
+                const lblText = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+                if (keywords.some((k) => lblText.includes(k))) {
+                    return box;
+                }
+            }
+
+            for (const box of allBoxes) {
+                const ctrl = box.querySelector("input, select, textarea");
+                const ctrlId = ((ctrl && ctrl.id) || "").toLowerCase();
+                const ctrlName = ((ctrl && ctrl.name) || "").toLowerCase();
+                if (keywords.some((k) => ctrlId.includes(k) || ctrlName.includes(k))) {
+                    return box;
+                }
+            }
+
+            return null;
         }
 
         function syncShoeSizeFromSelect() {
@@ -527,13 +544,23 @@
             if (!sel) return;
             updateFieldFillHighlight(sel);
 
+            const val = (sel.value || "").trim();
+            let hiddenSync = document.getElementById("id_shoe_size_sync");
+            if (!hiddenSync) {
+                hiddenSync = document.createElement("input");
+                hiddenSync.type = "hidden";
+                hiddenSync.id = "id_shoe_size_sync";
+                hiddenSync.name = "shoe_size";
+                sel.insertAdjacentElement("afterend", hiddenSync);
+            }
+            hiddenSync.value = val;
+
             const box = findShoeFieldBox();
             if (!box) return;
 
-            const origControl = box.querySelector("input, select, textarea");
-            if (!origControl || origControl.id === "id_shoe_size_select") return;
+            const origControl = box.querySelector("input:not([type='hidden']):not(#id_shoe_size_sync), select:not(#id_shoe_size_select), textarea");
+            if (!origControl) return;
 
-            const val = (sel.value || "").trim();
             if (origControl.tagName === "SELECT") {
                 if (!val) {
                     origControl.value = "";
@@ -543,11 +570,7 @@
                         const optTxt = ((opt.dataset.orig || opt.textContent) || "").trim();
                         return optVal === val || optTxt === val || optTxt.startsWith(`${val}cm`) || optTxt.startsWith(`${val} `);
                     });
-                    if (matched) {
-                        origControl.value = matched.value;
-                    } else {
-                        origControl.value = val;
-                    }
+                    origControl.value = matched ? matched.value : val;
                 }
             } else {
                 origControl.value = val;
@@ -556,56 +579,93 @@
             origControl.dispatchEvent(new Event("input", { bubbles: true }));
         }
 
+        function buildShoeSelectElement(initialVal) {
+            const sel = document.createElement("select");
+            sel.id = "id_shoe_size_select";
+
+            const emptyOpt = document.createElement("option");
+            emptyOpt.value = "";
+            emptyOpt.textContent = "";
+            sel.appendChild(emptyOpt);
+
+            for (let halfSteps = 42; halfSteps <= 60; halfSteps++) {
+                const cmNum = halfSteps / 2;
+                const labelStr = Number.isInteger(cmNum) ? String(cmNum) : cmNum.toFixed(1);
+                const opt = document.createElement("option");
+                opt.value = labelStr;
+                opt.textContent = labelStr;
+                sel.appendChild(opt);
+            }
+
+            if (initialVal) {
+                const cleaned = initialVal.replace(/cm$/i, "").trim();
+                const hasOpt = Array.from(sel.options).some((o) => o.value === cleaned);
+                if (hasOpt) {
+                    sel.value = cleaned;
+                }
+            }
+
+            sel.addEventListener("change", syncShoeSizeFromSelect);
+            sel.addEventListener("input", syncShoeSizeFromSelect);
+            return sel;
+        }
+
         function ensureShoeSizeSelect() {
-            const box = findShoeFieldBox();
-            if (!box) return;
-
-            const origControl = box.querySelector("input, select, textarea");
-            if (!origControl) return;
-
             let sel = document.getElementById("id_shoe_size_select");
+            const box = findShoeFieldBox();
+            const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
+            const t = uiTexts[savedLang] || uiTexts.ja;
+
             if (!sel) {
-                sel = document.createElement("select");
-                sel.id = "id_shoe_size_select";
+                if (box) {
+                    const origControl = box.querySelector("input, select, textarea");
+                    const initialVal = origControl ? (origControl.value || "") : "";
+                    sel = buildShoeSelectElement(initialVal);
 
-                const emptyOpt = document.createElement("option");
-                emptyOpt.value = "";
-                emptyOpt.textContent = "";
-                sel.appendChild(emptyOpt);
-
-                for (let halfSteps = 42; halfSteps <= 60; halfSteps++) {
-                    const cmNum = halfSteps / 2;
-                    const labelStr = Number.isInteger(cmNum) ? String(cmNum) : cmNum.toFixed(1);
-                    const opt = document.createElement("option");
-                    opt.value = labelStr;
-                    opt.textContent = labelStr;
-                    sel.appendChild(opt);
-                }
-
-                const currentVal = (origControl.value || "").trim().replace(/cm$/i, "");
-                if (currentVal) {
-                    const hasOpt = Array.from(sel.options).some((o) => o.value === currentVal);
-                    if (hasOpt) {
-                        sel.value = currentVal;
+                    if (origControl) {
+                        origControl.classList.add("hidden");
+                        origControl.required = false;
+                        origControl.insertAdjacentElement("afterend", sel);
+                    } else {
+                        box.appendChild(sel);
                     }
-                }
 
-                origControl.classList.add("hidden");
-                origControl.required = false;
-                origControl.insertAdjacentElement("afterend", sel);
+                    let hint = document.getElementById("shoe-size-hint");
+                    if (!hint) {
+                        hint = document.createElement("div");
+                        hint.id = "shoe-size-hint";
+                        hint.className = "hint";
+                        hint.textContent = t.shoeHint;
+                        sel.insertAdjacentElement("afterend", hint);
+                    }
+                } else {
+                    const fallbackBox = document.createElement("div");
+                    fallbackBox.id = "shoe-size-fallback-box";
+                    fallbackBox.className = "field";
+                    fallbackBox.dataset.field = "shoe_size";
 
-                let hint = document.getElementById("shoe-size-hint");
-                if (!hint) {
-                    hint = document.createElement("div");
+                    const lbl = document.createElement("label");
+                    lbl.id = "shoe-size-label";
+                    lbl.setAttribute("for", "id_shoe_size_select");
+                    lbl.textContent = t.shoeLabel;
+
+                    sel = buildShoeSelectElement("");
+
+                    const hint = document.createElement("div");
                     hint.id = "shoe-size-hint";
                     hint.className = "hint";
-                    const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
-                    hint.textContent = (uiTexts[savedLang] || uiTexts.ja).shoeHint;
-                    sel.insertAdjacentElement("afterend", hint);
-                }
+                    hint.textContent = t.shoeHint;
 
-                sel.addEventListener("change", syncShoeSizeFromSelect);
-                sel.addEventListener("input", syncShoeSizeFromSelect);
+                    fallbackBox.appendChild(lbl);
+                    fallbackBox.appendChild(sel);
+                    fallbackBox.appendChild(hint);
+
+                    const formEl = document.getElementById("skillsheet-form");
+                    const submitBtn = document.getElementById("submit-btn");
+                    if (formEl && submitBtn) {
+                        formEl.insertBefore(fallbackBox, submitBtn);
+                    }
+                }
             }
 
             updateFieldFillHighlight(sel);
@@ -993,6 +1053,9 @@
                 addrHint.textContent = t.addressHint;
                 addrHint.className = "hint";
             }
+
+            const shoeLbl = document.getElementById("shoe-size-label");
+            if (shoeLbl) shoeLbl.textContent = t.shoeLabel;
 
             const shoeHint = document.getElementById("shoe-size-hint");
             if (shoeHint) shoeHint.textContent = t.shoeHint;
