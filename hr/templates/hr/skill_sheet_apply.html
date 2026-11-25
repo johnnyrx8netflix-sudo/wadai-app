@@ -764,23 +764,28 @@
             updateFieldFillHighlight(addressInput);
         }
 
-        function pickLangPart(rawText, lang) {
+        function pickLangPart(rawText, lang, isLabel = false) {
             if (!rawText) return rawText;
-            const cleaned = stripLeadingNumber(rawText);
-            const trimmed = cleaned.trim();
+            const trimmedRaw = rawText.trim();
+
             if (
-                trimmed === "---------" ||
-                trimmed === "" ||
-                /^\d+%$/.test(trimmed) ||
-                /^(S|M|L|LL|3L|4L|5L|0h|1h|2h|3h)$/.test(trimmed)
+                trimmedRaw === "---------" ||
+                trimmedRaw === ""
             ) {
-                return trimmed;
+                return "";
             }
-            const parts = trimmed.split(" / ");
-            if (parts.length === 1) return trimmed;
+
+            if (/^(h|S|M|L|LL|XL|2L|3L|4L|5L|%)$/i.test(trimmedRaw)) {
+                return trimmedRaw;
+            }
+
+            const baseText = isLabel ? stripLeadingNumber(trimmedRaw) : trimmedRaw;
+            const parts = baseText.split(" / ");
+            if (parts.length === 1) return baseText.trim();
+
             const idx = LANG_INDEX[lang] ?? 0;
             if (parts.length === 2) {
-                return lang === "ja" ? parts[0].trim() : parts[1].trim();
+                return (lang === "ja" ? parts[0] : parts[1]).trim();
             }
             return (parts[idx] || parts[0]).trim();
         }
@@ -852,12 +857,12 @@
             applyWorkingHoursLang(safeLang);
 
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
-                if (lbl.dataset.orig) lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang);
+                if (lbl.dataset.orig) lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang, true);
             });
 
             document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
                 if (opt.dataset.orig !== undefined) {
-                    opt.textContent = pickLangPart(opt.dataset.orig, safeLang);
+                    opt.textContent = pickLangPart(opt.dataset.orig, safeLang, false);
                 }
             });
 
