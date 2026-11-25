@@ -7,7 +7,8 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f0f2f5;
+            background: linear-gradient(180deg, #fff5f5 0%, #f0f7ff 100%);
+            min-height: 100vh;
             color: #222;
             margin: 0;
             padding: 20px;
@@ -18,8 +19,19 @@
             background: #fff;
             padding: 28px 24px;
             border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            border-top: 6px solid #03787c;
+            box-shadow: 0 4px 16px rgba(200, 16, 46, 0.08);
+            border-top: 6px solid #c8102e;
+            position: relative;
+            overflow: hidden;
+        }
+        .wrap::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #c8102e 0%, #f97316 50%, #0284c7 100%);
         }
         .brand-header {
             display: flex;
@@ -32,17 +44,15 @@
             margin-bottom: 8px;
         }
         .brand-logo {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             object-fit: contain;
-            border-radius: 50%;
+            border-radius: 8px;
             flex-shrink: 0;
-            display: inline-block;
-            background: #fff;
         }
         .brand-logo.lg {
-            width: 80px;
-            height: 80px;
+            width: 84px;
+            height: 84px;
         }
         h1 {
             margin: 0;
@@ -65,14 +75,16 @@
             padding: 14px 24px;
             font-size: 1rem;
             font-weight: 700;
-            border: 2px solid #03787c;
-            background: #e6f4f4;
-            color: #035c5f;
+            border: 2px solid #c8102e;
+            background: #fff1f2;
+            color: #9f1239;
             border-radius: 8px;
             cursor: pointer;
+            transition: all 0.15s ease;
         }
         .lang-btn:hover {
-            background: #03787c;
+            background: linear-gradient(90deg, #c8102e 0%, #ea580c 100%);
+            border-color: #c8102e;
             color: #fff;
         }
         .top-bar {
@@ -83,20 +95,22 @@
             flex-wrap: wrap;
             margin-bottom: 16px;
             padding-bottom: 12px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 2px solid #fee2e2;
         }
         .sub-btn {
-            background: #e6f4f4;
-            color: #035c5f;
-            border: 1px solid #03787c;
+            background: #fff1f2;
+            color: #9f1239;
+            border: 1px solid #f43f5e;
             padding: 7px 14px;
             border-radius: 6px;
             font-size: 0.85rem;
             font-weight: 700;
             cursor: pointer;
+            transition: all 0.15s ease;
         }
         .sub-btn:hover {
-            background: #03787c;
+            background: #c8102e;
+            border-color: #c8102e;
             color: #fff;
         }
         .field {
@@ -126,7 +140,7 @@
         input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #0284c7;
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.16);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.18);
         }
         input.is-empty,
         select.is-empty,
@@ -173,7 +187,7 @@
         }
         .submit-btn {
             width: 100%;
-            background: #03787c;
+            background: linear-gradient(90deg, #c8102e 0%, #ea580c 100%);
             color: #fff;
             border: none;
             padding: 14px;
@@ -182,14 +196,16 @@
             font-weight: 700;
             cursor: pointer;
             margin-top: 18px;
+            box-shadow: 0 3px 10px rgba(200, 16, 46, 0.25);
+            transition: opacity 0.15s ease;
         }
         .submit-btn:hover {
-            background: #025f62;
+            opacity: 0.92;
         }
         .notice {
-            background: #e6f4f4;
-            border: 1px solid #03787c;
-            color: #035c5f;
+            background: #eff6ff;
+            border: 1px solid #0284c7;
+            color: #0c4a6e;
             padding: 14px 16px;
             border-radius: 8px;
             margin-bottom: 18px;
@@ -209,12 +225,7 @@
     <div class="wrap">
         <div id="lang-screen" class="lang-screen {% if submitted or form.errors %}hidden{% endif %}">
             <div class="brand-header center">
-                <img
-                    src="/static/hr/img/wadai-logo.png"
-                    data-fallbacks="/static/wadai-logo.png|/static/hr/img/wadai-logo.jpg|/static/hr/img/wadai-logo.jpeg"
-                    alt="和大サポート ロゴ"
-                    class="brand-logo lg js-wadai-logo"
-                >
+                <img src="/static/hr/img/wadai-logo.png" alt="和大サポート ロゴ" class="brand-logo lg">
                 <h1>和大サポート - Wadai Support</h1>
             </div>
             <p class="hint">言語を選択してください / Escolha o idioma / Select Language</p>
@@ -228,12 +239,7 @@
         <div id="form-screen" class="{% if not submitted and not form.errors %}hidden{% endif %}">
             <div class="top-bar">
                 <div class="brand-header">
-                    <img
-                        src="/static/hr/img/wadai-logo.png"
-                        data-fallbacks="/static/wadai-logo.png|/static/hr/img/wadai-logo.jpg|/static/hr/img/wadai-logo.jpeg"
-                        alt="和大サポート ロゴ"
-                        class="brand-logo js-wadai-logo"
-                    >
+                    <img src="/static/hr/img/wadai-logo.png" alt="和大サポート ロゴ" class="brand-logo">
                     <h1 id="form-title">和大サポート - スキルシート</h1>
                 </div>
                 <button type="button" id="lang-switch-btn" class="sub-btn" onclick="backToLang()">言語変更</button>
@@ -281,36 +287,6 @@
     <script>
         const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
         let basePostalAddress = "";
-
-        const FALLBACK_LOGO_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">' +
-            '<circle cx="60" cy="60" r="54" fill="#03787c"/>' +
-            '<text x="60" y="77" text-anchor="middle" fill="#ffffff" font-family="Arial,sans-serif" font-size="56" font-weight="bold">W</text>' +
-            '</svg>'
-        );
-
-        function initLogoFallback() {
-            document.querySelectorAll("img.js-wadai-logo").forEach((img) => {
-                const candidates = [
-                    img.getAttribute("src"),
-                    ...(img.dataset.fallbacks || "").split("|").filter(Boolean),
-                    FALLBACK_LOGO_SVG
-                ];
-                let idx = 0;
-
-                const tryNext = () => {
-                    idx += 1;
-                    if (idx < candidates.length) {
-                        img.src = candidates[idx];
-                    }
-                };
-
-                img.addEventListener("error", tryNext);
-                if (img.complete && img.naturalWidth === 0) {
-                    tryNext();
-                }
-            });
-        }
 
         const SHIFT_OPTIONS = [
             { value: "day", ja: "昼勤のみ", pt: "Diurno", en: "Day shift" },
@@ -1060,7 +1036,6 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            initLogoFallback();
             ensureStreetAddressField();
             ensureWorkingHoursField();
             reorderFields();
