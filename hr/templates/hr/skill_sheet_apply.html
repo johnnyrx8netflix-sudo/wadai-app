@@ -341,6 +341,11 @@
             { value: "no_preference", ja: "特に選ばない", pt: "Sem preferência", en: "No preference" }
         ];
 
+        const YES_NO_OPTIONS = [
+            { value: "yes", ja: "はい", pt: "Sim", en: "Yes" },
+            { value: "no", ja: "いいえ", pt: "Não", en: "No" }
+        ];
+
         const FIELD_ORDER = [
             "full_name",
             "gender",
@@ -376,6 +381,10 @@
                 workingHoursHint: "希望する勤務時間を選択してください",
                 shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
+                hasWorkHistoryLabel: "職歴はありますか？",
+                hasWorkHistoryHint: "「はい」を選ぶと会社①の入力欄が表示されます。「いいえ」の場合は日本語レベルへ進みます。",
+                moreWorkHistoryLabel: "追加の職歴はありますか？",
+                moreWorkHistoryHint: "「はい」を選ぶと会社②以降の入力欄が表示されます。「いいえ」の場合は日本語レベルへ進みます。",
                 ageCalculated: "生年月日から自動計算しました",
                 postalFound: "郵便番号から住所を自動入力しました",
                 postalNotFound: "該当する住所が見つかりませんでした。住所・番地を手入力してください。",
@@ -398,6 +407,10 @@
                 workingHoursHint: "Selecione o horário de trabalho desejado",
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
+                hasWorkHistoryLabel: "Possui experiência profissional (histórico de trabalho)?",
+                hasWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ① ou 'Não' para ir direto ao nível de japonês.",
+                moreWorkHistoryLabel: "Deseja adicionar mais experiência profissional?",
+                moreWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ② ou 'Não' para ir direto ao nível de japonês.",
                 ageCalculated: "Idade calculada automaticamente",
                 postalFound: "Endereço preenchido automaticamente pelo CEP",
                 postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
@@ -420,6 +433,10 @@
                 workingHoursHint: "Select your preferred working hours",
                 shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
+                hasWorkHistoryLabel: "Do you have work experience?",
+                hasWorkHistoryHint: "Select 'Yes' to show Company ①, or 'No' to jump to Japanese level.",
+                moreWorkHistoryLabel: "Do you have additional work experience to add?",
+                moreWorkHistoryHint: "Select 'Yes' to show Company ②+, or 'No' to jump to Japanese level.",
                 ageCalculated: "Age calculated automatically",
                 postalFound: "Address filled automatically from postal code",
                 postalNotFound: "Postal code not found. Please enter address manually.",
@@ -506,6 +523,216 @@
                 el.addEventListener("change", () => updateFieldFillHighlight(el));
                 el.addEventListener("blur", () => updateFieldFillHighlight(el));
             });
+        }
+
+        function classifyCompanyBoxes() {
+            const company1Boxes = [];
+            const company2PlusBoxes = [];
+
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
+                if (
+                    box.id === "has-work-history-box" ||
+                    box.id === "more-work-history-box"
+                ) {
+                    return;
+                }
+                const fieldName = (box.dataset.field || "").toLowerCase();
+                const lbl = box.querySelector("label");
+                const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
+
+                const isCompany1 =
+                    /^company_?1(?:_|$)/.test(fieldName) ||
+                    /^work_?(?:history_?)?1(?:_|$)/.test(fieldName) ||
+                    rawLbl.includes("①") ||
+                    rawLbl.includes("会社1") ||
+                    rawLbl.includes("職歴1");
+
+                const isCompany2Plus =
+                    /^company_?(?:[2-9]|\d{2,})(?:_|$)/.test(fieldName) ||
+                    /^work_?(?:history_?)?(?:[2-9]|\d{2,})(?:_|$)/.test(fieldName) ||
+                    /[②③④⑤⑥⑦⑧⑨⑩]/.test(rawLbl) ||
+                    /会社[2-9]|職歴[2-9]/.test(rawLbl);
+
+                if (isCompany1) {
+                    company1Boxes.push(box);
+                } else if (isCompany2Plus) {
+                    company2PlusBoxes.push(box);
+                }
+            });
+
+            return { company1Boxes, company2PlusBoxes };
+        }
+
+        function setBoxesHidden(boxes, hidden, clearValues = false) {
+            boxes.forEach((box) => {
+                if (hidden) {
+                    box.classList.add("hidden");
+                } else {
+                    box.classList.remove("hidden");
+                }
+                box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
+                    if (ctrl.type === "hidden") return;
+                    if (hidden) {
+                        ctrl.required = false;
+                        if (clearValues) {
+                            if (ctrl.tagName === "SELECT") {
+                                ctrl.selectedIndex = 0;
+                            } else {
+                                ctrl.value = "";
+                            }
+                            updateFieldFillHighlight(ctrl);
+                        }
+                    }
+                });
+            });
+        }
+
+        function buildYesNoSelect(id, name, lang) {
+            const safeLang = uiTexts[lang] ? lang : "ja";
+            const sel = document.createElement("select");
+            sel.id = id;
+            sel.name = name;
+
+            const emptyOpt = document.createElement("option");
+            emptyOpt.value = "";
+            emptyOpt.textContent = "";
+            emptyOpt.dataset.ja = "";
+            emptyOpt.dataset.pt = "";
+            emptyOpt.dataset.en = "";
+            sel.appendChild(emptyOpt);
+
+            YES_NO_OPTIONS.forEach((item) => {
+                const opt = document.createElement("option");
+                opt.value = item.value;
+                opt.textContent = item[safeLang] || item.ja;
+                opt.dataset.ja = item.ja;
+                opt.dataset.pt = item.pt;
+                opt.dataset.en = item.en;
+                sel.appendChild(opt);
+            });
+
+            return sel;
+        }
+
+        function applyYesNoLang(selId, lang) {
+            const safeLang = uiTexts[lang] ? lang : "ja";
+            const sel = document.getElementById(selId);
+            if (!sel) return;
+            Array.from(sel.options).forEach((opt) => {
+                if (opt.value === "") {
+                    opt.textContent = "";
+                } else {
+                    opt.textContent = opt[("dataset")]?.[safeLang] || opt.dataset.ja || opt.textContent;
+                }
+            });
+            updateFieldFillHighlight(sel);
+        }
+
+        function updateWorkHistoryFlow() {
+            const { company1Boxes, company2PlusBoxes } = classifyCompanyBoxes();
+            const q1Box = document.getElementById("has-work-history-box");
+            const q2Box = document.getElementById("more-work-history-box");
+            const q1Sel = document.getElementById("id_has_work_history");
+            const q2Sel = document.getElementById("id_more_work_history");
+
+            const q1Val = q1Sel ? (q1Sel.value || "").trim() : "";
+
+            if (q1Val === "yes") {
+                setBoxesHidden(company1Boxes, false, false);
+                if (q2Box) {
+                    q2Box.classList.remove("hidden");
+                }
+                const q2Val = q2Sel ? (q2Sel.value || "").trim() : "";
+                if (q2Val === "yes") {
+                    setBoxesHidden(company2PlusBoxes, false, false);
+                } else {
+                    setBoxesHidden(company2PlusBoxes, true, q2Val === "no");
+                }
+            } else {
+                setBoxesHidden(company1Boxes, true, q1Val === "no");
+                setBoxesHidden(company2PlusBoxes, true, q1Val === "no");
+                if (q2Box) {
+                    q2Box.classList.add("hidden");
+                }
+                if (q2Sel && q1Val === "no") {
+                    q2Sel.value = "";
+                    updateFieldFillHighlight(q2Sel);
+                }
+            }
+        }
+
+        function ensureWorkHistoryQuestions() {
+            const { company1Boxes, company2PlusBoxes } = classifyCompanyBoxes();
+            if (company1Boxes.length === 0 && company2PlusBoxes.length === 0) return;
+
+            const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
+            const t = uiTexts[savedLang] || uiTexts.ja;
+
+            let q1Box = document.getElementById("has-work-history-box");
+            if (!q1Box) {
+                q1Box = document.createElement("div");
+                q1Box.id = "has-work-history-box";
+                q1Box.className = "field";
+                q1Box.dataset.field = "has_work_history_question";
+
+                const lbl1 = document.createElement("label");
+                lbl1.id = "has-work-history-label";
+                lbl1.setAttribute("for", "id_has_work_history");
+                lbl1.textContent = t.hasWorkHistoryLabel;
+
+                const sel1 = buildYesNoSelect("id_has_work_history", "has_work_history_question", savedLang);
+                sel1.addEventListener("change", () => {
+                    updateFieldFillHighlight(sel1);
+                    updateWorkHistoryFlow();
+                });
+
+                const hint1 = document.createElement("div");
+                hint1.id = "has-work-history-hint";
+                hint1.className = "hint";
+                hint1.textContent = t.hasWorkHistoryHint;
+
+                q1Box.appendChild(lbl1);
+                q1Box.appendChild(sel1);
+                q1Box.appendChild(hint1);
+
+                if (company1Boxes.length > 0) {
+                    company1Boxes[0].insertAdjacentElement("beforebegin", q1Box);
+                } else if (company2PlusBoxes.length > 0) {
+                    company2PlusBoxes[0].insertAdjacentElement("beforebegin", q1Box);
+                }
+            }
+
+            let q2Box = document.getElementById("more-work-history-box");
+            if (!q2Box && company2PlusBoxes.length > 0) {
+                q2Box = document.createElement("div");
+                q2Box.id = "more-work-history-box";
+                q2Box.className = "field hidden";
+                q2Box.dataset.field = "more_work_history_question";
+
+                const lbl2 = document.createElement("label");
+                lbl2.id = "more-work-history-label";
+                lbl2.setAttribute("for", "id_more_work_history");
+                lbl2.textContent = t.moreWorkHistoryLabel;
+
+                const sel2 = buildYesNoSelect("id_more_work_history", "more_work_history_question", savedLang);
+                sel2.addEventListener("change", () => {
+                    updateFieldFillHighlight(sel2);
+                    updateWorkHistoryFlow();
+                });
+
+                const hint2 = document.createElement("div");
+                hint2.id = "more-work-history-hint";
+                hint2.className = "hint";
+                hint2.textContent = t.moreWorkHistoryHint;
+
+                q2Box.appendChild(lbl2);
+                q2Box.appendChild(sel2);
+                q2Box.appendChild(hint2);
+
+                company2PlusBoxes[0].insertAdjacentElement("beforebegin", q2Box);
+            }
+
+            updateWorkHistoryFlow();
         }
 
         function findShoeFieldBox() {
@@ -1060,6 +1287,18 @@
             const shoeHint = document.getElementById("shoe-size-hint");
             if (shoeHint) shoeHint.textContent = t.shoeHint;
 
+            const q1Lbl = document.getElementById("has-work-history-label");
+            if (q1Lbl) q1Lbl.textContent = t.hasWorkHistoryLabel;
+
+            const q1Hint = document.getElementById("has-work-history-hint");
+            if (q1Hint) q1Hint.textContent = t.hasWorkHistoryHint;
+
+            const q2Lbl = document.getElementById("more-work-history-label");
+            if (q2Lbl) q2Lbl.textContent = t.moreWorkHistoryLabel;
+
+            const q2Hint = document.getElementById("more-work-history-hint");
+            if (q2Hint) q2Hint.textContent = t.moreWorkHistoryHint;
+
             const stLbl = document.getElementById("street-address-label");
             if (stLbl) stLbl.textContent = t.streetLabel;
 
@@ -1076,6 +1315,8 @@
             if (whHint) whHint.textContent = t.workingHoursHint;
 
             applyWorkingHoursLang(safeLang);
+            applyYesNoLang("id_has_work_history", safeLang);
+            applyYesNoLang("id_more_work_history", safeLang);
 
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
                 if (lbl.dataset.orig) lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang, true);
@@ -1093,6 +1334,7 @@
 
             updateVisaVisibility();
             hideCommuteOtherField();
+            updateWorkHistoryFlow();
         }
 
         function startForm(lang) {
@@ -1289,6 +1531,7 @@
             ensureWorkingHoursField();
             reorderFields();
             snapshotOriginalTexts();
+            ensureWorkHistoryQuestions();
             ensureShoeSizeSelect();
             hideCommuteOtherField();
             initFieldFillHighlight();
@@ -1336,6 +1579,7 @@
             applyLang(savedLang);
             updateVisaVisibility();
             hideCommuteOtherField();
+            updateWorkHistoryFlow();
 
             const postalInput = document.getElementById("id_postal_code");
             if (postalInput) {
@@ -1351,6 +1595,7 @@
                     syncPreferredShiftFromSelect();
                     syncShoeSizeFromSelect();
                     updateVisaVisibility();
+                    updateWorkHistoryFlow();
                 });
             }
         });
