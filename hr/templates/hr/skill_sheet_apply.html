@@ -119,6 +119,65 @@
             border-color: #c8102e;
             color: #fff;
         }
+        .stepper-box {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            background: #fff8f8;
+            border: 1px solid #fecdd3;
+            border-radius: 10px;
+        }
+        .stepper-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #9f1239;
+        }
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #fee2e2;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 25%;
+            background: linear-gradient(90deg, #c8102e 0%, #ea580c 50%, #0284c7 100%);
+            transition: width 0.25s ease;
+        }
+        .step-pills {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .step-pill {
+            padding: 6px 4px;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 6px;
+            background: #fff;
+            color: #64748b;
+            border: 1px solid #e5e7eb;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .step-pill.active {
+            background: #c8102e;
+            color: #fff;
+            border-color: #c8102e;
+        }
+        .step-pill.done {
+            background: #e0f2fe;
+            color: #0369a1;
+            border-color: #0284c7;
+        }
         .field {
             margin-bottom: 16px;
             padding: 14px;
@@ -210,7 +269,31 @@
             color: #b91c1c;
             font-weight: 600;
         }
+        .step-nav {
+            display: flex;
+            gap: 12px;
+            margin-top: 18px;
+        }
+        .prev-btn {
+            flex: 1;
+            max-width: 100%;
+            box-sizing: border-box;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .prev-btn:hover {
+            background: #e2e8f0;
+        }
+        .next-btn,
         .submit-btn {
+            flex: 2;
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
@@ -222,10 +305,10 @@
             font-size: 1.05rem;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 18px;
             box-shadow: 0 3px 10px rgba(200, 16, 46, 0.25);
             transition: opacity 0.15s ease;
         }
+        .next-btn:hover,
         .submit-btn:hover {
             opacity: 0.92;
         }
@@ -262,6 +345,16 @@
                 padding: 10px 10px;
                 font-size: 0.95rem;
                 line-height: 1.4;
+            }
+            .step-pills {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .step-nav {
+                flex-direction: column;
+            }
+            .prev-btn, .next-btn, .submit-btn {
+                flex: none;
+                width: 100%;
             }
         }
     </style>
@@ -302,6 +395,22 @@
                 </div>
             {% endif %}
 
+            <div id="stepper-box" class="stepper-box">
+                <div class="stepper-meta">
+                    <span id="step-indicator">STEP 1 / 4</span>
+                    <span id="step-heading">基本情報</span>
+                </div>
+                <div class="progress-track">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div class="step-pills">
+                    <div class="step-pill active" id="pill-1">1. 基本情報</div>
+                    <div class="step-pill" id="pill-2">2. 在留・希望条件</div>
+                    <div class="step-pill" id="pill-3">3. 語学・その他</div>
+                    <div class="step-pill" id="pill-4">4. 職歴</div>
+                </div>
+            </div>
+
             <form method="post" id="skillsheet-form">
                 {% csrf_token %}
                 {% for field in form %}
@@ -324,7 +433,12 @@
                         {% endif %}
                     </div>
                 {% endfor %}
-                <button type="submit" id="submit-btn" class="submit-btn">送信する</button>
+
+                <div id="step-nav" class="step-nav">
+                    <button type="button" id="prev-btn" class="prev-btn hidden" onclick="prevStep()">戻る</button>
+                    <button type="button" id="next-btn" class="next-btn" onclick="nextStep()">次へ</button>
+                    <button type="submit" id="submit-btn" class="submit-btn hidden">送信する</button>
+                </div>
             </form>
         </div>
     </div>
@@ -332,6 +446,8 @@
     <script>
         const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
         let basePostalAddress = "";
+        let currentStep = 1;
+        const TOTAL_STEPS = 4;
 
         const SHIFT_OPTIONS = [
             { value: "day", ja: "昼勤のみ", pt: "Diurno", en: "Day shift" },
@@ -346,7 +462,7 @@
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
         ];
 
-        const FIELD_ORDER = [
+        const STEP1_FIELDS = [
             "full_name",
             "gender",
             "marital_status",
@@ -355,7 +471,10 @@
             "phone",
             "postal_code",
             "address",
-            "street_address",
+            "street_address"
+        ];
+
+        const STEP2_FIELDS = [
             "nationality",
             "visa_type",
             "drivers_license",
@@ -363,12 +482,31 @@
             "preferred_working_hours"
         ];
 
+        const FIELD_ORDER = [
+            ...STEP1_FIELDS,
+            ...STEP2_FIELDS
+        ];
+
         const uiTexts = {
             ja: {
                 title: "和大サポート - スキルシート",
                 switchLang: "言語変更",
+                prev: "戻る",
+                next: "次へ",
                 submit: "送信する",
                 done: "登録が完了しました。ご入力ありがとうございます。",
+                stepNames: [
+                    "基本情報",
+                    "在留・通勤・希望条件",
+                    "語学・スキル・その他",
+                    "職歴"
+                ],
+                pillNames: [
+                    "1. 基本情報",
+                    "2. 在留・希望条件",
+                    "3. 語学・その他",
+                    "4. 職歴"
+                ],
                 birthHint: "生年月日を選ぶと年齢が自動で入ります",
                 ageHint: "生年月日から自動計算されます（訂正不可）",
                 phoneHint: "数字のみ入力すると自動でハイフンが入ります",
@@ -382,9 +520,9 @@
                 shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
                 hasWorkHistoryLabel: "職歴はありますか？",
-                hasWorkHistoryHint: "「はい」を選ぶと会社①の入力欄が表示されます。「いいえ」の場合は日本語レベルへ進みます。",
+                hasWorkHistoryHint: "「はい」を選ぶと会社①の入力欄が表示されます。「いいえ」の場合は職歴なしで送信へ進めます。",
                 moreWorkHistoryLabel: "追加の職歴はありますか？",
-                moreWorkHistoryHint: "「はい」を選ぶと会社②以降の入力欄が表示されます。「いいえ」の場合は日本語レベルへ進みます。",
+                moreWorkHistoryHint: "「はい」を選ぶと会社②以降の入力欄が表示されます。「いいえ」の場合はこのまま送信へ進めます。",
                 ageCalculated: "生年月日から自動計算しました",
                 postalFound: "郵便番号から住所を自動入力しました",
                 postalNotFound: "該当する住所が見つかりませんでした。住所・番地を手入力してください。",
@@ -393,8 +531,22 @@
             pt: {
                 title: "Wadai Support - Skill Sheet",
                 switchLang: "Mudar idioma",
+                prev: "Voltar",
+                next: "Próximo",
                 submit: "Enviar",
                 done: "Cadastro concluído com sucesso. Obrigado!",
+                stepNames: [
+                    "Dados básicos",
+                    "Visto, deslocamento e turno",
+                    "Idioma, habilidades e outros",
+                    "Histórico profissional"
+                ],
+                pillNames: [
+                    "1. Básicos",
+                    "2. Visto/Turno",
+                    "3. Idioma/Outros",
+                    "4. Histórico"
+                ],
                 birthHint: "Escolha a data de nascimento para preencher a idade automaticamente",
                 ageHint: "Calculado automaticamente pela data de nascimento (não editável)",
                 phoneHint: "Digite apenas números; o hífen é inserido automaticamente",
@@ -408,9 +560,9 @@
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
                 hasWorkHistoryLabel: "Possui experiência profissional (histórico de trabalho)?",
-                hasWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ① ou 'Não' para ir direto ao nível de japonês.",
+                hasWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ① ou 'Não' para seguir sem histórico.",
                 moreWorkHistoryLabel: "Deseja adicionar mais experiência profissional?",
-                moreWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ② ou 'Não' para ir direto ao nível de japonês.",
+                moreWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ② ou 'Não' para prosseguir.",
                 ageCalculated: "Idade calculada automaticamente",
                 postalFound: "Endereço preenchido automaticamente pelo CEP",
                 postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
@@ -419,8 +571,22 @@
             en: {
                 title: "Wadai Support - Skill Sheet",
                 switchLang: "Change language",
+                prev: "Back",
+                next: "Next",
                 submit: "Submit",
                 done: "Registration completed. Thank you!",
+                stepNames: [
+                    "Basic Information",
+                    "Visa, Commute & Shift",
+                    "Language, Skills & Other",
+                    "Work History"
+                ],
+                pillNames: [
+                    "1. Basic",
+                    "2. Visa/Shift",
+                    "3. Skills/Other",
+                    "4. History"
+                ],
                 birthHint: "Select your birth date to fill age automatically",
                 ageHint: "Calculated automatically from birth date (locked)",
                 phoneHint: "Enter digits only; hyphens are added automatically",
@@ -434,9 +600,9 @@
                 shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
                 hasWorkHistoryLabel: "Do you have work experience?",
-                hasWorkHistoryHint: "Select 'Yes' to show Company ①, or 'No' to jump to Japanese level.",
+                hasWorkHistoryHint: "Select 'Yes' to show Company ①, or 'No' to continue without work history.",
                 moreWorkHistoryLabel: "Do you have additional work experience to add?",
-                moreWorkHistoryHint: "Select 'Yes' to show Company ②+, or 'No' to jump to Japanese level.",
+                moreWorkHistoryHint: "Select 'Yes' to show Company ②+, or 'No' to continue.",
                 ageCalculated: "Age calculated automatically",
                 postalFound: "Address filled automatically from postal code",
                 postalNotFound: "Postal code not found. Please enter address manually.",
@@ -525,6 +691,73 @@
             });
         }
 
+        function isRetirementOtherField(box) {
+            if (!box) return false;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
+            const ctrl = box.querySelector("input, select, textarea");
+            const ctrlId = ((ctrl && ctrl.id) || "").toLowerCase();
+            const ctrlName = ((ctrl && ctrl.name) || "").toLowerCase();
+
+            const hasOtherKeyword =
+                fieldName.includes("other") ||
+                ctrlId.includes("other") ||
+                ctrlName.includes("other") ||
+                rawLbl.includes("その他");
+
+            const hasRetirementKeyword =
+                fieldName.includes("retire") ||
+                fieldName.includes("reason") ||
+                fieldName.includes("taishoku") ||
+                ctrlId.includes("retire") ||
+                ctrlId.includes("reason") ||
+                ctrlId.includes("taishoku") ||
+                ctrlName.includes("retire") ||
+                ctrlName.includes("reason") ||
+                ctrlName.includes("taishoku") ||
+                rawLbl.includes("退職理由");
+
+            return hasOtherKeyword && hasRetirementKeyword;
+        }
+
+        function hideRetirementOtherFields() {
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
+                if (isRetirementOtherField(box)) {
+                    box.dataset.permanentlyHidden = "true";
+                    box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
+                        if (ctrl.type === "hidden") return;
+                        ctrl.required = false;
+                        if (ctrl.tagName === "SELECT") {
+                            ctrl.selectedIndex = 0;
+                        } else {
+                            ctrl.value = "";
+                        }
+                        updateFieldFillHighlight(ctrl);
+                    });
+                }
+            });
+        }
+
+        function isWorkHistoryBox(box) {
+            if (!box) return false;
+            if (box.id === "has-work-history-box" || box.id === "more-work-history-box") return true;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
+
+            return (
+                /^company_?\d*(?:_|$)/.test(fieldName) ||
+                /^work_?(?:history_?)?\d*(?:_|$)/.test(fieldName) ||
+                fieldName.includes("company") ||
+                fieldName.includes("work_history") ||
+                fieldName.includes("retire") ||
+                fieldName.includes("taishoku") ||
+                /[①②③④⑤⑥⑦⑧⑨⑩]/.test(rawLbl) ||
+                /会社|職歴|退職理由|時給|派遣会社/.test(rawLbl)
+            );
+        }
+
         function classifyCompanyBoxes() {
             const company1Boxes = [];
             const company2PlusBoxes = [];
@@ -532,7 +765,9 @@
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
                 if (
                     box.id === "has-work-history-box" ||
-                    box.id === "more-work-history-box"
+                    box.id === "more-work-history-box" ||
+                    box.dataset.permanentlyHidden === "true" ||
+                    isRetirementOtherField(box)
                 ) {
                     return;
                 }
@@ -563,28 +798,170 @@
             return { company1Boxes, company2PlusBoxes };
         }
 
-        function setBoxesHidden(boxes, hidden, clearValues = false) {
-            boxes.forEach((box) => {
-                if (hidden) {
-                    box.classList.add("hidden");
-                } else {
-                    box.classList.remove("hidden");
-                }
-                box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
-                    if (ctrl.type === "hidden") return;
-                    if (hidden) {
-                        ctrl.required = false;
-                        if (clearValues) {
-                            if (ctrl.tagName === "SELECT") {
-                                ctrl.selectedIndex = 0;
-                            } else {
-                                ctrl.value = "";
-                            }
+        function getFieldStep(box) {
+            if (!box || box.dataset.permanentlyHidden === "true") return 0;
+            const fieldName = box.dataset.field || "";
+            if (STEP1_FIELDS.includes(fieldName)) return 1;
+            if (STEP2_FIELDS.includes(fieldName)) return 2;
+            if (isWorkHistoryBox(box)) return 4;
+            return 3;
+        }
+
+        function updateWorkHistoryFlow() {
+            hideRetirementOtherFields();
+            const { company1Boxes, company2PlusBoxes } = classifyCompanyBoxes();
+            const q1Box = document.getElementById("has-work-history-box");
+            const q2Box = document.getElementById("more-work-history-box");
+            const q1Sel = document.getElementById("id_has_work_history");
+            const q2Sel = document.getElementById("id_more_work_history");
+
+            const q1Val = q1Sel ? (q1Sel.value || "").trim() : "";
+
+            company1Boxes.forEach((box) => {
+                box.dataset.whActive = q1Val === "yes" ? "true" : "false";
+                if (q1Val === "no") {
+                    box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
+                        if (ctrl.type !== "hidden") {
+                            ctrl.required = false;
+                            if (ctrl.tagName === "SELECT") ctrl.selectedIndex = 0;
+                            else ctrl.value = "";
                             updateFieldFillHighlight(ctrl);
                         }
-                    }
-                });
+                    });
+                }
             });
+
+            if (q2Box) {
+                q2Box.dataset.whActive = q1Val === "yes" ? "true" : "false";
+                if (q1Val !== "yes" && q2Sel) {
+                    q2Sel.value = "";
+                    updateFieldFillHighlight(q2Sel);
+                }
+            }
+
+            const q2Val = q2Sel ? (q2Sel.value || "").trim() : "";
+            company2PlusBoxes.forEach((box) => {
+                const active = q1Val === "yes" && q2Val === "yes";
+                box.dataset.whActive = active ? "true" : "false";
+                if (!active) {
+                    box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
+                        if (ctrl.type !== "hidden") {
+                            ctrl.required = false;
+                            if (q1Val === "no" || q2Val === "no") {
+                                if (ctrl.tagName === "SELECT") ctrl.selectedIndex = 0;
+                                else ctrl.value = "";
+                                updateFieldFillHighlight(ctrl);
+                            }
+                        }
+                    });
+                }
+            });
+
+            applyStepVisibility();
+        }
+
+        function applyStepVisibility() {
+            hideRetirementOtherFields();
+
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
+                if (box.dataset.permanentlyHidden === "true") {
+                    box.classList.add("hidden");
+                    return;
+                }
+
+                const step = getFieldStep(box);
+                let shouldShow = step === currentStep;
+
+                if (step === 4) {
+                    if (box.id === "has-work-history-box") {
+                        shouldShow = currentStep === 4;
+                    } else if (box.id === "more-work-history-box") {
+                        shouldShow = currentStep === 4 && box.dataset.whActive === "true";
+                    } else {
+                        shouldShow = currentStep === 4 && box.dataset.whActive === "true";
+                    }
+                }
+
+                if (shouldShow) {
+                    box.classList.remove("hidden");
+                } else {
+                    box.classList.add("hidden");
+                    box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
+                        if (ctrl.type !== "hidden") {
+                            ctrl.required = false;
+                        }
+                    });
+                }
+            });
+
+            updateVisaVisibility();
+            hideCommuteOtherField();
+            updateStepperUI();
+        }
+
+        function updateStepperUI() {
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const t = uiTexts[lang] || uiTexts.ja;
+
+            const indicator = document.getElementById("step-indicator");
+            const heading = document.getElementById("step-heading");
+            const fill = document.getElementById("progress-fill");
+            const prevBtn = document.getElementById("prev-btn");
+            const nextBtn = document.getElementById("next-btn");
+            const submitBtn = document.getElementById("submit-btn");
+
+            if (indicator) indicator.textContent = `STEP ${currentStep} / ${TOTAL_STEPS}`;
+            if (heading) heading.textContent = t.stepNames[currentStep - 1] || "";
+            if (fill) fill.style.width = `${(currentStep / TOTAL_STEPS) * 100}%`;
+
+            for (let i = 1; i <= TOTAL_STEPS; i++) {
+                const pill = document.getElementById(`pill-${i}`);
+                if (!pill) continue;
+                pill.textContent = t.pillNames[i - 1] || `${i}`;
+                pill.classList.remove("active", "done");
+                if (i === currentStep) pill.classList.add("active");
+                else if (i < currentStep) pill.classList.add("done");
+            }
+
+            if (prevBtn) {
+                prevBtn.textContent = t.prev;
+                if (currentStep > 1) prevBtn.classList.remove("hidden");
+                else prevBtn.classList.add("hidden");
+            }
+
+            if (nextBtn && submitBtn) {
+                nextBtn.textContent = t.next;
+                submitBtn.textContent = t.submit;
+                if (currentStep < TOTAL_STEPS) {
+                    nextBtn.classList.remove("hidden");
+                    submitBtn.classList.add("hidden");
+                } else {
+                    nextBtn.classList.add("hidden");
+                    submitBtn.classList.remove("hidden");
+                }
+            }
+        }
+
+        function goToStep(stepNum) {
+            if (stepNum < 1 || stepNum > TOTAL_STEPS) return;
+            currentStep = stepNum;
+            applyStepVisibility();
+            const formScreen = document.getElementById("form-screen");
+            if (formScreen) {
+                formScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < TOTAL_STEPS) {
+                goToStep(currentStep + 1);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                goToStep(currentStep - 1);
+            }
         }
 
         function buildYesNoSelect(id, name, lang) {
@@ -622,46 +999,14 @@
                 if (opt.value === "") {
                     opt.textContent = "";
                 } else {
-                    opt.textContent = opt[("dataset")]?.[safeLang] || opt.dataset.ja || opt.textContent;
+                    opt.textContent = opt.dataset[safeLang] || opt.dataset.ja || opt.textContent;
                 }
             });
             updateFieldFillHighlight(sel);
         }
 
-        function updateWorkHistoryFlow() {
-            const { company1Boxes, company2PlusBoxes } = classifyCompanyBoxes();
-            const q1Box = document.getElementById("has-work-history-box");
-            const q2Box = document.getElementById("more-work-history-box");
-            const q1Sel = document.getElementById("id_has_work_history");
-            const q2Sel = document.getElementById("id_more_work_history");
-
-            const q1Val = q1Sel ? (q1Sel.value || "").trim() : "";
-
-            if (q1Val === "yes") {
-                setBoxesHidden(company1Boxes, false, false);
-                if (q2Box) {
-                    q2Box.classList.remove("hidden");
-                }
-                const q2Val = q2Sel ? (q2Sel.value || "").trim() : "";
-                if (q2Val === "yes") {
-                    setBoxesHidden(company2PlusBoxes, false, false);
-                } else {
-                    setBoxesHidden(company2PlusBoxes, true, q2Val === "no");
-                }
-            } else {
-                setBoxesHidden(company1Boxes, true, q1Val === "no");
-                setBoxesHidden(company2PlusBoxes, true, q1Val === "no");
-                if (q2Box) {
-                    q2Box.classList.add("hidden");
-                }
-                if (q2Sel && q1Val === "no") {
-                    q2Sel.value = "";
-                    updateFieldFillHighlight(q2Sel);
-                }
-            }
-        }
-
         function ensureWorkHistoryQuestions() {
+            hideRetirementOtherFields();
             const { company1Boxes, company2PlusBoxes } = classifyCompanyBoxes();
             if (company1Boxes.length === 0 && company2PlusBoxes.length === 0) return;
 
@@ -888,9 +1233,9 @@
                     fallbackBox.appendChild(hint);
 
                     const formEl = document.getElementById("skillsheet-form");
-                    const submitBtn = document.getElementById("submit-btn");
-                    if (formEl && submitBtn) {
-                        formEl.insertBefore(fallbackBox, submitBtn);
+                    const stepNav = document.getElementById("step-nav");
+                    if (formEl && stepNav) {
+                        formEl.insertBefore(fallbackBox, stepNav);
                     }
                 }
             }
@@ -913,6 +1258,7 @@
                     origText.includes("通勤方法(その他詳細)")
                 ) {
                     box.classList.add("hidden");
+                    box.dataset.permanentlyHidden = "true";
                     box.querySelectorAll("input, select, textarea").forEach((inp) => {
                         inp.required = false;
                         inp.value = "";
@@ -1040,6 +1386,7 @@
             const legacyBox = document.querySelector('#skillsheet-form .field[data-field="preferred_shift"]');
             if (legacyBox) {
                 legacyBox.classList.add("hidden");
+                legacyBox.dataset.permanentlyHidden = "true";
             }
 
             if (document.getElementById("id_preferred_working_hours")) return;
@@ -1089,11 +1436,11 @@
 
             const commuteBox = document.querySelector('#skillsheet-form .field[data-field="commute_method"]');
             const formEl = document.getElementById("skillsheet-form");
-            const submitBtn = document.getElementById("submit-btn");
+            const stepNav = document.getElementById("step-nav");
             if (commuteBox) {
                 commuteBox.insertAdjacentElement("afterend", box);
-            } else if (formEl && submitBtn) {
-                formEl.insertBefore(box, submitBtn);
+            } else if (formEl && stepNav) {
+                formEl.insertBefore(box, stepNav);
             }
         }
 
@@ -1113,8 +1460,8 @@
 
         function reorderFields() {
             const formEl = document.getElementById("skillsheet-form");
-            const submitBtn = document.getElementById("submit-btn");
-            if (!formEl || !submitBtn) return;
+            const stepNav = document.getElementById("step-nav");
+            if (!formEl || !stepNav) return;
 
             const allBoxes = Array.from(formEl.querySelectorAll(".field[data-field]"));
             const boxMap = new Map();
@@ -1122,16 +1469,44 @@
                 boxMap.set(box.dataset.field, box);
             });
 
-            FIELD_ORDER.forEach((fieldName) => {
+            const step3Boxes = [];
+            const step4Boxes = [];
+
+            allBoxes.forEach((box) => {
+                const fieldName = box.dataset.field || "";
+                if (STEP1_FIELDS.includes(fieldName) || STEP2_FIELDS.includes(fieldName)) return;
+                if (isWorkHistoryBox(box)) step4Boxes.push(box);
+                else step3Boxes.push(box);
+            });
+
+            STEP1_FIELDS.forEach((fieldName) => {
                 const box = boxMap.get(fieldName);
                 if (box) {
-                    formEl.insertBefore(box, submitBtn);
+                    formEl.insertBefore(box, stepNav);
                     boxMap.delete(fieldName);
                 }
             });
 
+            STEP2_FIELDS.forEach((fieldName) => {
+                const box = boxMap.get(fieldName);
+                if (box) {
+                    formEl.insertBefore(box, stepNav);
+                    boxMap.delete(fieldName);
+                }
+            });
+
+            step3Boxes.forEach((box) => {
+                formEl.insertBefore(box, stepNav);
+                boxMap.delete(box.dataset.field);
+            });
+
+            step4Boxes.forEach((box) => {
+                formEl.insertBefore(box, stepNav);
+                boxMap.delete(box.dataset.field);
+            });
+
             boxMap.forEach((box) => {
-                formEl.insertBefore(box, submitBtn);
+                formEl.insertBefore(box, stepNav);
             });
         }
 
@@ -1159,6 +1534,11 @@
             const visaBox = document.querySelector('#skillsheet-form .field[data-field="visa_type"]');
             const visaInput = document.getElementById("id_visa_type");
             if (!natEl || !visaBox) return;
+
+            if (currentStep !== 2) {
+                visaBox.classList.add("hidden");
+                return;
+            }
 
             const hasValue = Boolean((natEl.value || "").trim());
             const isJapanese = isJapaneseNationality(natEl);
@@ -1332,6 +1712,7 @@
                 updateFieldFillHighlight(sel);
             });
 
+            updateStepperUI();
             updateVisaVisibility();
             hideCommuteOtherField();
             updateWorkHistoryFlow();
@@ -1339,7 +1720,9 @@
 
         function startForm(lang) {
             localStorage.setItem("skillsheet_lang", lang);
+            currentStep = 1;
             applyLang(lang);
+            applyStepVisibility();
             document.getElementById("lang-screen").classList.add("hidden");
             document.getElementById("form-screen").classList.remove("hidden");
         }
@@ -1527,10 +1910,12 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            hideRetirementOtherFields();
             ensureStreetAddressField();
             ensureWorkingHoursField();
             reorderFields();
             snapshotOriginalTexts();
+            hideRetirementOtherFields();
             ensureWorkHistoryQuestions();
             ensureShoeSizeSelect();
             hideCommuteOtherField();
@@ -1577,9 +1962,7 @@
 
             const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
             applyLang(savedLang);
-            updateVisaVisibility();
-            hideCommuteOtherField();
-            updateWorkHistoryFlow();
+            applyStepVisibility();
 
             const postalInput = document.getElementById("id_postal_code");
             if (postalInput) {
