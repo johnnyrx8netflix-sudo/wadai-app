@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>和大サポート - スキルシート登録</title>
     <style>
+        html, body {
+            overflow-x: hidden;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: linear-gradient(180deg, #fff5f5 0%, #f0f7ff 100%);
@@ -12,9 +15,11 @@
             color: #222;
             margin: 0;
             padding: 20px;
+            box-sizing: border-box;
         }
         .wrap {
             max-width: 820px;
+            width: 100%;
             margin: 0 auto;
             background: #fff;
             padding: 28px 24px;
@@ -23,6 +28,7 @@
             border-top: 6px solid #c8102e;
             position: relative;
             overflow: hidden;
+            box-sizing: border-box;
         }
         .wrap::before {
             content: "";
@@ -119,6 +125,10 @@
             background: #fafafa;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
+            box-sizing: border-box;
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
         }
         label {
             display: block;
@@ -128,7 +138,10 @@
             font-size: 0.95rem;
         }
         input, select, textarea {
+            display: block;
             width: 100%;
+            max-width: 100%;
+            min-width: 0;
             padding: 10px 12px;
             border: 1px solid #f87171;
             border-radius: 6px;
@@ -136,6 +149,15 @@
             font-size: 0.96rem;
             background-color: #fee2e2;
             color: #991b1b;
+        }
+        input[type="date"] {
+            -webkit-appearance: none;
+            appearance: none;
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
@@ -187,6 +209,8 @@
         }
         .submit-btn {
             width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
             background: linear-gradient(90deg, #c8102e 0%, #ea580c 100%);
             color: #fff;
             border: none;
@@ -218,6 +242,22 @@
         }
         .hidden {
             display: none !important;
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .wrap {
+                padding: 18px 12px;
+                border-radius: 10px;
+            }
+            .field {
+                padding: 10px;
+            }
+            input, select, textarea, input[type="date"] {
+                padding: 9px 10px;
+                font-size: 0.92rem;
+            }
         }
     </style>
 </head>
@@ -329,6 +369,7 @@
                 streetHint: "番地・部屋番号などを入力してください",
                 workingHoursLabel: "希望勤務時間",
                 workingHoursHint: "希望する勤務時間を選択してください",
+                shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
                 ageCalculated: "生年月日から自動計算しました",
                 postalFound: "郵便番号から住所を自動入力しました",
                 postalNotFound: "該当する住所が見つかりませんでした。住所・番地を手入力してください。",
@@ -349,6 +390,7 @@
                 streetHint: "Digite o número da casa/prédio e complemento",
                 workingHoursLabel: "Horário de trabalho desejado",
                 workingHoursHint: "Selecione o horário de trabalho desejado",
+                shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
                 ageCalculated: "Idade calculada automaticamente",
                 postalFound: "Endereço preenchido automaticamente pelo CEP",
                 postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
@@ -369,6 +411,7 @@
                 streetHint: "Enter street number, building name, or room number",
                 workingHoursLabel: "Preferred working hours",
                 workingHoursHint: "Select your preferred working hours",
+                shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
                 ageCalculated: "Age calculated automatically",
                 postalFound: "Address filled automatically from postal code",
                 postalNotFound: "Postal code not found. Please enter address manually.",
@@ -455,6 +498,118 @@
                 el.addEventListener("change", () => updateFieldFillHighlight(el));
                 el.addEventListener("blur", () => updateFieldFillHighlight(el));
             });
+        }
+
+        function findShoeFieldBox() {
+            const byName = document.querySelector('#skillsheet-form .field[data-field*="shoe"]');
+            if (byName) return byName;
+
+            let matched = null;
+            document.querySelectorAll("#skillsheet-form .field").forEach((box) => {
+                if (matched) return;
+                const fieldName = (box.dataset.field || "").toLowerCase();
+                const lbl = box.querySelector("label");
+                const lblText = lbl ? ((lbl.dataset.orig || lbl.textContent) || "").trim() : "";
+                if (
+                    fieldName.includes("foot") ||
+                    fieldName.includes("kutu") ||
+                    fieldName.includes("kutsu") ||
+                    lblText.includes("靴")
+                ) {
+                    matched = box;
+                }
+            });
+            return matched;
+        }
+
+        function syncShoeSizeFromSelect() {
+            const sel = document.getElementById("id_shoe_size_select");
+            if (!sel) return;
+            updateFieldFillHighlight(sel);
+
+            const box = findShoeFieldBox();
+            if (!box) return;
+
+            const origControl = box.querySelector("input, select, textarea");
+            if (!origControl || origControl.id === "id_shoe_size_select") return;
+
+            const val = (sel.value || "").trim();
+            if (origControl.tagName === "SELECT") {
+                if (!val) {
+                    origControl.value = "";
+                } else {
+                    const matched = Array.from(origControl.options).find((opt) => {
+                        const optVal = (opt.value || "").trim();
+                        const optTxt = ((opt.dataset.orig || opt.textContent) || "").trim();
+                        return optVal === val || optTxt === val || optTxt.startsWith(`${val}cm`) || optTxt.startsWith(`${val} `);
+                    });
+                    if (matched) {
+                        origControl.value = matched.value;
+                    } else {
+                        origControl.value = val;
+                    }
+                }
+            } else {
+                origControl.value = val;
+            }
+            origControl.dispatchEvent(new Event("change", { bubbles: true }));
+            origControl.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        function ensureShoeSizeSelect() {
+            const box = findShoeFieldBox();
+            if (!box) return;
+
+            const origControl = box.querySelector("input, select, textarea");
+            if (!origControl) return;
+
+            let sel = document.getElementById("id_shoe_size_select");
+            if (!sel) {
+                sel = document.createElement("select");
+                sel.id = "id_shoe_size_select";
+
+                const emptyOpt = document.createElement("option");
+                emptyOpt.value = "";
+                emptyOpt.textContent = "";
+                sel.appendChild(emptyOpt);
+
+                for (let halfSteps = 42; halfSteps <= 60; halfSteps++) {
+                    const cmNum = halfSteps / 2;
+                    const labelStr = Number.isInteger(cmNum) ? String(cmNum) : cmNum.toFixed(1);
+                    const opt = document.createElement("option");
+                    opt.value = labelStr;
+                    opt.textContent = labelStr;
+                    sel.appendChild(opt);
+                }
+
+                const currentVal = (origControl.value || "").trim().replace(/cm$/i, "");
+                if (currentVal) {
+                    const hasOpt = Array.from(sel.options).some((o) => o.value === currentVal);
+                    if (hasOpt) {
+                        sel.value = currentVal;
+                    }
+                }
+
+                origControl.classList.add("hidden");
+                origControl.required = false;
+                origControl.insertAdjacentElement("afterend", sel);
+
+                let hint = document.getElementById("shoe-size-hint");
+                if (!hint) {
+                    hint = document.createElement("div");
+                    hint.id = "shoe-size-hint";
+                    hint.className = "hint";
+                    const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
+                    hint.textContent = (uiTexts[savedLang] || uiTexts.ja).shoeHint;
+                    sel.insertAdjacentElement("afterend", hint);
+                }
+
+                sel.addEventListener("change", syncShoeSizeFromSelect);
+                sel.addEventListener("input", syncShoeSizeFromSelect);
+            }
+
+            updateFieldFillHighlight(sel);
+            syncShoeSizeFromSelect();
         }
 
         function hideCommuteOtherField() {
@@ -839,6 +994,9 @@
                 addrHint.className = "hint";
             }
 
+            const shoeHint = document.getElementById("shoe-size-hint");
+            if (shoeHint) shoeHint.textContent = t.shoeHint;
+
             const stLbl = document.getElementById("street-address-label");
             if (stLbl) stLbl.textContent = t.streetLabel;
 
@@ -1068,6 +1226,7 @@
             ensureWorkingHoursField();
             reorderFields();
             snapshotOriginalTexts();
+            ensureShoeSizeSelect();
             hideCommuteOtherField();
             initFieldFillHighlight();
             lockAgeField();
@@ -1127,6 +1286,7 @@
                 formEl.addEventListener("submit", () => {
                     syncCombinedAddress();
                     syncPreferredShiftFromSelect();
+                    syncShoeSizeFromSelect();
                     updateVisaVisibility();
                 });
             }
