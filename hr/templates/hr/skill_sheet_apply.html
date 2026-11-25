@@ -130,12 +130,12 @@
         input, select, textarea {
             width: 100%;
             padding: 10px 12px;
-            border: 1px solid #eab308;
+            border: 1px solid #f87171;
             border-radius: 6px;
             box-sizing: border-box;
             font-size: 0.96rem;
-            background-color: #fef9c3;
-            color: #713f12;
+            background-color: #fee2e2;
+            color: #991b1b;
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
@@ -146,9 +146,9 @@
         select.is-empty,
         textarea.is-empty,
         select.is-unselected {
-            background-color: #fef9c3 !important;
-            border-color: #eab308 !important;
-            color: #713f12 !important;
+            background-color: #fee2e2 !important;
+            border-color: #f87171 !important;
+            color: #991b1b !important;
         }
         input.is-filled,
         select.is-filled,
@@ -159,9 +159,9 @@
         }
         input[readonly].is-empty,
         .auto-filled.is-empty {
-            background-color: #fef9c3 !important;
-            border-color: #eab308 !important;
-            color: #713f12 !important;
+            background-color: #fee2e2 !important;
+            border-color: #f87171 !important;
+            color: #991b1b !important;
             cursor: not-allowed;
         }
         input[readonly].is-filled,
@@ -217,7 +217,7 @@
             margin-top: 4px;
         }
         .hidden {
-            display: none;
+            display: none !important;
         }
     </style>
 </head>
@@ -454,6 +454,28 @@
                 el.addEventListener("input", () => updateFieldFillHighlight(el));
                 el.addEventListener("change", () => updateFieldFillHighlight(el));
                 el.addEventListener("blur", () => updateFieldFillHighlight(el));
+            });
+        }
+
+        function hideCommuteOtherField() {
+            document.querySelectorAll("#skillsheet-form .field").forEach((box) => {
+                const fieldName = (box.dataset.field || "").toLowerCase();
+                const lbl = box.querySelector("label");
+                const origText = lbl ? (lbl.dataset.orig || lbl.textContent || "") : "";
+                if (
+                    fieldName === "commute_other" ||
+                    fieldName === "commute_method_other" ||
+                    fieldName === "commute_detail" ||
+                    (fieldName.includes("commute") && (fieldName.includes("other") || fieldName.includes("detail"))) ||
+                    origText.includes("通勤方法（その他詳細）") ||
+                    origText.includes("通勤方法(その他詳細)")
+                ) {
+                    box.classList.add("hidden");
+                    box.querySelectorAll("input, select, textarea").forEach((inp) => {
+                        inp.required = false;
+                        inp.value = "";
+                    });
+                }
             });
         }
 
@@ -844,6 +866,7 @@
             });
 
             updateVisaVisibility();
+            hideCommuteOtherField();
         }
 
         function startForm(lang) {
@@ -1040,6 +1063,7 @@
             ensureWorkingHoursField();
             reorderFields();
             snapshotOriginalTexts();
+            hideCommuteOtherField();
             initFieldFillHighlight();
             lockAgeField();
             configureNumericInputs();
@@ -1084,6 +1108,7 @@
             const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
             applyLang(savedLang);
             updateVisaVisibility();
+            hideCommuteOtherField();
 
             const postalInput = document.getElementById("id_postal_code");
             if (postalInput) {
