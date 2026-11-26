@@ -723,100 +723,6 @@
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
         ];
 
-        const PHRASE_MAP = [
-            { keys: ["氏名", "名前", "フルネーム"], pt: "Nome completo", en: "Full name" },
-            { keys: ["性別"], pt: "Sexo / Gênero", en: "Gender" },
-            { keys: ["男性", "男"], pt: "Masculino", en: "Male" },
-            { keys: ["女性", "女"], pt: "Feminino", en: "Female" },
-            { keys: ["既婚", "結婚している"], pt: "Casado(a)", en: "Married" },
-            { keys: ["未婚", "独身"], pt: "Solteiro(a)", en: "Single" },
-            { keys: ["婚姻", "配偶者"], pt: "Estado civil", en: "Marital status" },
-            { keys: ["生年月日"], pt: "Data de nascimento", en: "Date of birth" },
-            { keys: ["年齢"], pt: "Idade", en: "Age" },
-            { keys: ["電話", "携帯", "連絡先"], pt: "Telefone", en: "Phone number" },
-            { keys: ["郵便番号"], pt: "CEP", en: "Postal code" },
-            { keys: ["住所"], pt: "Endereço", en: "Address" },
-            { keys: ["国籍"], pt: "Nacionalidade", en: "Nationality" },
-            { keys: ["日本", "日本人"], pt: "Japão", en: "Japan" },
-            { keys: ["ブラジル"], pt: "Brasil", en: "Brazil" },
-            { keys: ["ペルー"], pt: "Peru", en: "Peru" },
-            { keys: ["フィリピン"], pt: "Filipinas", en: "Philippines" },
-            { keys: ["ベトナム"], pt: "Vietnã", en: "Vietnam" },
-            { keys: ["中国"], pt: "China", en: "China" },
-            { keys: ["ビザ", "在留資格"], pt: "Tipo de visto", en: "Visa type" },
-            { keys: ["永住者"], pt: "Visto permanente", en: "Permanent resident" },
-            { keys: ["定住者"], pt: "Residente de longa duração", en: "Long-term resident" },
-            { keys: ["日本人の配偶者"], pt: "Cônjuge de japonês", en: "Spouse of Japanese national" },
-            { keys: ["永住者の配偶者"], pt: "Cônjuge de residente permanente", en: "Spouse of permanent resident" },
-            { keys: ["特定活動"], pt: "Atividades designadas", en: "Designated activities" },
-            { keys: ["技術・人文知識・国際業務"], pt: "Engenharia / Humanidades / Int'l", en: "Engineer / Specialist in Humanities" },
-            { keys: ["特定技能"], pt: "Habilidade específica", en: "Specified skilled worker" },
-            { keys: ["運転免許", "免許"], pt: "Carteira de motorista", en: "Driver's license" },
-            { keys: ["普通免許", "あり", "有"], pt: "Sim (Possui)", en: "Yes" },
-            { keys: ["なし", "無", "持ってない", "持っていない"], pt: "Não possui", en: "None / No" },
-            { keys: ["通勤方法", "通勤"], pt: "Meio de transporte", en: "Commute method" },
-            { keys: ["自家用車", "車", "マイカー"], pt: "Carro próprio", en: "Private car" },
-            { keys: ["自転車"], pt: "Bicicleta", en: "Bicycle" },
-            { keys: ["バイク", "原付"], pt: "Moto / Motocicleta", en: "Motorcycle" },
-            { keys: ["徒歩"], pt: "A pé", en: "On foot" },
-            { keys: ["電車", "バス", "公共交通"], pt: "Transporte público", en: "Public transit" },
-            { keys: ["送迎"], pt: "Transporte da empresa", en: "Company shuttle" },
-            { keys: ["希望職種", "職種"], pt: "Função / Trabalho desejado", en: "Desired job type" },
-            { keys: ["食品加工", "食品"], pt: "Processamento de alimentos", en: "Food processing" },
-            { keys: ["工場", "製造", "ライン"], pt: "Fábrica / Produção", en: "Factory / Manufacturing" },
-            { keys: ["組立", "組み立て"], pt: "Montagem", en: "Assembly" },
-            { keys: ["検査", "検品"], pt: "Inspeção", en: "Inspection" },
-            { keys: ["梱包", "仕分け", "倉庫", "軽作業"], pt: "Embalagem / Armazém", en: "Packing / Warehouse" },
-            { keys: ["溶接"], pt: "Solda", en: "Welding" },
-            { keys: ["塗装"], pt: "Pintura", en: "Painting" },
-            { keys: ["プレス"], pt: "Prensa", en: "Press" },
-            { keys: ["フォークリフト"], pt: "Empilhadeira", en: "Forklift" },
-            { keys: ["上着"], pt: "Jaqueta / Blusa", en: "Jacket / Top" },
-            { keys: ["ズボン"], pt: "Calça", en: "Pants / Trousers" },
-            { keys: ["靴"], pt: "Tamanho do calçado", en: "Shoe size" },
-            { keys: ["その他"], pt: "Outros", en: "Other" },
-            { keys: ["はい"], pt: "Sim", en: "Yes" },
-            { keys: ["いいえ"], pt: "Não", en: "No" }
-        ];
-
-        function hasJapaneseChars(str) {
-            return /[\u3040-\u30ff\u4e00-\u9faf]/.test(str || "");
-        }
-
-        function translateSinglePhrase(rawStr, lang) {
-            if (!rawStr) return rawStr;
-            if (lang === "ja") return rawStr;
-            const trimmed = rawStr.trim();
-            if (!trimmed || /^-+$/.test(trimmed)) return "";
-
-            const parenMatch = trimmed.match(/[（(]([^）)]+)[）)]/);
-            if (parenMatch) {
-                const inside = parenMatch[1];
-                if (inside.includes("/")) {
-                    const pParts = inside.split("/").map((s) => s.trim());
-                    if (lang === "pt" && pParts[0]) return pParts[0];
-                    if (lang === "en" && pParts[1]) return pParts[1];
-                } else if (!hasJapaneseChars(inside)) {
-                    return inside;
-                }
-            }
-
-            const withoutParen = trimmed.replace(/[（(][^）)]*[）)]/g, "").trim();
-            const targetCheck = withoutParen || trimmed;
-
-            for (const entry of PHRASE_MAP) {
-                if (entry.keys.some((k) => targetCheck === k || targetCheck.includes(k))) {
-                    return lang === "pt" ? entry.pt : entry.en;
-                }
-            }
-
-            if (!hasJapaneseChars(trimmed)) {
-                return trimmed;
-            }
-
-            return lang === "pt" ? withoutParen || trimmed : withoutParen || trimmed;
-        }
-
         const JP_LEVEL_CARDS = [
             {
                 pct: { ja: "80〜100%", pt: "80〜100%", en: "80–100%" },
@@ -918,12 +824,6 @@
                 pantsSizeLabel: "ズボン",
                 shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
-                jpListenTitle: "日本語を理解する",
-                jpListenDesc: "相手の話をどの程度理解できるか選んでください。",
-                jpSpeakTitle: "日本語を話す",
-                jpSpeakDesc: "日本語でどの程度会話ができるか選んでください。",
-                jpLevelTitle: "日本語レベル（目安）",
-                jpLevelDesc: "自分の日本語力に近い目安を選んでください。",
                 multiBadge: "複数選択可",
                 multiDesc: "当てはまるものをすべて選んでください（複数選択できます）。",
                 singleDesc: "当てはまるものを1つ選んでください。",
@@ -979,12 +879,6 @@
                 pantsSizeLabel: "Calça",
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
-                jpListenTitle: "Compreensão de japonês",
-                jpListenDesc: "Selecione o quanto você consegue entender o que os outros dizem.",
-                jpSpeakTitle: "Fala em japonês",
-                jpSpeakDesc: "Selecione o quanto você consegue conversar em japonês.",
-                jpLevelTitle: "Nível de japonês (referência)",
-                jpLevelDesc: "Selecione a faixa mais próxima do seu nível de japonês.",
                 multiBadge: "Múltipla escolha",
                 multiDesc: "Selecione todas as opções desejadas (pode escolher mais de uma).",
                 singleDesc: "Selecione uma opção.",
@@ -1040,12 +934,6 @@
                 pantsSizeLabel: "Pants / Trousers",
                 shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
-                jpListenTitle: "Japanese Listening",
-                jpListenDesc: "Select how well you understand what others say in Japanese.",
-                jpSpeakTitle: "Japanese Speaking",
-                jpSpeakDesc: "Select how well you can hold a conversation in Japanese.",
-                jpLevelTitle: "Japanese Level (Guide)",
-                jpLevelDesc: "Select the level closest to your Japanese ability.",
                 multiBadge: "Multiple choice",
                 multiDesc: "Select all that apply (you can choose multiple options).",
                 singleDesc: "Please select one option.",
@@ -1207,14 +1095,6 @@
             );
         }
 
-        function isVisaFieldBox(box) {
-            if (!box) return false;
-            const fn = (box.dataset.field || "").toLowerCase();
-            const lbl = box.querySelector("label");
-            const txt = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
-            return fn.includes("visa") || fn.includes("zairyu") || txt.includes("ビザ") || txt.includes("在留");
-        }
-
         /* 必須チェックは完全解除 */
         function isExemptFromRequired(box) {
             return true;
@@ -1230,9 +1110,7 @@
             container.querySelectorAll(".req-alert-msg").forEach((m) => m.remove());
         }
 
-        function showValidationErrorForBox(box, lang) {
-            // 必須チェック解除のためエラー表示しない
-        }
+        function showValidationErrorForBox(box, lang) {}
 
         function validateStep(stepNum, scrollToFirstError = true) {
             document.querySelectorAll("#skillsheet-form .field.req-error").forEach((b) => b.classList.remove("req-error"));
@@ -1398,10 +1276,18 @@
             }
         }
 
+        /* 元のラベル名（origLabel）を確実に取得するヘルパー */
+        function getResolvedLabelText(origLabel, lang) {
+            if (!origLabel) return "";
+            if (origLabel.dataset && origLabel.dataset.orig) {
+                return pickLangPart(origLabel.dataset.orig, lang, true);
+            }
+            return (origLabel.textContent || "").trim();
+        }
+
         /* 重複アイコンが出ないよう、余分な std-field-header は常に整理し、非モダン欄のみ1つ付ける */
         function ensureStandardFieldIcons() {
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                // 既存の std-field-header を一旦すべて掃除（重複防止の決め手）
                 box.querySelectorAll(":scope > .std-field-header").forEach((oldHeader) => {
                     const innerLbl = oldHeader.querySelector("label");
                     if (innerLbl) {
@@ -1410,7 +1296,6 @@
                     oldHeader.remove();
                 });
 
-                // モダン選択カード（.mc-header あり）の場合は、mc-header のアイコンを1つだけ使う
                 if (box.dataset.mcInitialized === "true" || box.querySelector(":scope > .mc-header")) {
                     const mcBadge = box.querySelector(":scope > .mc-header .mc-icon-badge");
                     if (mcBadge) {
@@ -1584,12 +1469,12 @@
             if (!sel) return;
 
             if (titleEl) {
-                if (kind === "listen") titleEl.textContent = t.jpListenTitle;
-                else if (kind === "speak") titleEl.textContent = t.jpSpeakTitle;
-                else if (kind === "level") titleEl.textContent = t.jpLevelTitle;
-                else if (isOvertimeField(box)) titleEl.textContent = t.overtimeLabel;
-                else if (isHolidayWorkField(box)) titleEl.textContent = t.holidayWorkLabel;
-                else if (origLabel) titleEl.textContent = origLabel.textContent;
+                const resolvedLabel = getResolvedLabelText(origLabel, safeLang);
+                if (resolvedLabel) {
+                    titleEl.textContent = resolvedLabel;
+                } else if (origLabel && origLabel.textContent) {
+                    titleEl.textContent = origLabel.textContent.trim();
+                }
             }
 
             if (multiBadgeEl) {
@@ -1598,10 +1483,7 @@
             }
 
             if (descEl) {
-                if (kind === "listen") descEl.textContent = t.jpListenDesc;
-                else if (kind === "speak") descEl.textContent = t.jpSpeakDesc;
-                else if (kind === "level") descEl.textContent = t.jpLevelDesc;
-                else if (isOvertimeField(box)) descEl.textContent = t.overtimeHint;
+                if (isOvertimeField(box)) descEl.textContent = t.overtimeHint;
                 else if (isAvailabilityField(box)) descEl.textContent = t.availabilityHint;
                 else if (kind === "shift") descEl.textContent = t.workingHoursHint;
                 else if (kind === "job" && isWorkHistoryBox(box) && box.dataset.whQuestion === "true") {
@@ -1672,7 +1554,6 @@
                 const sel = box.querySelector("select");
                 if (!sel || !shouldConvertFieldToModernChoice(box, sel)) return;
 
-                // 早出・残業・休日出勤は単一選択
                 const isSingleOnlyAvailability = isAvailabilityField(box);
                 const isMulti = !isSingleOnlyAvailability && (isJobTypeField(box) || isWorkingHoursField(box) || sel.multiple);
 
@@ -1688,7 +1569,6 @@
                 box.dataset.isMulti = isMulti ? "true" : "false";
                 box.classList.add("modern-choice-box");
 
-                // 既存の重複ヘッダがあれば除去
                 box.querySelectorAll(":scope > .std-field-header, :scope > .mc-header, :scope > .mc-desc, :scope > .mc-ui-wrap").forEach((el) => el.remove());
 
                 const initialVals = Array.from(sel.selectedOptions)
@@ -1713,9 +1593,7 @@
 
                 const title = document.createElement("div");
                 title.className = "mc-title";
-                if (isOvertimeField(box)) title.textContent = t.overtimeLabel;
-                else if (isHolidayWorkField(box)) title.textContent = t.holidayWorkLabel;
-                else title.textContent = origLabel ? origLabel.textContent : "";
+                title.textContent = getResolvedLabelText(origLabel, lang) || (origLabel ? origLabel.textContent.trim() : "");
                 titleWrap.appendChild(title);
 
                 if (isMulti) {
@@ -1988,6 +1866,7 @@
                     const lbl = document.createElement("label");
                     lbl.id = `${spec.field}-label`;
                     lbl.setAttribute("for", spec.id);
+                    lbl.dataset.orig = uiTexts.ja[spec.labelKey];
                     lbl.textContent = t[spec.labelKey];
 
                     const sel = document.createElement("select");
@@ -2010,7 +1889,7 @@
                     }
                 } else {
                     const lbl = box.querySelector("label");
-                    if (lbl) {
+                    if (lbl && !lbl.dataset.orig) {
                         lbl.dataset.orig = uiTexts.ja[spec.labelKey];
                     }
                 }
@@ -2045,6 +1924,7 @@
                     const lbl = document.createElement("label");
                     lbl.id = `${spec.field}-label`;
                     lbl.setAttribute("for", spec.id);
+                    lbl.dataset.orig = uiTexts.ja[spec.labelKey];
                     lbl.textContent = t[spec.labelKey];
 
                     const sel = document.createElement("select");
@@ -2470,6 +2350,7 @@
                 const lbl1 = document.createElement("label");
                 lbl1.id = "has-work-history-label";
                 lbl1.setAttribute("for", "id_has_work_history");
+                lbl1.dataset.orig = uiTexts.ja.hasWorkHistoryLabel;
                 lbl1.textContent = t.hasWorkHistoryLabel;
 
                 const sel1 = buildYesNoSelect("id_has_work_history", "has_work_history_question", savedLang);
@@ -2507,6 +2388,7 @@
                     const lbl = document.createElement("label");
                     lbl.id = `more-work-history-label-after-${prevCompanyNum}`;
                     lbl.setAttribute("for", selId);
+                    lbl.dataset.orig = prevCompanyNum === 2 ? uiTexts.ja.moreWorkHistoryLabelAfter2 : uiTexts.ja.moreWorkHistoryLabelAfterN;
                     lbl.textContent = prevCompanyNum === 2 ? t.moreWorkHistoryLabelAfter2 : t.moreWorkHistoryLabelAfterN;
 
                     const sel = buildYesNoSelect(selId, `more_work_history_after_${prevCompanyNum}`, savedLang);
@@ -2670,6 +2552,7 @@
                     const lbl = document.createElement("label");
                     lbl.id = "shoe-size-label";
                     lbl.setAttribute("for", "id_shoe_size_select");
+                    lbl.dataset.orig = uiTexts.ja.shoeLabel;
                     lbl.textContent = t.shoeLabel;
 
                     sel = buildShoeSelectElement("");
@@ -2780,6 +2663,7 @@
                 const lbl = document.createElement("label");
                 lbl.id = "street-address-label";
                 lbl.setAttribute("for", "id_street_address");
+                lbl.dataset.orig = uiTexts.ja.streetLabel;
                 lbl.textContent = uiTexts.ja.streetLabel;
 
                 const inp = document.createElement("input");
@@ -2860,6 +2744,7 @@
             const lbl = document.createElement("label");
             lbl.id = "working-hours-label";
             lbl.setAttribute("for", "id_preferred_working_hours");
+            lbl.dataset.orig = uiTexts.ja.workingHoursLabel;
             lbl.textContent = uiTexts.ja.workingHoursLabel;
 
             const sel = document.createElement("select");
@@ -3082,13 +2967,12 @@
 
             if (parts.length > 1) {
                 const idx = LANG_INDEX[lang] ?? 0;
-                const picked = parts.length === 2
+                return parts.length === 2
                     ? (lang === "ja" ? parts[0] : parts[1]).trim()
                     : (parts[idx] || parts[0]).trim();
-                return translateSinglePhrase(picked, lang);
             }
 
-            return translateSinglePhrase(baseText, lang);
+            return baseText;
         }
 
         function snapshotOriginalTexts() {
