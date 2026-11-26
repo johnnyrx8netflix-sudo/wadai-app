@@ -685,6 +685,20 @@
             { value: "no_preference", ja: "特に選ばない", pt: "Sem preferência", en: "No preference" }
         ];
 
+        const AVAILABILITY_OPTIONS = [
+            { value: "possible", ja: "可能", pt: "Possível", en: "Available" },
+            { value: "impossible", ja: "不可能", pt: "Impossível", en: "Not available" },
+            { value: "if_schedule_fits", ja: "予定が合えば対応可", pt: "Se o horário permitir", en: "If schedule fits" }
+        ];
+
+        const CLOTHING_SIZE_OPTIONS = [
+            { value: "S", ja: "S", pt: "P (S)", en: "S" },
+            { value: "M", ja: "M", pt: "M", en: "M" },
+            { value: "L", ja: "L", pt: "G (L)", en: "L" },
+            { value: "XL", ja: "XL", pt: "GG (XL)", en: "XL" },
+            { value: "XXL", ja: "XXL", pt: "XG (XXL)", en: "XXL" }
+        ];
+
         const YES_NO_OPTIONS = [
             { value: "yes", ja: "はい", pt: "Sim", en: "Yes" },
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
@@ -741,6 +755,9 @@
             "drivers_license",
             "commute_method",
             "preferred_working_hours",
+            "early_start",
+            "overtime",
+            "holiday_work",
             "preferred_job_type",
             "desired_job_type",
             "job_type"
@@ -776,6 +793,15 @@
                 streetHint: "番地・部屋番号などを入力してください",
                 workingHoursLabel: "希望勤務時間",
                 workingHoursHint: "希望する勤務時間を選んでください（複数選択可）。",
+                earlyStartLabel: "早出",
+                overtimeLabel: "残業",
+                holidayWorkLabel: "休日出勤",
+                availabilityHint: "「可能」「不可能」「予定が合えば対応可」から選んでください。",
+                jacketSizeLabel: "上着",
+                pantsSizeLabel: "ズボン",
+                otherNotesLabel: "その他",
+                otherNotesPlaceholder: "ご希望や連絡事項などがあればご入力ください",
+                otherNotesHint: "その他の備考やご希望があればご入力ください",
                 shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
                 jpListenTitle: "日本語を理解する",
@@ -827,6 +853,15 @@
                 streetHint: "Digite o número da casa/prédio e complemento",
                 workingHoursLabel: "Horário de trabalho desejado",
                 workingHoursHint: "Selecione os horários desejados (múltipla escolha).",
+                earlyStartLabel: "Entrada antecipada (早出)",
+                overtimeLabel: "Hora extra (残業)",
+                holidayWorkLabel: "Trabalho aos finais de semana/feriados (休日出勤)",
+                availabilityHint: "Escolha entre Possível, Impossível ou Se o horário permitir.",
+                jacketSizeLabel: "Jaqueta / Blusa (上着)",
+                pantsSizeLabel: "Calça (ズボン)",
+                otherNotesLabel: "Outros (その他)",
+                otherNotesPlaceholder: "Observações ou pedidos adicionais",
+                otherNotesHint: "Preencha caso tenha observações adicionais",
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
                 jpListenTitle: "Compreensão de japonês",
@@ -878,6 +913,15 @@
                 streetHint: "Enter street number, building name, or room number",
                 workingHoursLabel: "Preferred working hours",
                 workingHoursHint: "Select preferred working hours (multiple choice).",
+                earlyStartLabel: "Early start",
+                overtimeLabel: "Overtime",
+                holidayWorkLabel: "Weekend / Holiday work",
+                availabilityHint: "Choose Available, Not available, or If schedule fits.",
+                jacketSizeLabel: "Jacket / Top",
+                pantsSizeLabel: "Pants / Trousers",
+                otherNotesLabel: "Other",
+                otherNotesPlaceholder: "Any additional notes or preferences",
+                otherNotesHint: "Enter any extra notes or requests if applicable",
                 shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
                 jpListenTitle: "Japanese Listening",
@@ -970,6 +1014,25 @@
             );
         }
 
+        function isAvailabilityField(box) {
+            if (!box) return false;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            return (
+                fieldName.includes("early_start") ||
+                fieldName.includes("overtime") ||
+                fieldName.includes("holiday_work") ||
+                fieldName.includes("zangyo") ||
+                fieldName.includes("kyujitsu") ||
+                rawLbl.includes("早出") ||
+                rawLbl.includes("残業") ||
+                rawLbl.includes("休日出勤") ||
+                rawLbl.includes("overtime") ||
+                rawLbl.includes("holiday work")
+            );
+        }
+
         function getChoiceKind(box) {
             if (!box) return null;
             const fieldName = (box.dataset.field || "").toLowerCase();
@@ -1011,11 +1074,24 @@
             if (fieldName.includes("nationality") || rawLbl.includes("国籍") || combined.includes("nationality") || combined.includes("nacionalidade")) {
                 return "nationality";
             }
+            if (fieldName.includes("visa") || rawLbl.includes("ビザ") || combined.includes("visa") || combined.includes("visto")) {
+                return "visa";
+            }
             if (fieldName.includes("gender") || rawLbl.includes("性別")) return "gender";
             if (fieldName.includes("marital") || rawLbl.includes("婚姻") || rawLbl.includes("配偶者")) return "marital";
             if (fieldName.includes("license") || rawLbl.includes("免許")) return "license";
             if (fieldName.includes("commute") || rawLbl.includes("通勤")) return "commute";
-            if (isWorkingHoursField(box)) return "shift";
+            if (isWorkingHoursField(box) || isAvailabilityField(box)) return "shift";
+            if (
+                fieldName.includes("jacket") ||
+                fieldName.includes("pants") ||
+                fieldName.includes("top_size") ||
+                fieldName.includes("bottom_size") ||
+                rawLbl.includes("上着") ||
+                rawLbl.includes("ズボン")
+            ) {
+                return "clothing";
+            }
             if (isJobTypeField(box)) return "job";
             if (fieldName.includes("work_history") || rawLbl.includes("職歴")) return "history";
             return "default";
@@ -1030,6 +1106,7 @@
                 case "level":
                     return `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
                 case "nationality":
+                case "visa":
                     return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
                 case "gender":
                 case "marital":
@@ -1039,6 +1116,8 @@
                     return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="14" x2="13" y2="14"/></svg>`;
                 case "shift":
                     return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>`;
+                case "clothing":
+                    return `<svg viewBox="0 0 24 24"><path d="M6 2l6 4 6-4 4 5-3 3v12H5V10L2 7l4-5z"/></svg>`;
                 case "job":
                 case "history":
                     return `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`;
@@ -1070,7 +1149,7 @@
             if (!box || !sel) return false;
             if (sel.id === "id_shoe_size_select") return false;
             const fieldName = (box.dataset.field || "").toLowerCase();
-            if (fieldName.includes("shoe") || fieldName.includes("visa")) {
+            if (fieldName.includes("shoe")) {
                 return false;
             }
             const validOpts = Array.from(sel.options).filter((o) => {
@@ -1172,6 +1251,7 @@
                 if (kind === "listen") descEl.textContent = t.jpListenDesc;
                 else if (kind === "speak") descEl.textContent = t.jpSpeakDesc;
                 else if (kind === "level") descEl.textContent = t.jpLevelDesc;
+                else if (isAvailabilityField(box)) descEl.textContent = t.availabilityHint;
                 else if (kind === "shift") descEl.textContent = t.workingHoursHint;
                 else if (kind === "history") {
                     if (box.id === "more-work-history-box-after-2") {
@@ -1444,6 +1524,227 @@
             });
         }
 
+        /* 早出・残業・休日出勤の選択肢を「可能 / 不可能 / 予定が合えば対応可」に統一 */
+        function applyAvailabilityOptionsToFields() {
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const safeLang = uiTexts[lang] ? lang : "ja";
+
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
+                if (!isAvailabilityField(box)) return;
+                const sel = box.querySelector("select");
+                if (!sel) return;
+
+                const currentVal = (sel.value || "").trim();
+                const emptyOpt = document.createElement("option");
+                emptyOpt.value = "";
+                emptyOpt.textContent = "";
+                emptyOpt.dataset.orig = "";
+
+                sel.innerHTML = "";
+                sel.appendChild(emptyOpt);
+
+                AVAILABILITY_OPTIONS.forEach((item) => {
+                    const opt = document.createElement("option");
+                    opt.value = item.value;
+                    opt.textContent = item[safeLang] || item.ja;
+                    opt.dataset.orig = item.ja;
+                    opt.dataset.ja = item.ja;
+                    opt.dataset.pt = item.pt;
+                    opt.dataset.en = item.en;
+                    sel.appendChild(opt);
+                });
+
+                if (currentVal) {
+                    const lower = currentVal.toLowerCase();
+                    if (lower.includes("possible") && !lower.includes("impossible") || currentVal.includes("可能") && !currentVal.includes("不可能") && !currentVal.includes("予定")) {
+                        sel.value = "possible";
+                    } else if (lower.includes("impossible") || lower.includes("not") || currentVal.includes("不可能") || currentVal.includes("不可")) {
+                        sel.value = "impossible";
+                    } else if (lower.includes("schedule") || currentVal.includes("予定") || currentVal.includes("条件") || currentVal.includes("相談")) {
+                        sel.value = "if_schedule_fits";
+                    } else {
+                        sel.value = currentVal;
+                    }
+                }
+                updateFieldFillHighlight(sel);
+            });
+        }
+
+        function findFieldBoxByKeywords(keywords) {
+            const allBoxes = Array.from(document.querySelectorAll("#skillsheet-form .field[data-field]"));
+            for (const box of allBoxes) {
+                const fn = (box.dataset.field || "").toLowerCase();
+                if (keywords.some((k) => fn.includes(k))) return box;
+            }
+            for (const box of allBoxes) {
+                const lbl = box.querySelector("label");
+                const txt = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+                if (keywords.some((k) => txt.includes(k))) return box;
+            }
+            return null;
+        }
+
+        function ensureAvailabilityFields() {
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const t = uiTexts[lang] || uiTexts.ja;
+            const formEl = document.getElementById("skillsheet-form");
+            const stepNav = document.getElementById("step-nav");
+            const whBox = document.getElementById("working-hours-box") || document.querySelector('#skillsheet-form .field[data-field="preferred_working_hours"]');
+
+            const specs = [
+                { id: "id_early_start", name: "early_start", field: "early_start", labelKey: "earlyStartLabel", keywords: ["early_start", "早出"] },
+                { id: "id_overtime", name: "overtime", field: "overtime", labelKey: "overtimeLabel", keywords: ["overtime", "残業"] },
+                { id: "id_holiday_work", name: "holiday_work", field: "holiday_work", labelKey: "holidayWorkLabel", keywords: ["holiday_work", "休日出勤"] }
+            ];
+
+            let insertAfterTarget = whBox;
+
+            specs.forEach((spec) => {
+                let box = findFieldBoxByKeywords(spec.keywords);
+                if (!box) {
+                    box = document.createElement("div");
+                    box.id = `${spec.field}-box`;
+                    box.className = "field";
+                    box.dataset.field = spec.field;
+
+                    const lbl = document.createElement("label");
+                    lbl.id = `${spec.field}-label`;
+                    lbl.setAttribute("for", spec.id);
+                    lbl.textContent = t[spec.labelKey];
+
+                    const sel = document.createElement("select");
+                    sel.id = spec.id;
+                    sel.name = spec.name;
+
+                    const hint = document.createElement("div");
+                    hint.id = `${spec.field}-hint`;
+                    hint.className = "hint";
+                    hint.textContent = t.availabilityHint;
+
+                    box.appendChild(lbl);
+                    box.appendChild(sel);
+                    box.appendChild(hint);
+
+                    if (insertAfterTarget && insertAfterTarget.parentNode) {
+                        insertAfterTarget.insertAdjacentElement("afterend", box);
+                    } else if (formEl && stepNav) {
+                        formEl.insertBefore(box, stepNav);
+                    }
+                } else {
+                    const lbl = box.querySelector("label");
+                    if (lbl && !lbl.dataset.orig) {
+                        lbl.dataset.orig = t[spec.labelKey];
+                    }
+                }
+                insertAfterTarget = box;
+            });
+
+            applyAvailabilityOptionsToFields();
+        }
+
+        function ensureClothingAndOtherFields() {
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const t = uiTexts[lang] || uiTexts.ja;
+            const formEl = document.getElementById("skillsheet-form");
+            const stepNav = document.getElementById("step-nav");
+            const shoeBox = document.getElementById("shoe-size-fallback-box") || findShoeFieldBox();
+
+            const clothingSpecs = [
+                { id: "id_jacket_size", name: "jacket_size", field: "jacket_size", labelKey: "jacketSizeLabel", keywords: ["jacket", "top_size", "上着"] },
+                { id: "id_pants_size", name: "pants_size", field: "pants_size", labelKey: "pantsSizeLabel", keywords: ["pants", "bottom_size", "ズボン"] }
+            ];
+
+            let anchor = shoeBox;
+
+            clothingSpecs.forEach((spec) => {
+                let box = findFieldBoxByKeywords(spec.keywords);
+                if (!box) {
+                    box = document.createElement("div");
+                    box.id = `${spec.field}-box`;
+                    box.className = "field";
+                    box.dataset.field = spec.field;
+
+                    const lbl = document.createElement("label");
+                    lbl.id = `${spec.field}-label`;
+                    lbl.setAttribute("for", spec.id);
+                    lbl.textContent = t[spec.labelKey];
+
+                    const sel = document.createElement("select");
+                    sel.id = spec.id;
+                    sel.name = spec.name;
+
+                    const emptyOpt = document.createElement("option");
+                    emptyOpt.value = "";
+                    emptyOpt.textContent = "";
+                    emptyOpt.dataset.orig = "";
+                    sel.appendChild(emptyOpt);
+
+                    CLOTHING_SIZE_OPTIONS.forEach((optItem) => {
+                        const o = document.createElement("option");
+                        o.value = optItem.value;
+                        o.textContent = optItem[lang] || optItem.ja;
+                        o.dataset.orig = optItem.ja;
+                        o.dataset.ja = optItem.ja;
+                        o.dataset.pt = optItem.pt;
+                        o.dataset.en = optItem.en;
+                        sel.appendChild(o);
+                    });
+
+                    box.appendChild(lbl);
+                    box.appendChild(sel);
+
+                    if (anchor && anchor.parentNode) {
+                        anchor.insertAdjacentElement("afterend", box);
+                    } else if (formEl && stepNav) {
+                        formEl.insertBefore(box, stepNav);
+                    }
+                }
+                anchor = box;
+            });
+
+            // 「その他」フィールドの追加（退職理由の「その他」と区別）
+            const existingOther = Array.from(document.querySelectorAll("#skillsheet-form .field[data-field]")).find((b) => {
+                if (b.dataset.permanentlyHidden === "true" || isRetirementOtherField(b)) return false;
+                const fn = (b.dataset.field || "").toLowerCase();
+                const lbl = b.querySelector("label");
+                const txt = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
+                return fn === "other" || fn === "other_notes" || fn === "remarks" || txt === "その他" || txt === "その他 / Outros / Other";
+            });
+
+            if (!existingOther) {
+                const otherBox = document.createElement("div");
+                otherBox.id = "other-notes-box";
+                otherBox.className = "field";
+                otherBox.dataset.field = "other_notes";
+
+                const lbl = document.createElement("label");
+                lbl.id = "other-notes-label";
+                lbl.setAttribute("for", "id_other_notes");
+                lbl.textContent = t.otherNotesLabel;
+
+                const inp = document.createElement("input");
+                inp.type = "text";
+                inp.id = "id_other_notes";
+                inp.name = "other_notes";
+                inp.placeholder = t.otherNotesPlaceholder;
+
+                const hint = document.createElement("div");
+                hint.id = "other-notes-hint";
+                hint.className = "hint";
+                hint.textContent = t.otherNotesHint;
+
+                otherBox.appendChild(lbl);
+                otherBox.appendChild(inp);
+                otherBox.appendChild(hint);
+
+                if (anchor && anchor.parentNode) {
+                    anchor.insertAdjacentElement("afterend", otherBox);
+                } else if (formEl && stepNav) {
+                    formEl.insertBefore(otherBox, stepNav);
+                }
+            }
+        }
+
         function isRetirementOtherField(box) {
             if (!box) return false;
             const fieldName = (box.dataset.field || "").toLowerCase();
@@ -1511,7 +1812,6 @@
             );
         }
 
-        /* 仕事①・仕事②・仕事③以降を会社番号ごとにグループ化 */
         function getCompanyGroups() {
             const groupsMap = new Map();
 
@@ -1571,7 +1871,14 @@
             if (!box || box.dataset.permanentlyHidden === "true") return 0;
             const fieldName = box.dataset.field || "";
             if (STEP1_FIELDS.includes(fieldName)) return 1;
-            if (STEP2_FIELDS.includes(fieldName) || isJobTypeField(box) || isWorkingHoursField(box)) return 2;
+            if (
+                STEP2_FIELDS.includes(fieldName) ||
+                isJobTypeField(box) ||
+                isWorkingHoursField(box) ||
+                isAvailabilityField(box)
+            ) {
+                return 2;
+            }
             if (isWorkHistoryBox(box)) return 4;
             return 3;
         }
@@ -1594,7 +1901,6 @@
             }
         }
 
-        /* 仕事① -> (会社②あり？) -> 仕事② -> (会社③あり？) -> 仕事③ ... の段階表示を制御 */
         function updateWorkHistoryFlow() {
             hideRetirementOtherFields();
             const groups = getCompanyGroups();
@@ -1606,7 +1912,6 @@
             const q1Sel = document.getElementById("id_has_work_history");
             const hasAnyWork = q1Sel ? (q1Sel.value || "").trim() : "";
 
-            // 会社①の表示制御
             const firstCompanyBoxes = groups[0][1];
             const showFirstCompany = hasAnyWork === "yes";
             firstCompanyBoxes.forEach((box) => {
@@ -1616,7 +1921,6 @@
                 }
             });
 
-            // 会社②以降を順番に判定
             let prevAnsweredYes = showFirstCompany;
 
             for (let i = 1; i < groups.length; i++) {
@@ -1798,7 +2102,6 @@
             updateFieldFillHighlight(sel);
         }
 
-        /* 仕事①の前、仕事②のあと、仕事③のあと…に「まだありますか？（はい／いいえ）」を配置 */
         function ensureWorkHistoryQuestions() {
             hideRetirementOtherFields();
             const groups = getCompanyGroups();
@@ -1838,7 +2141,6 @@
                 groups[0][1][0].insertAdjacentElement("beforebegin", q1Box);
             }
 
-            // 仕事②以降（index >= 1）の各グループの直前に「まだありますか？（はい／いいえ）」を配置
             for (let i = 1; i < groups.length; i++) {
                 const [companyNum, boxes] = groups[i];
                 const prevCompanyNum = companyNum - 1;
@@ -2279,9 +2581,13 @@
             allBoxes.forEach((box) => {
                 const fieldName = box.dataset.field || "";
                 if (STEP1_FIELDS.includes(fieldName) || STEP2_FIELDS.includes(fieldName)) return;
-                if (isJobTypeField(box) || isWorkingHoursField(box)) step2ExtraBoxes.push(box);
-                else if (isWorkHistoryBox(box)) step4Boxes.push(box);
-                else step3Boxes.push(box);
+                if (isJobTypeField(box) || isWorkingHoursField(box) || isAvailabilityField(box)) {
+                    step2ExtraBoxes.push(box);
+                } else if (isWorkHistoryBox(box)) {
+                    step4Boxes.push(box);
+                } else {
+                    step3Boxes.push(box);
+                }
             });
 
             STEP1_FIELDS.forEach((fieldName) => {
@@ -2363,11 +2669,17 @@
                         } else {
                             visaInput.value = "";
                         }
+                        if (visaBox.dataset.mcInitialized === "true") {
+                            visaBox.dataset.selectedList = "[]";
+                        }
                         updateFieldFillHighlight(visaInput);
                     }
                 }
             } else {
                 visaBox.classList.remove("hidden");
+                if (visaBox.dataset.mcInitialized === "true") {
+                    refreshModernChoiceBox(visaBox, localStorage.getItem("skillsheet_lang") || "ja");
+                }
             }
         }
 
@@ -2407,7 +2719,7 @@
                 return "";
             }
 
-            if (/^(h|S|M|L|LL|XL|2L|3L|4L|5L|%)$/i.test(trimmedRaw)) {
+            if (/^(h|S|M|L|LL|XL|XXL|2L|3L|4L|5L|%)$/i.test(trimmedRaw)) {
                 return trimmedRaw;
             }
 
@@ -2477,6 +2789,21 @@
             const shoeHint = document.getElementById("shoe-size-hint");
             if (shoeHint) shoeHint.textContent = t.shoeHint;
 
+            const jacketLbl = document.getElementById("jacket_size-label");
+            if (jacketLbl) jacketLbl.textContent = t.jacketSizeLabel;
+
+            const pantsLbl = document.getElementById("pants_size-label");
+            if (pantsLbl) pantsLbl.textContent = t.pantsSizeLabel;
+
+            const otherLbl = document.getElementById("other_notes-label");
+            if (otherLbl) otherLbl.textContent = t.otherNotesLabel;
+
+            const otherInp = document.getElementById("id_other_notes");
+            if (otherInp) otherInp.placeholder = t.otherNotesPlaceholder;
+
+            const otherHint = document.getElementById("other_notes-hint");
+            if (otherHint) otherHint.textContent = t.otherNotesHint;
+
             const q1Lbl = document.getElementById("has-work-history-label");
             if (q1Lbl) q1Lbl.textContent = t.hasWorkHistoryLabel;
 
@@ -2519,7 +2846,9 @@
             });
 
             document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
-                if (opt.dataset.orig !== undefined) {
+                if (opt.dataset && opt.dataset[safeLang]) {
+                    opt.textContent = opt.dataset[safeLang];
+                } else if (opt.dataset.orig !== undefined) {
                     opt.textContent = pickLangPart(opt.dataset.orig, safeLang, false);
                 }
             });
@@ -2730,11 +3059,13 @@
             hideRetirementOtherFields();
             ensureStreetAddressField();
             ensureWorkingHoursField();
+            ensureAvailabilityFields();
+            ensureShoeSizeSelect();
+            ensureClothingAndOtherFields();
             reorderFields();
             snapshotOriginalTexts();
             hideRetirementOtherFields();
             ensureWorkHistoryQuestions();
-            ensureShoeSizeSelect();
             hideCommuteOtherField();
             initFieldFillHighlight();
             initAllModernChoiceFields();
