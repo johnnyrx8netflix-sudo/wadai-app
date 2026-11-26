@@ -494,9 +494,7 @@
             font-weight: 700;
         }
         .err-text {
-            color: #b91c1c;
-            font-size: 0.85rem;
-            margin-top: 4px;
+            display: none !important;
         }
         .hidden {
             display: none !important;
@@ -564,7 +562,7 @@
 </head>
 <body>
     <div class="wrap">
-        <div id="lang-screen" class="lang-screen {% if submitted or form.errors %}hidden{% endif %}">
+        <div id="lang-screen" class="lang-screen {% if submitted %}hidden{% endif %}">
             <div class="brand-header center">
                 <img src="/static/hr/img/wadai-logo.png" alt="和大サポート ロゴ" class="brand-logo lg">
                 <h1>和大サポート - Wadai Support</h1>
@@ -577,7 +575,7 @@
             </div>
         </div>
 
-        <div id="form-screen" class="{% if not submitted and not form.errors %}hidden{% endif %}">
+        <div id="form-screen" class="{% if not submitted %}hidden{% endif %}">
             <div class="top-bar">
                 <div class="brand-header">
                     <img src="/static/hr/img/wadai-logo.png" alt="和大サポート ロゴ" class="brand-logo">
@@ -589,12 +587,6 @@
             {% if submitted %}
                 <div id="done-notice" class="notice">
                     登録が完了しました。ご入力ありがとうございます。
-                </div>
-            {% endif %}
-
-            {% if form.non_field_errors %}
-                <div class="notice" style="background:#fef2f2;border-color:#dc2626;color:#991b1b;">
-                    {{ form.non_field_errors }}
                 </div>
             {% endif %}
 
@@ -630,9 +622,6 @@
                             <div id="postal-hint" class="hint"></div>
                         {% elif field.name == "address" %}
                             <div id="address-hint" class="hint"></div>
-                        {% endif %}
-                        {% if field.errors %}
-                            <div class="err-text">{{ field.errors }}</div>
                         {% endif %}
                     </div>
                 {% endfor %}
@@ -691,8 +680,8 @@
 
         const PHRASE_MAP = [
             { keys: ["性別"], pt: "Sexo / Gênero", en: "Gender" },
-            { keys: ["男性", "男"], pt: "Masculino", en: "Male" },
-            { keys: ["女性", "女"], pt: "Feminino", en: "Female" },
+            { keys: ["男性"], pt: "Masculino", en: "Male" },
+            { keys: ["女性"], pt: "Feminino", en: "Female" },
             { keys: ["既婚", "結婚している"], pt: "Casado", en: "Married" },
             { keys: ["未婚", "独身"], pt: "Solteiro", en: "Single" },
             { keys: ["婚姻", "配偶者"], pt: "Estado civil", en: "Marital status" },
@@ -717,10 +706,10 @@
             { keys: ["技術・人文知識・国際業務"], pt: "Engenharia / Humanidades / Int'l", en: "Engineer / Specialist in Humanities" },
             { keys: ["特定技能"], pt: "Habilidade específica", en: "Specified skilled worker" },
             { keys: ["運転免許", "免許"], pt: "Carteira de motorista", en: "Driver's license" },
-            { keys: ["普通免許", "あり", "有"], pt: "Sim", en: "Yes" },
-            { keys: ["なし", "無", "持ってない", "持っていない"], pt: "Não", en: "No" },
+            { keys: ["普通免許", "あり"], pt: "Sim", en: "Yes" },
+            { keys: ["なし", "持ってない", "持っていない"], pt: "Não", en: "No" },
             { keys: ["通勤方法", "通勤"], pt: "Meio de transporte", en: "Commute method" },
-            { keys: ["自家用車", "車", "マイカー"], pt: "Carro próprio", en: "Private car" },
+            { keys: ["自家用車", "マイカー"], pt: "Carro próprio", en: "Private car" },
             { keys: ["自転車"], pt: "Bicicleta", en: "Bicycle" },
             { keys: ["バイク", "原付"], pt: "Moto / Motocicleta", en: "Motorcycle" },
             { keys: ["徒歩"], pt: "A pé", en: "On foot" },
@@ -769,6 +758,29 @@
             if (!trimmed || /^-+$/.test(trimmed)) return "";
             if (preserveName || lang === "ja") return trimmed;
 
+            const lower = trimmed.toLowerCase();
+            if (lower === "yes" || trimmed === "はい" || trimmed === "あり" || trimmed === "有") {
+                return lang === "pt" ? "Sim" : "Yes";
+            }
+            if (lower === "no" || trimmed === "いいえ" || trimmed === "なし" || trimmed === "無") {
+                return lang === "pt" ? "Não" : "No";
+            }
+            if (lower === "single" || trimmed === "未婚" || trimmed === "独身") {
+                return lang === "pt" ? "Solteiro" : "Single";
+            }
+            if (lower === "married" || trimmed === "既婚") {
+                return lang === "pt" ? "Casado" : "Married";
+            }
+            if (lower === "male" || trimmed === "男" || trimmed === "男性") {
+                return lang === "pt" ? "Masculino" : "Male";
+            }
+            if (lower === "female" || trimmed === "女" || trimmed === "女性") {
+                return lang === "pt" ? "Feminino" : "Female";
+            }
+            if (trimmed === "車") {
+                return lang === "pt" ? "Carro próprio" : "Private car";
+            }
+
             const parenMatch = trimmed.match(/[（(]([^）)]+)[）)]/);
             if (parenMatch) {
                 const inside = parenMatch[1];
@@ -776,7 +788,7 @@
                     const pParts = inside.split("/").map((s) => s.trim());
                     if (lang === "pt" && pParts[0]) return pParts[0];
                     if (lang === "en" && pParts[1]) return pParts[1];
-                } else if (!hasJapaneseChars(inside)) {
+                } else if (!hasJapaneseChars(inside) && inside.length > 1) {
                     return inside;
                 }
             }
@@ -1175,17 +1187,29 @@
         function clearValidationErrorsInContainer(container) {
             if (!container) return;
             container.querySelectorAll(".field.req-error").forEach((b) => b.classList.remove("req-error"));
-            container.querySelectorAll(".req-alert-msg").forEach((m) => m.remove());
+            container.querySelectorAll(".req-alert-msg, .err-text").forEach((m) => m.remove());
+        }
+
+        function removeAllRequiredAttributesAndErrors() {
+            document.querySelectorAll("#skillsheet-form [required]").forEach((el) => {
+                el.removeAttribute("required");
+                el.required = false;
+            });
+            document.querySelectorAll("#skillsheet-form .err-text, #skillsheet-form .req-alert-msg, #skillsheet-form .req-badge").forEach((el) => {
+                el.remove();
+            });
+            document.querySelectorAll("#skillsheet-form .field.req-error").forEach((el) => {
+                el.classList.remove("req-error");
+            });
         }
 
         function validateStep(stepNum, scrollToFirstError = true) {
-            document.querySelectorAll("#skillsheet-form .field.req-error").forEach((b) => b.classList.remove("req-error"));
-            document.querySelectorAll("#skillsheet-form .req-alert-msg").forEach((m) => m.remove());
+            removeAllRequiredAttributesAndErrors();
             return true;
         }
 
         function updateRequiredBadges(lang) {
-            document.querySelectorAll("#skillsheet-form .req-badge").forEach((b) => b.remove());
+            removeAllRequiredAttributesAndErrors();
         }
 
         function getChoiceKind(box) {
@@ -1250,25 +1274,25 @@
             const t = uiTexts[safeLang] || uiTexts.ja;
             const kind = box.dataset.choiceKind || "default";
             const origLabel = box.querySelector("label");
+            const fn = (box.dataset.field || "").toLowerCase();
+            const rawOrig = (origLabel && origLabel.dataset.orig) ? origLabel.dataset.orig : (origLabel ? origLabel.textContent : "");
 
-            if (box.id === "has-work-history-box") return t.hasWorkHistoryLabel;
+            if (box.id === "has-work-history-box" || fn === "has_work_history_question") return t.hasWorkHistoryLabel;
             if (box.id === "more-work-history-box-after-2") return t.moreWorkHistoryLabelAfter2;
             if (box.id && box.id.startsWith("more-work-history-box-after-")) return t.moreWorkHistoryLabelAfterN;
-            if (box.id === "street-address-box") return t.streetLabel;
-            if (box.id === "working-hours-box") return t.workingHoursLabel;
-            if (box.id === "early_start-box" || (box.dataset.field || "").toLowerCase() === "early_start") return t.earlyStartLabel;
-            if (box.id === "holiday_work-box" || (box.dataset.field || "").toLowerCase() === "holiday_work") return t.holidayWorkLabel;
+            if (box.id === "street-address-box" || fn === "street_address") return t.streetLabel;
+            if (box.id === "working-hours-box" || fn === "preferred_working_hours") return t.workingHoursLabel;
+            if (box.id === "early_start-box" || fn === "early_start" || rawOrig.includes("早出")) return t.earlyStartLabel;
+            if (box.id === "holiday_work-box" || fn === "holiday_work" || rawOrig.includes("休日出勤")) return t.holidayWorkLabel;
             if (kind === "listen") return t.jpListenTitle;
             if (kind === "speak") return t.jpSpeakTitle;
             if (kind === "level") return t.jpLevelTitle;
             if (isOvertimeField(box)) return t.overtimeLabel;
 
-            const rawOrig = (origLabel && origLabel.dataset.orig) ? origLabel.dataset.orig : (origLabel ? origLabel.textContent : "");
             if (rawOrig && rawOrig.trim()) {
                 return pickLangPart(rawOrig, safeLang, true, isNameLabelOrBox(origLabel));
             }
 
-            const fn = (box.dataset.field || "").toLowerCase();
             if (fn === "gender") return pickLangPart("性別", safeLang, true, false);
             if (fn === "marital_status") return pickLangPart("婚姻状況", safeLang, true, false);
             return "";
@@ -1945,6 +1969,7 @@
                     box.dataset.permanentlyHidden = "true";
                     box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
                         if (ctrl.type === "hidden") return;
+                        ctrl.removeAttribute("required");
                         ctrl.required = false;
                         if (ctrl.tagName === "SELECT") {
                             ctrl.selectedIndex = 0;
@@ -2050,6 +2075,7 @@
         function clearBoxValues(box) {
             box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
                 if (ctrl.type === "hidden" && !ctrl.classList.contains("multi-choice-hidden")) return;
+                ctrl.removeAttribute("required");
                 ctrl.required = false;
                 if (ctrl.tagName === "SELECT") {
                     Array.from(ctrl.options).forEach((o) => { o.selected = false; });
@@ -2125,6 +2151,7 @@
 
         function applyStepVisibility() {
             hideRetirementOtherFields();
+            removeAllRequiredAttributesAndErrors();
 
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
                 if (box.dataset.permanentlyHidden === "true" || isRemovedExtraNotesField(box)) {
@@ -2147,11 +2174,6 @@
                     box.classList.remove("hidden");
                 } else {
                     box.classList.add("hidden");
-                    box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
-                        if (ctrl.type !== "hidden") {
-                            ctrl.required = false;
-                        }
-                    });
                 }
             });
 
@@ -2470,6 +2492,7 @@
 
                     if (origControl) {
                         origControl.classList.add("hidden");
+                        origControl.removeAttribute("required");
                         origControl.required = false;
                         origControl.insertAdjacentElement("afterend", sel);
                     } else {
@@ -2535,6 +2558,7 @@
                     box.classList.add("hidden");
                     box.dataset.permanentlyHidden = "true";
                     box.querySelectorAll("input, select, textarea").forEach((inp) => {
+                        inp.removeAttribute("required");
                         inp.required = false;
                         inp.value = "";
                     });
@@ -2842,6 +2866,7 @@
             if (!hasValue || isJapanese) {
                 visaBox.classList.add("hidden");
                 if (visaInput) {
+                    visaInput.removeAttribute("required");
                     visaInput.required = false;
                     if (isJapanese) {
                         if (visaInput.tagName === "SELECT") {
@@ -2960,6 +2985,7 @@
             const t = uiTexts[safeLang];
 
             deduplicateFieldLabels();
+            removeAllRequiredAttributesAndErrors();
 
             document.getElementById("form-title").textContent = t.title;
             document.getElementById("lang-switch-btn").textContent = t.switchLang;
@@ -3043,7 +3069,9 @@
 
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
                 const parentBox = lbl.closest ? lbl.closest(".field[data-field]") : null;
-                if (parentBox && parentBox.dataset.mcInitialized === "true") {
+                if (parentBox && parentBox.id === "street-address-box") {
+                    lbl.textContent = t.streetLabel;
+                } else if (parentBox && parentBox.dataset.mcInitialized === "true") {
                     lbl.textContent = resolveBoxTitleText(parentBox, safeLang);
                 } else if (lbl.dataset.orig) {
                     const keepName = isNameLabelOrBox(lbl);
@@ -3061,10 +3089,6 @@
                 } else if (ctrl.dataset.origPlaceholder) {
                     ctrl.placeholder = pickLangPart(ctrl.dataset.origPlaceholder, safeLang, false, isNameLabelOrBox(ctrl));
                 }
-            });
-
-            document.querySelectorAll("#skillsheet-form .req-alert-msg").forEach((msgEl) => {
-                msgEl.textContent = t.requiredAlert;
             });
 
             document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
@@ -3272,6 +3296,7 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            removeAllRequiredAttributesAndErrors();
             deduplicateFieldLabels();
             hideRetirementOtherFields();
             ensureStreetAddressField();
@@ -3342,6 +3367,7 @@
             const formEl = document.getElementById("skillsheet-form");
             if (formEl) {
                 formEl.addEventListener("submit", (e) => {
+                    removeAllRequiredAttributesAndErrors();
                     syncCombinedAddress();
                     syncPreferredShiftFromSelect();
                     syncShoeSizeFromSelect();
