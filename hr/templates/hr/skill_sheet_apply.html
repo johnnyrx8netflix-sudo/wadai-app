@@ -723,7 +723,6 @@
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
         ];
 
-        /* よく出る日本語表記・選択肢の多言語辞書 */
         const PHRASE_MAP = [
             { keys: ["氏名", "名前", "フルネーム"], pt: "Nome completo", en: "Full name" },
             { keys: ["性別"], pt: "Sexo / Gênero", en: "Gender" },
@@ -1141,6 +1140,21 @@
             return combined.includes("overtime") || combined.includes("zangyo") || combined.includes("残業");
         }
 
+        function isHolidayWorkField(box) {
+            if (!box) return false;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            const titleText = (box.querySelector(".mc-title") ? box.querySelector(".mc-title").textContent : "").toLowerCase();
+            const combined = `${fieldName} ${rawLbl} ${titleText}`;
+            return (
+                combined.includes("holiday_work") ||
+                combined.includes("kyujitsu") ||
+                combined.includes("休日出勤") ||
+                combined.includes("holiday work")
+            );
+        }
+
         function isAvailabilityField(box) {
             if (!box) return false;
             const fieldName = (box.dataset.field || "").toLowerCase();
@@ -1291,6 +1305,7 @@
             if (
                 fieldName.includes("birth") ||
                 rawLbl.includes("生年月日") ||
+                isHolidayWorkField(box) ||
                 fieldName.includes("holiday") ||
                 rawLbl.includes("休日")
             ) {
@@ -1383,32 +1398,41 @@
             }
         }
 
-        /* モダン選択式UIではない一般入力・セレクト欄にもアイコンを付ける */
+        /* 重複アイコンが出ないよう、余分な std-field-header は常に整理し、非モダン欄のみ1つ付ける */
         function ensureStandardFieldIcons() {
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (box.dataset.permanentlyHidden === "true" || box.dataset.mcInitialized === "true") return;
+                // 既存の std-field-header を一旦すべて掃除（重複防止の決め手）
+                box.querySelectorAll(":scope > .std-field-header").forEach((oldHeader) => {
+                    const innerLbl = oldHeader.querySelector("label");
+                    if (innerLbl) {
+                        oldHeader.parentNode.insertBefore(innerLbl, oldHeader);
+                    }
+                    oldHeader.remove();
+                });
+
+                // モダン選択カード（.mc-header あり）の場合は、mc-header のアイコンを1つだけ使う
+                if (box.dataset.mcInitialized === "true" || box.querySelector(":scope > .mc-header")) {
+                    const mcBadge = box.querySelector(":scope > .mc-header .mc-icon-badge");
+                    if (mcBadge) {
+                        mcBadge.innerHTML = buildIconSvg(getChoiceKind(box));
+                    }
+                    return;
+                }
+
+                if (box.dataset.permanentlyHidden === "true") return;
                 const lbl = box.querySelector(":scope > label");
                 if (!lbl || lbl.classList.contains("hidden")) return;
 
-                const kind = getChoiceKind(box);
-                let header = box.querySelector(":scope > .std-field-header");
-                if (!header) {
-                    header = document.createElement("div");
-                    header.className = "std-field-header";
+                const header = document.createElement("div");
+                header.className = "std-field-header";
 
-                    const badge = document.createElement("span");
-                    badge.className = "mc-icon-badge";
-                    badge.innerHTML = buildIconSvg(kind);
+                const badge = document.createElement("span");
+                badge.className = "mc-icon-badge";
+                badge.innerHTML = buildIconSvg(getChoiceKind(box));
 
-                    lbl.parentNode.insertBefore(header, lbl);
-                    header.appendChild(badge);
-                    header.appendChild(lbl);
-                } else {
-                    const badge = header.querySelector(".mc-icon-badge");
-                    if (badge) {
-                        badge.innerHTML = buildIconSvg(kind);
-                    }
-                }
+                lbl.parentNode.insertBefore(header, lbl);
+                header.appendChild(badge);
+                header.appendChild(lbl);
             });
         }
 
@@ -1564,11 +1588,13 @@
                 else if (kind === "speak") titleEl.textContent = t.jpSpeakTitle;
                 else if (kind === "level") titleEl.textContent = t.jpLevelTitle;
                 else if (isOvertimeField(box)) titleEl.textContent = t.overtimeLabel;
+                else if (isHolidayWorkField(box)) titleEl.textContent = t.holidayWorkLabel;
                 else if (origLabel) titleEl.textContent = origLabel.textContent;
             }
 
             if (multiBadgeEl) {
                 multiBadgeEl.textContent = t.multiBadge;
+                multiBadgeEl.classList.toggle("hidden", !isMulti);
             }
 
             if (descEl) {
@@ -1621,8 +1647,12 @@
                     row.querySelectorAll(".mc-pill-btn").forEach((btn) => {
                         const opt = Array.from(sel.options).find((o) => o.value === btn.dataset.value);
                         const textSpan = btn.querySelector(".mc-btn-text");
+                        const checkSpan = btn.querySelector(".mc-check-mark");
                         if (opt && textSpan) {
                             textSpan.textContent = opt.textContent;
+                        }
+                        if (checkSpan) {
+                            checkSpan.classList.toggle("hidden", !isMulti);
                         }
                         const selected = selectedVals.includes(btn.dataset.value);
                         btn.classList.toggle("is-selected", selected);
@@ -1641,17 +1671,25 @@
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
                 const sel = box.querySelector("select");
                 if (!sel || !shouldConvertFieldToModernChoice(box, sel)) return;
+
+                // 早出・残業・休日出勤は単一選択
+                const isSingleOnlyAvailability = isAvailabilityField(box);
+                const isMulti = !isSingleOnlyAvailability && (isJobTypeField(box) || isWorkingHoursField(box) || sel.multiple);
+
                 if (box.dataset.mcInitialized === "true") {
+                    box.dataset.isMulti = isMulti ? "true" : "false";
                     refreshModernChoiceBox(box, lang);
                     return;
                 }
 
                 const kind = getChoiceKind(box);
-                const isMulti = isJobTypeField(box) || isWorkingHoursField(box) || sel.multiple;
                 box.dataset.mcInitialized = "true";
                 box.dataset.choiceKind = kind;
                 box.dataset.isMulti = isMulti ? "true" : "false";
                 box.classList.add("modern-choice-box");
+
+                // 既存の重複ヘッダがあれば除去
+                box.querySelectorAll(":scope > .std-field-header, :scope > .mc-header, :scope > .mc-desc, :scope > .mc-ui-wrap").forEach((el) => el.remove());
 
                 const initialVals = Array.from(sel.selectedOptions)
                     .map((o) => o.value)
@@ -1675,7 +1713,9 @@
 
                 const title = document.createElement("div");
                 title.className = "mc-title";
-                title.textContent = isOvertimeField(box) ? t.overtimeLabel : (origLabel ? origLabel.textContent : "");
+                if (isOvertimeField(box)) title.textContent = t.overtimeLabel;
+                else if (isHolidayWorkField(box)) title.textContent = t.holidayWorkLabel;
+                else title.textContent = origLabel ? origLabel.textContent : "";
                 titleWrap.appendChild(title);
 
                 if (isMulti) {
@@ -1769,7 +1809,7 @@
 
                         btn.addEventListener("click", () => {
                             const current = getSelectedValuesForBox(box);
-                            if (isMulti) {
+                            if (box.dataset.isMulti === "true") {
                                 const exists = current.includes(opt.value);
                                 const next = exists
                                     ? current.filter((v) => v !== opt.value)
