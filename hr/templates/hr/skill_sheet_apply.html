@@ -195,21 +195,12 @@
             max-width: 100%;
             overflow: hidden;
         }
-        .std-field-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-        .std-field-header > label {
-            margin-bottom: 0 !important;
-        }
         label {
             display: block;
             font-weight: 700;
             color: #1f2937;
             margin-bottom: 6px;
-            font-size: 0.95rem;
+            font-size: 0.98rem;
         }
         input, select, textarea {
             display: block;
@@ -272,7 +263,7 @@
             cursor: not-allowed;
         }
 
-        /* 統一されたモダン選択式UI */
+        /* 選択式UI（アイコンなし・タイトル表示維持） */
         .field.modern-choice-box {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -284,28 +275,8 @@
         .mc-header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             margin-bottom: 6px;
-        }
-        .mc-icon-badge {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            background: #eff6ff;
-            color: #3b82f6;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .mc-icon-badge svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
         }
         .mc-title-wrap {
             display: flex;
@@ -331,14 +302,13 @@
         .mc-desc {
             font-size: 0.86rem;
             color: #64748b;
-            margin: 0 0 14px 46px;
+            margin: 0 0 14px 0;
             line-height: 1.45;
         }
         .mc-pill-row {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            margin-left: 46px;
         }
         .mc-pill-btn {
             min-width: 84px;
@@ -568,10 +538,6 @@
                 padding: 10px 10px;
                 font-size: 0.95rem;
                 line-height: 1.4;
-            }
-            .mc-desc,
-            .mc-pill-row {
-                margin-left: 0;
             }
             .mc-pill-btn {
                 flex: 1 1 calc(50% - 6px);
@@ -1214,29 +1180,13 @@
             return fn.includes("visa") || fn.includes("zairyu") || txt.includes("ビザ") || txt.includes("在留");
         }
 
-        function isExemptFromRequired(box) {
-            return true;
-        }
-
-        function isBoxValueMissing(box) {
-            return false;
-        }
-
         function clearValidationErrorsInContainer(container) {
             if (!container) return;
             container.querySelectorAll(".field.req-error").forEach((b) => b.classList.remove("req-error"));
             container.querySelectorAll(".req-alert-msg").forEach((m) => m.remove());
         }
 
-        function showValidationErrorForBox(box, lang) {}
-
         function validateStep(stepNum, scrollToFirstError = true) {
-            document.querySelectorAll("#skillsheet-form .field.req-error").forEach((b) => b.classList.remove("req-error"));
-            document.querySelectorAll("#skillsheet-form .req-alert-msg").forEach((m) => m.remove());
-            return true;
-        }
-
-        function validateAllStepsForSubmit() {
             document.querySelectorAll("#skillsheet-form .field.req-error").forEach((b) => b.classList.remove("req-error"));
             document.querySelectorAll("#skillsheet-form .req-alert-msg").forEach((m) => m.remove());
             return true;
@@ -1284,165 +1234,36 @@
             ) {
                 return "level";
             }
-            if (
-                fieldName.includes("full_name") ||
-                fieldName === "name" ||
-                rawLbl.includes("氏名") ||
-                rawLbl.includes("名前")
-            ) {
-                return "person";
-            }
-            if (fieldName.includes("gender") || rawLbl.includes("性別")) {
-                return "gender";
-            }
-            if (fieldName.includes("marital") || rawLbl.includes("婚姻") || rawLbl.includes("配偶者")) {
-                return "marital";
-            }
-            if (
-                fieldName.includes("birth") ||
-                rawLbl.includes("生年月日") ||
-                fieldName.includes("holiday") ||
-                rawLbl.includes("休日")
-            ) {
-                return "calendar";
-            }
-            if (fieldName === "age" || fieldName.endsWith("_age") || rawLbl.includes("年齢")) {
-                return "age";
-            }
-            if (
-                fieldName.includes("phone") ||
-                fieldName.includes("tel") ||
-                fieldName.includes("mobile") ||
-                rawLbl.includes("電話") ||
-                rawLbl.includes("携帯")
-            ) {
-                return "phone";
-            }
-            if (
-                fieldName.includes("postal") ||
-                fieldName.includes("zip") ||
-                rawLbl.includes("郵便番号") ||
-                fieldName.includes("address") ||
-                rawLbl.includes("住所") ||
-                fieldName.includes("street") ||
-                rawLbl.includes("番地") ||
-                rawLbl.includes("建物")
-            ) {
-                return "location";
-            }
-            if (fieldName.includes("nationality") || rawLbl.includes("国籍") || combined.includes("nationality") || combined.includes("nacionalidade")) {
-                return "nationality";
-            }
-            if (fieldName.includes("visa") || rawLbl.includes("ビザ") || combined.includes("visa") || combined.includes("visto")) {
-                return "visa";
-            }
-            if (fieldName.includes("license") || rawLbl.includes("免許")) {
-                return "license";
-            }
-            if (fieldName.includes("commute") || rawLbl.includes("通勤")) {
-                return "commute";
-            }
-            if (isWorkingHoursField(box) || isAvailabilityField(box)) {
-                return "shift";
-            }
-            if (isClothingSizeField(box) || fieldName.includes("shoe") || rawLbl.includes("靴")) {
-                return "clothing";
-            }
-            if (isJobTypeField(box) || isWorkHistoryBox(box) || fieldName.includes("work_history") || rawLbl.includes("職歴")) {
-                return "job";
-            }
             return "default";
         }
 
-        function buildIconSvg(kind) {
-            switch (kind) {
-                case "listen":
-                    return `<svg viewBox="0 0 24 24"><path d="M16 8a5 5 0 0 0-8 4v1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v1a2 2 0 0 0 4 0v-6a5 5 0 0 0-1-3z"/><path d="M19 6a8 8 0 0 0-14 5"/></svg>`;
-                case "speak":
-                    return `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
-                case "level":
-                    return `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
-                case "nationality":
-                case "visa":
-                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
-                case "person":
-                case "gender":
-                case "marital":
-                    return `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-                case "calendar":
-                    return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
-                case "age":
-                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
-                case "phone":
-                    return `<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
-                case "location":
-                    return `<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
-                case "license":
-                    return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="14" x2="13" y2="14"/></svg>`;
-                case "commute":
-                    return `<svg viewBox="0 0 24 24"><path d="M5 17h14v-5l-2-5H7L5 12v5z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg>`;
-                case "shift":
-                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>`;
-                case "clothing":
-                    return `<svg viewBox="0 0 24 24"><path d="M6 2l6 4 6-4 4 5-3 3v12H5V10L2 7l4-5z"/></svg>`;
-                case "job":
-                case "history":
-                    return `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`;
-                default:
-                    return `<svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
-            }
+        /* 追加されたアイコン要素はすべて削除する */
+        function removeAllAddedIcons() {
+            document.querySelectorAll("#skillsheet-form .mc-icon-badge, #skillsheet-form .std-field-header").forEach((el) => {
+                el.remove();
+            });
         }
 
-        /* アイコンが2重にならないよう、各ボックス内の .mc-icon-badge は常に1つだけに整理する */
-        function normalizeFieldIcons() {
-            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (box.dataset.permanentlyHidden === "true") return;
+        function resolveBoxTitleText(box, lang) {
+            const safeLang = uiTexts[lang] ? lang : "ja";
+            const t = uiTexts[safeLang] || uiTexts.ja;
+            const kind = box.dataset.choiceKind || "default";
+            const origLabel = box.querySelector("label");
 
-                const kind = getChoiceKind(box);
-                const svgHtml = buildIconSvg(kind);
+            if (kind === "listen") return t.jpListenTitle;
+            if (kind === "speak") return t.jpSpeakTitle;
+            if (kind === "level") return t.jpLevelTitle;
+            if (isOvertimeField(box)) return t.overtimeLabel;
 
-                if (box.dataset.mcInitialized === "true") {
-                    box.querySelectorAll(".std-field-header").forEach((eh) => eh.remove());
-                    const mcHeader = box.querySelector(":scope > .mc-header");
-                    if (mcHeader) {
-                        const badges = Array.from(mcHeader.querySelectorAll(".mc-icon-badge"));
-                        if (badges.length === 0) {
-                            const b = document.createElement("span");
-                            b.className = "mc-icon-badge";
-                            b.innerHTML = svgHtml;
-                            mcHeader.prepend(b);
-                        } else {
-                            badges[0].innerHTML = svgHtml;
-                            badges.slice(1).forEach((extra) => extra.remove());
-                        }
-                    }
-                    return;
-                }
+            const rawOrig = (origLabel && origLabel.dataset.orig) ? origLabel.dataset.orig : (origLabel ? origLabel.textContent : "");
+            if (rawOrig && rawOrig.trim()) {
+                return pickLangPart(rawOrig, safeLang, true, isNameLabelOrBox(origLabel));
+            }
 
-                const lbl = box.querySelector("label");
-                if (!lbl || lbl.classList.contains("hidden")) return;
-
-                let header = box.querySelector(":scope > .std-field-header");
-                if (!header) {
-                    header = document.createElement("div");
-                    header.className = "std-field-header";
-                    lbl.parentNode.insertBefore(header, lbl);
-                    header.appendChild(lbl);
-                }
-
-                Array.from(box.querySelectorAll(":scope > .std-field-header")).slice(1).forEach((eh) => eh.remove());
-
-                const badges = Array.from(header.querySelectorAll(".mc-icon-badge"));
-                if (badges.length === 0) {
-                    const b = document.createElement("span");
-                    b.className = "mc-icon-badge";
-                    b.innerHTML = svgHtml;
-                    header.prepend(b);
-                } else {
-                    badges[0].innerHTML = svgHtml;
-                    badges.slice(1).forEach((extra) => extra.remove());
-                }
-            });
+            const fn = (box.dataset.field || "").toLowerCase();
+            if (fn === "gender") return pickLangPart("性別", safeLang, true, false);
+            if (fn === "marital_status") return pickLangPart("婚姻状況", safeLang, true, false);
+            return "";
         }
 
         function findBestSelectOptionForCard(sel, cardSpec) {
@@ -1595,15 +1416,7 @@
             if (origLabel) origLabel.classList.add("hidden");
 
             if (titleEl) {
-                if (kind === "listen") titleEl.textContent = t.jpListenTitle;
-                else if (kind === "speak") titleEl.textContent = t.jpSpeakTitle;
-                else if (kind === "level") titleEl.textContent = t.jpLevelTitle;
-                else if (isOvertimeField(box)) titleEl.textContent = t.overtimeLabel;
-                else if (origLabel && origLabel.dataset.orig) {
-                    titleEl.textContent = pickLangPart(origLabel.dataset.orig, safeLang, true, isNameLabelOrBox(origLabel));
-                } else if (origLabel) {
-                    titleEl.textContent = origLabel.textContent;
-                }
+                titleEl.textContent = resolveBoxTitleText(box, safeLang);
             }
 
             if (multiBadgeEl) {
@@ -1616,8 +1429,8 @@
                 else if (kind === "level") descEl.textContent = t.jpLevelDesc;
                 else if (isOvertimeField(box)) descEl.textContent = t.overtimeHint;
                 else if (isAvailabilityField(box)) descEl.textContent = t.availabilityHint;
-                else if (kind === "shift") descEl.textContent = t.workingHoursHint;
-                else if (kind === "job" && isWorkHistoryBox(box) && box.dataset.whQuestion === "true") {
+                else if (isWorkingHoursField(box)) descEl.textContent = t.workingHoursHint;
+                else if (isWorkHistoryBox(box) && box.dataset.whQuestion === "true") {
                     if (box.id === "more-work-history-box-after-2") {
                         descEl.textContent = t.moreWorkHistoryHintAfter2;
                     } else if (box.id && box.id.startsWith("more-work-history-box-after-")) {
@@ -1707,16 +1520,12 @@
                 const header = document.createElement("div");
                 header.className = "mc-header";
 
-                const badge = document.createElement("span");
-                badge.className = "mc-icon-badge";
-                badge.innerHTML = buildIconSvg(kind);
-
                 const titleWrap = document.createElement("div");
                 titleWrap.className = "mc-title-wrap";
 
                 const title = document.createElement("div");
                 title.className = "mc-title";
-                title.textContent = isOvertimeField(box) ? t.overtimeLabel : (origLabel ? origLabel.textContent : "");
+                title.textContent = resolveBoxTitleText(box, lang);
                 titleWrap.appendChild(title);
 
                 if (isMulti) {
@@ -1726,7 +1535,6 @@
                     titleWrap.appendChild(mBadge);
                 }
 
-                header.appendChild(badge);
                 header.appendChild(titleWrap);
 
                 const desc = document.createElement("p");
@@ -1990,6 +1798,7 @@
                     lbl.id = `${spec.field}-label`;
                     lbl.setAttribute("for", spec.id);
                     lbl.textContent = t[spec.labelKey];
+                    lbl.dataset.orig = uiTexts.ja[spec.labelKey];
 
                     const sel = document.createElement("select");
                     sel.id = spec.id;
@@ -2011,7 +1820,7 @@
                     }
                 } else {
                     const lbl = box.querySelector("label");
-                    if (lbl) {
+                    if (lbl && !lbl.dataset.orig) {
                         lbl.dataset.orig = uiTexts.ja[spec.labelKey];
                     }
                 }
@@ -2047,6 +1856,7 @@
                     lbl.id = `${spec.field}-label`;
                     lbl.setAttribute("for", spec.id);
                     lbl.textContent = t[spec.labelKey];
+                    lbl.dataset.orig = uiTexts.ja[spec.labelKey];
 
                     const sel = document.createElement("select");
                     sel.id = spec.id;
@@ -2338,7 +2148,7 @@
 
             updateVisaVisibility();
             hideCommuteOtherField();
-            normalizeFieldIcons();
+            removeAllAddedIcons();
             updateRequiredBadges(localStorage.getItem("skillsheet_lang") || "ja");
             updateStepperUI();
         }
@@ -2472,6 +2282,7 @@
                 lbl1.id = "has-work-history-label";
                 lbl1.setAttribute("for", "id_has_work_history");
                 lbl1.textContent = t.hasWorkHistoryLabel;
+                lbl1.dataset.orig = uiTexts.ja.hasWorkHistoryLabel;
 
                 const sel1 = buildYesNoSelect("id_has_work_history", "has_work_history_question", savedLang);
                 sel1.addEventListener("change", () => {
@@ -2508,7 +2319,9 @@
                     const lbl = document.createElement("label");
                     lbl.id = `more-work-history-label-after-${prevCompanyNum}`;
                     lbl.setAttribute("for", selId);
-                    lbl.textContent = prevCompanyNum === 2 ? t.moreWorkHistoryLabelAfter2 : t.moreWorkHistoryLabelAfterN;
+                    const labelStr = prevCompanyNum === 2 ? t.moreWorkHistoryLabelAfter2 : t.moreWorkHistoryLabelAfterN;
+                    lbl.textContent = labelStr;
+                    lbl.dataset.orig = prevCompanyNum === 2 ? uiTexts.ja.moreWorkHistoryLabelAfter2 : uiTexts.ja.moreWorkHistoryLabelAfterN;
 
                     const sel = buildYesNoSelect(selId, `more_work_history_after_${prevCompanyNum}`, savedLang);
                     sel.addEventListener("change", () => {
@@ -2672,6 +2485,7 @@
                     lbl.id = "shoe-size-label";
                     lbl.setAttribute("for", "id_shoe_size_select");
                     lbl.textContent = t.shoeLabel;
+                    lbl.dataset.orig = uiTexts.ja.shoeLabel;
 
                     sel = buildShoeSelectElement("");
 
@@ -2782,6 +2596,7 @@
                 lbl.id = "street-address-label";
                 lbl.setAttribute("for", "id_street_address");
                 lbl.textContent = uiTexts.ja.streetLabel;
+                lbl.dataset.orig = uiTexts.ja.streetLabel;
 
                 const inp = document.createElement("input");
                 inp.type = "text";
@@ -2862,6 +2677,7 @@
             lbl.id = "working-hours-label";
             lbl.setAttribute("for", "id_preferred_working_hours");
             lbl.textContent = uiTexts.ja.workingHoursLabel;
+            lbl.dataset.orig = uiTexts.ja.workingHoursLabel;
 
             const sel = document.createElement("select");
             sel.id = "id_preferred_working_hours";
@@ -3097,7 +2913,7 @@
                 const labels = Array.from(box.querySelectorAll("label"));
                 if (labels.length <= 1) return;
 
-                const primary = labels.find((l) => l.closest(".std-field-header")) || labels[0];
+                const primary = labels[0];
                 const primaryNorm = stripLeadingNumber((primary.dataset.orig || primary.textContent || "").trim());
 
                 labels.forEach((lbl) => {
@@ -3248,7 +3064,7 @@
             });
 
             refreshAllModernChoiceFields(safeLang);
-            normalizeFieldIcons();
+            removeAllAddedIcons();
             updateRequiredBadges(safeLang);
             updateStepperUI();
             updateVisaVisibility();
@@ -3463,7 +3279,7 @@
             hideCommuteOtherField();
             initFieldFillHighlight();
             initAllModernChoiceFields();
-            normalizeFieldIcons();
+            removeAllAddedIcons();
             lockAgeField();
             configureNumericInputs();
 
