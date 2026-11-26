@@ -186,14 +186,15 @@
         }
         .field {
             margin-bottom: 16px;
-            padding: 14px;
-            background: #fafafa;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
+            padding: 16px 18px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
             box-sizing: border-box;
             min-width: 0;
             max-width: 100%;
             overflow: hidden;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
         }
         .field.req-error {
             border-color: #dc2626 !important;
@@ -216,6 +217,18 @@
             font-size: 0.84rem;
             font-weight: 700;
             color: #b91c1c;
+        }
+        .std-field-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .std-field-header label {
+            margin: 0 !important;
+            font-size: 1.0rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
         }
         label {
             display: block;
@@ -736,7 +749,6 @@
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
         ];
 
-        /* よく出る日本語表記・選択肢の多言語辞書 */
         const PHRASE_MAP = [
             { keys: ["氏名", "名前", "フルネーム"], pt: "Nome completo", en: "Full name" },
             { keys: ["性別"], pt: "Sexo / Gênero", en: "Gender" },
@@ -803,7 +815,6 @@
             const trimmed = rawStr.trim();
             if (!trimmed || /^-+$/.test(trimmed)) return "";
 
-            // 括弧書きの多言語表記（例：「日本語（Português / English）」や「その他（Other）」）を抽出
             const parenMatch = trimmed.match(/[（(]([^）)]+)[）)]/);
             if (parenMatch) {
                 const inside = parenMatch[1];
@@ -829,7 +840,7 @@
                 return trimmed;
             }
 
-            return lang === "pt" ? withoutParen || trimmed : withoutParen || trimmed;
+            return withoutParen || trimmed;
         }
 
         const JP_LEVEL_CARDS = [
@@ -1192,6 +1203,14 @@
             );
         }
 
+        function isShoeSizeField(box) {
+            if (!box) return false;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            return fieldName.includes("shoe") || rawLbl.includes("靴") || rawLbl.includes("shoe");
+        }
+
         function isRemovedExtraNotesField(box) {
             if (!box || box.dataset.permanentlyHidden === "true" || isRetirementOtherField(box)) return false;
             const fn = (box.dataset.field || "").toLowerCase();
@@ -1319,7 +1338,7 @@
         }
 
         function getChoiceKind(box) {
-            if (!box) return null;
+            if (!box) return "default";
             const fieldName = (box.dataset.field || "").toLowerCase();
             const lbl = box.querySelector("label");
             const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
@@ -1356,6 +1375,27 @@
             ) {
                 return "level";
             }
+            if (fieldName.includes("full_name") || fieldName === "name" || rawLbl.includes("氏名") || rawLbl.includes("名前")) {
+                return "person_name";
+            }
+            if (fieldName.includes("birth") || rawLbl.includes("生年月日")) {
+                return "birth_date";
+            }
+            if (fieldName === "age" || fieldName.endsWith("_age") || rawLbl.includes("年齢")) {
+                return "age";
+            }
+            if (fieldName.includes("phone") || fieldName.includes("tel") || rawLbl.includes("電話") || rawLbl.includes("携帯")) {
+                return "phone";
+            }
+            if (fieldName.includes("postal") || fieldName.includes("zip") || rawLbl.includes("郵便番号")) {
+                return "postal";
+            }
+            if (fieldName.includes("street") || rawLbl.includes("番地") || rawLbl.includes("建物")) {
+                return "street";
+            }
+            if (fieldName.includes("address") || rawLbl.includes("住所")) {
+                return "address";
+            }
             if (fieldName.includes("nationality") || rawLbl.includes("国籍") || combined.includes("nationality") || combined.includes("nacionalidade")) {
                 return "nationality";
             }
@@ -1366,40 +1406,86 @@
             if (fieldName.includes("marital") || rawLbl.includes("婚姻") || rawLbl.includes("配偶者")) return "marital";
             if (fieldName.includes("license") || rawLbl.includes("免許")) return "license";
             if (fieldName.includes("commute") || rawLbl.includes("通勤")) return "commute";
+            if (isOvertimeField(box)) return "overtime";
+            if (fieldName.includes("holiday") || rawLbl.includes("休日")) return "holiday";
             if (isWorkingHoursField(box) || isAvailabilityField(box)) return "shift";
+            if (isShoeSizeField(box)) return "shoe";
             if (isClothingSizeField(box)) return "clothing";
             if (isJobTypeField(box)) return "job";
-            if (fieldName.includes("work_history") || rawLbl.includes("職歴")) return "history";
+            if (fieldName.includes("work_history") || fieldName.includes("company") || rawLbl.includes("職歴") || rawLbl.includes("会社")) return "history";
             return "default";
         }
 
         function buildIconSvg(kind) {
             switch (kind) {
+                case "person_name":
+                case "gender":
+                case "marital":
+                    return `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+                case "birth_date":
+                case "holiday":
+                    return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+                case "age":
+                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
+                case "phone":
+                    return `<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
+                case "postal":
+                    return `<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
+                case "address":
+                case "street":
+                    return `<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+                case "nationality":
+                case "visa":
+                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
+                case "license":
+                    return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="14" x2="13" y2="14"/></svg>`;
+                case "commute":
+                    return `<svg viewBox="0 0 24 24"><path d="M5 17h14v-5l-2-5H7L5 12v5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>`;
+                case "shift":
+                case "overtime":
+                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>`;
+                case "shoe":
+                    return `<svg viewBox="0 0 24 24"><path d="M3 16v3h18v-2c0-2-2.5-3-5-3l-4-4-3 2-3-2-3 4z"/></svg>`;
+                case "clothing":
+                    return `<svg viewBox="0 0 24 24"><path d="M6 2l6 4 6-4 4 5-3 3v12H5V10L2 7l4-5z"/></svg>`;
                 case "listen":
                     return `<svg viewBox="0 0 24 24"><path d="M16 8a5 5 0 0 0-8 4v1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v1a2 2 0 0 0 4 0v-6a5 5 0 0 0-1-3z"/><path d="M19 6a8 8 0 0 0-14 5"/></svg>`;
                 case "speak":
                     return `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
                 case "level":
                     return `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
-                case "nationality":
-                case "visa":
-                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
-                case "gender":
-                case "marital":
-                    return `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-                case "license":
-                case "commute":
-                    return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="14" x2="13" y2="14"/></svg>`;
-                case "shift":
-                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>`;
-                case "clothing":
-                    return `<svg viewBox="0 0 24 24"><path d="M6 2l6 4 6-4 4 5-3 3v12H5V10L2 7l4-5z"/></svg>`;
                 case "job":
                 case "history":
                     return `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`;
                 default:
                     return `<svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
             }
+        }
+
+        function initStandardFieldIcons() {
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
+                if (box.dataset.mcInitialized === "true") return;
+                const lbl = box.querySelector("label");
+                if (!lbl) return;
+
+                const kind = getChoiceKind(box);
+                let header = box.querySelector(".std-field-header");
+                if (!header) {
+                    header = document.createElement("div");
+                    header.className = "std-field-header";
+                    const badge = document.createElement("span");
+                    badge.className = "mc-icon-badge";
+                    badge.innerHTML = buildIconSvg(kind);
+                    lbl.parentNode.insertBefore(header, lbl);
+                    header.appendChild(badge);
+                    header.appendChild(lbl);
+                } else {
+                    const badge = header.querySelector(".mc-icon-badge");
+                    if (badge) {
+                        badge.innerHTML = buildIconSvg(kind);
+                    }
+                }
+            });
         }
 
         function findBestSelectOptionForCard(sel, cardSpec) {
@@ -1642,6 +1728,9 @@
                 box.dataset.choiceKind = kind;
                 box.dataset.isMulti = isMulti ? "true" : "false";
                 box.classList.add("modern-choice-box");
+
+                const stdHdr = box.querySelector(".std-field-header");
+                if (stdHdr) stdHdr.remove();
 
                 const initialVals = Array.from(sel.selectedOptions)
                     .map((o) => o.value)
@@ -3171,6 +3260,7 @@
                 updateFieldFillHighlight(sel);
             });
 
+            initStandardFieldIcons();
             refreshAllModernChoiceFields(safeLang);
             updateRequiredBadges(safeLang);
             updateStepperUI();
@@ -3384,6 +3474,7 @@
             ensureWorkHistoryQuestions();
             hideCommuteOtherField();
             initFieldFillHighlight();
+            initStandardFieldIcons();
             initAllModernChoiceFields();
             lockAgeField();
             configureNumericInputs();
