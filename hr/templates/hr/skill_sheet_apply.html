@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>和大サポート - スキルシート登録</title>
     <link rel="icon" type="image/png" href="/static/hr/img/wadai-logo.png">
     <link rel="apple-touch-icon" href="/static/hr/img/wadai-logo.png">
@@ -16,7 +16,7 @@
             min-height: 100vh;
             color: #222;
             margin: 0;
-            padding: 20px;
+            padding: 20px 20px calc(36px + env(safe-area-inset-bottom));
             box-sizing: border-box;
         }
         .wrap {
@@ -24,12 +24,12 @@
             width: 100%;
             margin: 0 auto;
             background: #fff;
-            padding: 28px 24px;
+            padding: 28px 24px 32px;
             border-radius: 12px;
             box-shadow: 0 4px 16px rgba(200, 16, 46, 0.08);
             border-top: 6px solid #c8102e;
             position: relative;
-            overflow: hidden;
+            overflow: visible;
             box-sizing: border-box;
         }
         .wrap::before {
@@ -39,6 +39,7 @@
             left: 0;
             right: 0;
             height: 6px;
+            border-radius: 12px 12px 0 0;
             background: linear-gradient(90deg, #c8102e 0%, #f97316 50%, #0284c7 100%);
         }
         .brand-header {
@@ -80,6 +81,7 @@
         }
         .lang-btn {
             min-width: 150px;
+            min-height: 48px;
             padding: 14px 24px;
             font-size: 1rem;
             font-weight: 700;
@@ -88,6 +90,7 @@
             color: #9f1239;
             border-radius: 8px;
             cursor: pointer;
+            touch-action: manipulation;
             transition: all 0.15s ease;
         }
         .lang-btn:hover {
@@ -114,6 +117,7 @@
             font-size: 0.85rem;
             font-weight: 700;
             cursor: pointer;
+            touch-action: manipulation;
             transition: all 0.15s ease;
         }
         .sub-btn:hover {
@@ -259,7 +263,7 @@
             cursor: not-allowed;
         }
 
-        /* 統一されたモダン選択式UI（日本語スキル＆全選択項目共通） */
+        /* 統一されたモダン選択式UI */
         .field.modern-choice-box {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -338,6 +342,7 @@
             font-size: 0.94rem;
             font-weight: 700;
             cursor: pointer;
+            touch-action: manipulation;
             transition: all 0.14s ease;
             display: inline-flex;
             align-items: center;
@@ -386,6 +391,7 @@
             border-radius: 12px;
             padding: 14px 8px;
             cursor: pointer;
+            touch-action: manipulation;
             transition: all 0.14s ease;
             display: flex;
             flex-direction: column;
@@ -452,10 +458,14 @@
         .step-nav {
             display: flex;
             gap: 12px;
-            margin-top: 18px;
+            margin-top: 22px;
+            padding-top: 8px;
+            position: relative;
+            z-index: 5;
         }
         .prev-btn {
             flex: 1;
+            min-height: 48px;
             max-width: 100%;
             box-sizing: border-box;
             background: #f1f5f9;
@@ -466,6 +476,7 @@
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
+            touch-action: manipulation;
             transition: all 0.15s ease;
         }
         .prev-btn:hover {
@@ -474,6 +485,7 @@
         .next-btn,
         .submit-btn {
             flex: 2;
+            min-height: 50px;
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
@@ -485,6 +497,7 @@
             font-size: 1.05rem;
             font-weight: 700;
             cursor: pointer;
+            touch-action: manipulation;
             box-shadow: 0 3px 10px rgba(200, 16, 46, 0.25);
             transition: opacity 0.15s ease;
         }
@@ -516,11 +529,26 @@
         }
         @media (max-width: 600px) {
             body {
-                padding: 10px;
+                padding: 10px 10px calc(104px + env(safe-area-inset-bottom));
             }
             .wrap {
-                padding: 18px 12px;
+                padding: 18px 12px 24px;
                 border-radius: 10px;
+            }
+            .lang-screen {
+                padding: 16px 4px 8px;
+            }
+            .lang-buttons {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+                margin-top: 18px;
+            }
+            .lang-btn {
+                width: 100%;
+                min-width: 0;
+                min-height: 50px;
+                padding: 14px 16px;
             }
             .field,
             .field.modern-choice-box {
@@ -539,6 +567,7 @@
             .mc-pill-btn {
                 flex: 1 1 calc(50% - 6px);
                 min-width: 0;
+                min-height: 46px;
                 padding: 10px 10px;
             }
             .step-pills {
@@ -546,10 +575,14 @@
             }
             .step-nav {
                 flex-direction: column;
+                gap: 10px;
+                margin-top: 20px;
+                margin-bottom: 12px;
             }
             .prev-btn, .next-btn, .submit-btn {
                 flex: none;
                 width: 100%;
+                min-height: 50px;
             }
         }
     </style>
@@ -742,7 +775,7 @@
                 streetPlaceholder: "例：1-2-3 ○○マンション 101号室",
                 streetHint: "番地・部屋番号などを入力してください",
                 workingHoursLabel: "希望勤務時間",
-                workingHoursHint: "希望する勤務時間を選んでください。",
+                workingHoursHint: "希望する勤務時間を選んでください（複数選択可）。",
                 shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
                 jpListenTitle: "日本語を理解する",
@@ -756,8 +789,10 @@
                 singleDesc: "当てはまるものを1つ選んでください。",
                 hasWorkHistoryLabel: "職歴はありますか？",
                 hasWorkHistoryHint: "「はい」を選ぶと会社①の入力欄が表示されます。「いいえ」の場合は職歴なしで送信へ進めます。",
-                moreWorkHistoryLabel: "追加の職歴はありますか？",
-                moreWorkHistoryHint: "「はい」を選ぶと会社②以降の入力欄が表示されます。「いいえ」の場合はこのまま送信へ進めます。",
+                moreWorkHistoryLabelAfter2: "まだありますか？（会社②のあとの追加職歴）",
+                moreWorkHistoryHintAfter2: "「はい」を選ぶと会社③の入力欄が表示されます。「いいえ」の場合はこのまま送信へ進めます。",
+                moreWorkHistoryLabelAfterN: "まだありますか？",
+                moreWorkHistoryHintAfterN: "「はい」を選ぶと次の会社の入力欄が表示されます。「いいえ」の場合はこのまま送信へ進めます。",
                 ageCalculated: "生年月日から自動計算しました",
                 postalFound: "郵便番号から住所を自動入力しました",
                 postalNotFound: "該当する住所が見つかりませんでした。住所・番地を手入力してください。",
@@ -791,7 +826,7 @@
                 streetPlaceholder: "Ex.: Rua Exemplo, 123, Apto 12",
                 streetHint: "Digite o número da casa/prédio e complemento",
                 workingHoursLabel: "Horário de trabalho desejado",
-                workingHoursHint: "Selecione o horário de trabalho desejado.",
+                workingHoursHint: "Selecione os horários desejados (múltipla escolha).",
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
                 jpListenTitle: "Compreensão de japonês",
@@ -805,8 +840,10 @@
                 singleDesc: "Selecione uma opção.",
                 hasWorkHistoryLabel: "Possui experiência profissional (histórico de trabalho)?",
                 hasWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ① ou 'Não' para seguir sem histórico.",
-                moreWorkHistoryLabel: "Deseja adicionar mais experiência profissional?",
-                moreWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ② ou 'Não' para prosseguir.",
+                moreWorkHistoryLabelAfter2: "Há mais experiência profissional após a Empresa ②?",
+                moreWorkHistoryHintAfter2: "Selecione 'Sim' para exibir a Empresa ③ ou 'Não' para enviar.",
+                moreWorkHistoryLabelAfterN: "Há mais experiência profissional?",
+                moreWorkHistoryHintAfterN: "Selecione 'Sim' para exibir a próxima empresa ou 'Não' para enviar.",
                 ageCalculated: "Idade calculada automaticamente",
                 postalFound: "Endereço preenchido automaticamente pelo CEP",
                 postalNotFound: "CEP não encontrado. Digite o endereço manualmente.",
@@ -840,7 +877,7 @@
                 streetPlaceholder: "e.g., 1-2-3 Sample St, Apt 101",
                 streetHint: "Enter street number, building name, or room number",
                 workingHoursLabel: "Preferred working hours",
-                workingHoursHint: "Select your preferred working hours.",
+                workingHoursHint: "Select preferred working hours (multiple choice).",
                 shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
                 jpListenTitle: "Japanese Listening",
@@ -854,8 +891,10 @@
                 singleDesc: "Please select one option.",
                 hasWorkHistoryLabel: "Do you have work experience?",
                 hasWorkHistoryHint: "Select 'Yes' to show Company ①, or 'No' to continue without work history.",
-                moreWorkHistoryLabel: "Do you have additional work experience to add?",
-                moreWorkHistoryHint: "Select 'Yes' to show Company ②+, or 'No' to continue.",
+                moreWorkHistoryLabelAfter2: "Do you have more work experience after Company ②?",
+                moreWorkHistoryHintAfter2: "Select 'Yes' to show Company ③, or 'No' to proceed to submit.",
+                moreWorkHistoryLabelAfterN: "Do you have any more work experience?",
+                moreWorkHistoryHintAfterN: "Select 'Yes' to show the next company, or 'No' to proceed to submit.",
                 ageCalculated: "Age calculated automatically",
                 postalFound: "Address filled automatically from postal code",
                 postalNotFound: "Postal code not found. Please enter address manually.",
@@ -915,6 +954,22 @@
             );
         }
 
+        function isWorkingHoursField(box) {
+            if (!box) return false;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            return (
+                fieldName.includes("working_hours") ||
+                fieldName.includes("shift") ||
+                rawLbl.includes("希望勤務時間") ||
+                rawLbl.includes("勤務時間") ||
+                rawLbl.includes("シフト") ||
+                rawLbl.includes("working hours") ||
+                rawLbl.includes("horário de trabalho")
+            );
+        }
+
         function getChoiceKind(box) {
             if (!box) return null;
             const fieldName = (box.dataset.field || "").toLowerCase();
@@ -953,11 +1008,14 @@
             ) {
                 return "level";
             }
+            if (fieldName.includes("nationality") || rawLbl.includes("国籍") || combined.includes("nationality") || combined.includes("nacionalidade")) {
+                return "nationality";
+            }
             if (fieldName.includes("gender") || rawLbl.includes("性別")) return "gender";
             if (fieldName.includes("marital") || rawLbl.includes("婚姻") || rawLbl.includes("配偶者")) return "marital";
             if (fieldName.includes("license") || rawLbl.includes("免許")) return "license";
             if (fieldName.includes("commute") || rawLbl.includes("通勤")) return "commute";
-            if (fieldName.includes("working_hours") || fieldName.includes("shift") || rawLbl.includes("勤務時間") || rawLbl.includes("シフト")) return "shift";
+            if (isWorkingHoursField(box)) return "shift";
             if (isJobTypeField(box)) return "job";
             if (fieldName.includes("work_history") || rawLbl.includes("職歴")) return "history";
             return "default";
@@ -971,6 +1029,8 @@
                     return `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
                 case "level":
                     return `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
+                case "nationality":
+                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
                 case "gender":
                 case "marital":
                     return `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
@@ -1006,12 +1066,11 @@
             return null;
         }
 
-        /* すべての選択式（靴のサイズ・選択肢7個以上の長大リストを除く）をモダンUI化 */
         function shouldConvertFieldToModernChoice(box, sel) {
             if (!box || !sel) return false;
             if (sel.id === "id_shoe_size_select") return false;
             const fieldName = (box.dataset.field || "").toLowerCase();
-            if (fieldName.includes("shoe") || fieldName.includes("nationality") || fieldName.includes("visa")) {
+            if (fieldName.includes("shoe") || fieldName.includes("visa")) {
                 return false;
             }
             const validOpts = Array.from(sel.options).filter((o) => {
@@ -1058,7 +1117,6 @@
                     sel.value = cleanVals[0] || "";
                 }
 
-                // 複数選択のカンマ区切り値も合わせて送信できるよう補助hiddenを生成
                 let multiHidden = box.querySelector("input.multi-choice-hidden");
                 if (!multiHidden) {
                     multiHidden = document.createElement("input");
@@ -1074,6 +1132,10 @@
                 multiHidden.value = labels.join(", ");
             } else {
                 sel.value = cleanVals[0] || "";
+            }
+
+            if (sel.id === "id_preferred_working_hours") {
+                syncPreferredShiftFromSelect();
             }
 
             updateFieldFillHighlight(sel);
@@ -1112,7 +1174,13 @@
                 else if (kind === "level") descEl.textContent = t.jpLevelDesc;
                 else if (kind === "shift") descEl.textContent = t.workingHoursHint;
                 else if (kind === "history") {
-                    descEl.textContent = box.id === "more-work-history-box" ? t.moreWorkHistoryHint : t.hasWorkHistoryHint;
+                    if (box.id === "more-work-history-box-after-2") {
+                        descEl.textContent = t.moreWorkHistoryHintAfter2;
+                    } else if (box.id && box.id.startsWith("more-work-history-box-after-")) {
+                        descEl.textContent = t.moreWorkHistoryHintAfterN;
+                    } else {
+                        descEl.textContent = t.hasWorkHistoryHint;
+                    }
                 } else {
                     descEl.textContent = isMulti ? t.multiDesc : t.singleDesc;
                 }
@@ -1172,13 +1240,12 @@
                 }
 
                 const kind = getChoiceKind(box);
-                const isMulti = isJobTypeField(box) || sel.multiple;
+                const isMulti = isJobTypeField(box) || isWorkingHoursField(box) || sel.multiple;
                 box.dataset.mcInitialized = "true";
                 box.dataset.choiceKind = kind;
                 box.dataset.isMulti = isMulti ? "true" : "false";
                 box.classList.add("modern-choice-box");
 
-                // 初期選択値を記録
                 const initialVals = Array.from(sel.selectedOptions)
                     .map((o) => o.value)
                     .filter((v) => v !== "");
@@ -1187,7 +1254,6 @@
                 const origLabel = box.querySelector("label");
                 if (origLabel) origLabel.classList.add("hidden");
 
-                // 既存の重複ヒントがあれば非表示化（モダンUI側の説明文に統合）
                 box.querySelectorAll(".hint").forEach((h) => h.classList.add("hidden"));
 
                 const header = document.createElement("div");
@@ -1428,7 +1494,7 @@
 
         function isWorkHistoryBox(box) {
             if (!box) return false;
-            if (box.id === "has-work-history-box" || box.id === "more-work-history-box") return true;
+            if (box.dataset.whQuestion === "true") return true;
             const fieldName = (box.dataset.field || "").toLowerCase();
             const lbl = box.querySelector("label");
             const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
@@ -1445,107 +1511,146 @@
             );
         }
 
-        function classifyCompanyBoxes() {
-            const company1Boxes = [];
-            const company2PlusBoxes = [];
+        /* 仕事①・仕事②・仕事③以降を会社番号ごとにグループ化 */
+        function getCompanyGroups() {
+            const groupsMap = new Map();
 
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
                 if (
-                    box.id === "has-work-history-box" ||
-                    box.id === "more-work-history-box" ||
+                    box.dataset.whQuestion === "true" ||
                     box.dataset.permanentlyHidden === "true" ||
                     isRetirementOtherField(box)
                 ) {
                     return;
                 }
+                if (!isWorkHistoryBox(box)) return;
+
                 const fieldName = (box.dataset.field || "").toLowerCase();
                 const lbl = box.querySelector("label");
                 const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
 
-                const isCompany1 =
-                    /^company_?1(?:_|$)/.test(fieldName) ||
-                    /^work_?(?:history_?)?1(?:_|$)/.test(fieldName) ||
-                    rawLbl.includes("①") ||
-                    rawLbl.includes("会社1") ||
-                    rawLbl.includes("職歴1");
+                let companyNum = 1;
+                const numMatch =
+                    fieldName.match(/^(?:company|work_?history|work)_?(\d+)(?:_|$)/) ||
+                    rawLbl.match(/(?:会社|職歴)\s*(\d+)/);
 
-                const isCompany2Plus =
-                    /^company_?(?:[2-9]|\d{2,})(?:_|$)/.test(fieldName) ||
-                    /^work_?(?:history_?)?(?:[2-9]|\d{2,})(?:_|$)/.test(fieldName) ||
-                    /[②③④⑤⑥⑦⑧⑨⑩]/.test(rawLbl) ||
-                    /会社[2-9]|職歴[2-9]/.test(rawLbl);
-
-                if (isCompany1) {
-                    company1Boxes.push(box);
-                } else if (isCompany2Plus) {
-                    company2PlusBoxes.push(box);
+                if (numMatch) {
+                    companyNum = parseInt(numMatch[1], 10);
+                } else if (rawLbl.includes("①")) {
+                    companyNum = 1;
+                } else if (rawLbl.includes("②")) {
+                    companyNum = 2;
+                } else if (rawLbl.includes("③")) {
+                    companyNum = 3;
+                } else if (rawLbl.includes("④")) {
+                    companyNum = 4;
+                } else if (rawLbl.includes("⑤")) {
+                    companyNum = 5;
+                } else if (rawLbl.includes("⑥")) {
+                    companyNum = 6;
+                } else if (rawLbl.includes("⑦")) {
+                    companyNum = 7;
+                } else if (rawLbl.includes("⑧")) {
+                    companyNum = 8;
+                } else if (rawLbl.includes("⑨")) {
+                    companyNum = 9;
+                } else if (rawLbl.includes("⑩")) {
+                    companyNum = 10;
                 }
+
+                if (!groupsMap.has(companyNum)) {
+                    groupsMap.set(companyNum, []);
+                }
+                groupsMap.get(companyNum).push(box);
             });
 
-            return { company1Boxes, company2PlusBoxes };
+            return Array.from(groupsMap.entries()).sort((a, b) => a[0] - b[0]);
         }
 
         function getFieldStep(box) {
             if (!box || box.dataset.permanentlyHidden === "true") return 0;
             const fieldName = box.dataset.field || "";
             if (STEP1_FIELDS.includes(fieldName)) return 1;
-            if (STEP2_FIELDS.includes(fieldName) || isJobTypeField(box)) return 2;
+            if (STEP2_FIELDS.includes(fieldName) || isJobTypeField(box) || isWorkingHoursField(box)) return 2;
             if (isWorkHistoryBox(box)) return 4;
             return 3;
         }
 
+        function clearBoxValues(box) {
+            box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
+                if (ctrl.type === "hidden" && !ctrl.classList.contains("multi-choice-hidden")) return;
+                ctrl.required = false;
+                if (ctrl.tagName === "SELECT") {
+                    Array.from(ctrl.options).forEach((o) => { o.selected = false; });
+                    ctrl.selectedIndex = 0;
+                } else {
+                    ctrl.value = "";
+                }
+                updateFieldFillHighlight(ctrl);
+            });
+            if (box.dataset.mcInitialized === "true") {
+                box.dataset.selectedList = "[]";
+                refreshModernChoiceBox(box, localStorage.getItem("skillsheet_lang") || "ja");
+            }
+        }
+
+        /* 仕事① -> (会社②あり？) -> 仕事② -> (会社③あり？) -> 仕事③ ... の段階表示を制御 */
         function updateWorkHistoryFlow() {
             hideRetirementOtherFields();
-            const { company1Boxes, company2PlusBoxes } = classifyCompanyBoxes();
-            const q1Box = document.getElementById("has-work-history-box");
-            const q2Box = document.getElementById("more-work-history-box");
-            const q1Sel = document.getElementById("id_has_work_history");
-            const q2Sel = document.getElementById("id_more_work_history");
-
-            const q1Val = q1Sel ? (q1Sel.value || "").trim() : "";
-
-            company1Boxes.forEach((box) => {
-                box.dataset.whActive = q1Val === "yes" ? "true" : "false";
-                if (q1Val === "no") {
-                    box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
-                        if (ctrl.type !== "hidden") {
-                            ctrl.required = false;
-                            if (ctrl.tagName === "SELECT") ctrl.selectedIndex = 0;
-                            else ctrl.value = "";
-                            updateFieldFillHighlight(ctrl);
-                        }
-                    });
-                }
-            });
-
-            if (q2Box) {
-                q2Box.dataset.whActive = q1Val === "yes" ? "true" : "false";
-                if (q1Val !== "yes" && q2Sel) {
-                    q2Sel.value = "";
-                    if (q2Box.dataset.mcInitialized === "true") {
-                        q2Box.dataset.selectedList = "[]";
-                    }
-                    updateFieldFillHighlight(q2Sel);
-                }
+            const groups = getCompanyGroups();
+            if (groups.length === 0) {
+                applyStepVisibility();
+                return;
             }
 
-            const q2Val = q2Sel ? (q2Sel.value || "").trim() : "";
-            company2PlusBoxes.forEach((box) => {
-                const active = q1Val === "yes" && q2Val === "yes";
-                box.dataset.whActive = active ? "true" : "false";
-                if (!active) {
-                    box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
-                        if (ctrl.type !== "hidden") {
-                            ctrl.required = false;
-                            if (q1Val === "no" || q2Val === "no") {
-                                if (ctrl.tagName === "SELECT") ctrl.selectedIndex = 0;
-                                else ctrl.value = "";
-                                updateFieldFillHighlight(ctrl);
-                            }
-                        }
-                    });
+            const q1Sel = document.getElementById("id_has_work_history");
+            const hasAnyWork = q1Sel ? (q1Sel.value || "").trim() : "";
+
+            // 会社①の表示制御
+            const firstCompanyBoxes = groups[0][1];
+            const showFirstCompany = hasAnyWork === "yes";
+            firstCompanyBoxes.forEach((box) => {
+                box.dataset.whActive = showFirstCompany ? "true" : "false";
+                if (!showFirstCompany) {
+                    clearBoxValues(box);
                 }
             });
+
+            // 会社②以降を順番に判定
+            let prevAnsweredYes = showFirstCompany;
+
+            for (let i = 1; i < groups.length; i++) {
+                const [companyNum, boxes] = groups[i];
+                const gateBox = document.getElementById(`more-work-history-box-after-${companyNum - 1}`);
+                const gateSel = document.getElementById(`id_more_work_history_after_${companyNum - 1}`);
+
+                if (!gateBox || !gateSel) break;
+
+                if (!prevAnsweredYes) {
+                    gateBox.dataset.whActive = "false";
+                    gateSel.value = "";
+                    gateBox.dataset.selectedList = "[]";
+                    updateFieldFillHighlight(gateSel);
+
+                    boxes.forEach((box) => {
+                        box.dataset.whActive = "false";
+                        clearBoxValues(box);
+                    });
+                    prevAnsweredYes = false;
+                } else {
+                    gateBox.dataset.whActive = "true";
+                    const gateVal = (gateSel.value || "").trim();
+                    const showThisCompany = gateVal === "yes";
+
+                    boxes.forEach((box) => {
+                        box.dataset.whActive = showThisCompany ? "true" : "false";
+                        if (!showThisCompany) {
+                            clearBoxValues(box);
+                        }
+                    });
+                    prevAnsweredYes = showThisCompany;
+                }
+            }
 
             applyStepVisibility();
         }
@@ -1565,8 +1670,6 @@
                 if (step === 4) {
                     if (box.id === "has-work-history-box") {
                         shouldShow = currentStep === 4;
-                    } else if (box.id === "more-work-history-box") {
-                        shouldShow = currentStep === 4 && box.dataset.whActive === "true";
                     } else {
                         shouldShow = currentStep === 4 && box.dataset.whActive === "true";
                     }
@@ -1695,10 +1798,11 @@
             updateFieldFillHighlight(sel);
         }
 
+        /* 仕事①の前、仕事②のあと、仕事③のあと…に「まだありますか？（はい／いいえ）」を配置 */
         function ensureWorkHistoryQuestions() {
             hideRetirementOtherFields();
-            const { company1Boxes, company2PlusBoxes } = classifyCompanyBoxes();
-            if (company1Boxes.length === 0 && company2PlusBoxes.length === 0) return;
+            const groups = getCompanyGroups();
+            if (groups.length === 0) return;
 
             const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
             const t = uiTexts[savedLang] || uiTexts.ja;
@@ -1709,6 +1813,7 @@
                 q1Box.id = "has-work-history-box";
                 q1Box.className = "field";
                 q1Box.dataset.field = "has_work_history_question";
+                q1Box.dataset.whQuestion = "true";
 
                 const lbl1 = document.createElement("label");
                 lbl1.id = "has-work-history-label";
@@ -1730,41 +1835,46 @@
                 q1Box.appendChild(sel1);
                 q1Box.appendChild(hint1);
 
-                if (company1Boxes.length > 0) {
-                    company1Boxes[0].insertAdjacentElement("beforebegin", q1Box);
-                } else if (company2PlusBoxes.length > 0) {
-                    company2PlusBoxes[0].insertAdjacentElement("beforebegin", q1Box);
-                }
+                groups[0][1][0].insertAdjacentElement("beforebegin", q1Box);
             }
 
-            let q2Box = document.getElementById("more-work-history-box");
-            if (!q2Box && company2PlusBoxes.length > 0) {
-                q2Box = document.createElement("div");
-                q2Box.id = "more-work-history-box";
-                q2Box.className = "field hidden";
-                q2Box.dataset.field = "more_work_history_question";
+            // 仕事②以降（index >= 1）の各グループの直前に「まだありますか？（はい／いいえ）」を配置
+            for (let i = 1; i < groups.length; i++) {
+                const [companyNum, boxes] = groups[i];
+                const prevCompanyNum = companyNum - 1;
+                const gateId = `more-work-history-box-after-${prevCompanyNum}`;
+                const selId = `id_more_work_history_after_${prevCompanyNum}`;
 
-                const lbl2 = document.createElement("label");
-                lbl2.id = "more-work-history-label";
-                lbl2.setAttribute("for", "id_more_work_history");
-                lbl2.textContent = t.moreWorkHistoryLabel;
+                let gateBox = document.getElementById(gateId);
+                if (!gateBox) {
+                    gateBox = document.createElement("div");
+                    gateBox.id = gateId;
+                    gateBox.className = "field hidden";
+                    gateBox.dataset.field = `more_work_history_after_${prevCompanyNum}`;
+                    gateBox.dataset.whQuestion = "true";
 
-                const sel2 = buildYesNoSelect("id_more_work_history", "more_work_history_question", savedLang);
-                sel2.addEventListener("change", () => {
-                    updateFieldFillHighlight(sel2);
-                    updateWorkHistoryFlow();
-                });
+                    const lbl = document.createElement("label");
+                    lbl.id = `more-work-history-label-after-${prevCompanyNum}`;
+                    lbl.setAttribute("for", selId);
+                    lbl.textContent = prevCompanyNum === 2 ? t.moreWorkHistoryLabelAfter2 : t.moreWorkHistoryLabelAfterN;
 
-                const hint2 = document.createElement("div");
-                hint2.id = "more-work-history-hint";
-                hint2.className = "hint";
-                hint2.textContent = t.moreWorkHistoryHint;
+                    const sel = buildYesNoSelect(selId, `more_work_history_after_${prevCompanyNum}`, savedLang);
+                    sel.addEventListener("change", () => {
+                        updateFieldFillHighlight(sel);
+                        updateWorkHistoryFlow();
+                    });
 
-                q2Box.appendChild(lbl2);
-                q2Box.appendChild(sel2);
-                q2Box.appendChild(hint2);
+                    const hint = document.createElement("div");
+                    hint.id = `more-work-history-hint-after-${prevCompanyNum}`;
+                    hint.className = "hint";
+                    hint.textContent = prevCompanyNum === 2 ? t.moreWorkHistoryHintAfter2 : t.moreWorkHistoryHintAfterN;
 
-                company2PlusBoxes[0].insertAdjacentElement("beforebegin", q2Box);
+                    gateBox.appendChild(lbl);
+                    gateBox.appendChild(sel);
+                    gateBox.appendChild(hint);
+
+                    boxes[0].insertAdjacentElement("beforebegin", gateBox);
+                }
             }
 
             updateWorkHistoryFlow();
@@ -2052,22 +2162,32 @@
         function syncPreferredShiftFromSelect() {
             const sel = document.getElementById("id_preferred_working_hours");
             const origShiftEl = document.getElementById("id_preferred_shift");
+            const box = sel ? sel.closest(".field") : null;
             updateFieldFillHighlight(sel);
             if (!sel || !origShiftEl) return;
 
-            const selectedOpt = sel.options[sel.selectedIndex];
-            const chosenJa = selectedOpt ? (selectedOpt.dataset.ja || selectedOpt.textContent || "") : "";
+            const selectedVals = box ? getSelectedValuesForBox(box) : (sel.value ? [sel.value] : []);
+            const chosenJaList = selectedVals.map((val) => {
+                const found = Array.from(sel.options).find((o) => o.value === val);
+                return found ? (found.dataset.ja || found.textContent || "").trim() : val;
+            }).filter(Boolean);
 
             if (origShiftEl.tagName === "SELECT") {
-                const matched = Array.from(origShiftEl.options).find((opt) => {
-                    const txt = (opt.dataset.orig || opt.textContent || "").trim();
-                    return opt.value === sel.value || txt.includes(chosenJa);
-                });
-                if (matched) {
-                    origShiftEl.value = matched.value;
+                if (origShiftEl.multiple) {
+                    Array.from(origShiftEl.options).forEach((opt) => {
+                        const txt = (opt.dataset.orig || opt.textContent || "").trim();
+                        opt.selected = selectedVals.includes(opt.value) || chosenJaList.some((c) => txt.includes(c));
+                    });
+                } else {
+                    const firstJa = chosenJaList[0] || "";
+                    const matched = Array.from(origShiftEl.options).find((opt) => {
+                        const txt = (opt.dataset.orig || opt.textContent || "").trim();
+                        return opt.value === selectedVals[0] || (firstJa && txt.includes(firstJa));
+                    });
+                    origShiftEl.value = matched ? matched.value : (selectedVals[0] || "");
                 }
             } else {
-                origShiftEl.value = chosenJa;
+                origShiftEl.value = chosenJaList.join(", ");
             }
             origShiftEl.dispatchEvent(new Event("change", { bubbles: true }));
         }
@@ -2094,14 +2214,7 @@
             const sel = document.createElement("select");
             sel.id = "id_preferred_working_hours";
             sel.name = "preferred_working_hours";
-
-            const emptyOpt = document.createElement("option");
-            emptyOpt.value = "";
-            emptyOpt.textContent = "";
-            emptyOpt.dataset.ja = "";
-            emptyOpt.dataset.pt = "";
-            emptyOpt.dataset.en = "";
-            sel.appendChild(emptyOpt);
+            sel.multiple = true;
 
             SHIFT_OPTIONS.forEach((opt) => {
                 const o = document.createElement("option");
@@ -2166,7 +2279,7 @@
             allBoxes.forEach((box) => {
                 const fieldName = box.dataset.field || "";
                 if (STEP1_FIELDS.includes(fieldName) || STEP2_FIELDS.includes(fieldName)) return;
-                if (isJobTypeField(box)) step2ExtraBoxes.push(box);
+                if (isJobTypeField(box) || isWorkingHoursField(box)) step2ExtraBoxes.push(box);
                 else if (isWorkHistoryBox(box)) step4Boxes.push(box);
                 else step3Boxes.push(box);
             });
@@ -2370,11 +2483,15 @@
             const q1Hint = document.getElementById("has-work-history-hint");
             if (q1Hint) q1Hint.textContent = t.hasWorkHistoryHint;
 
-            const q2Lbl = document.getElementById("more-work-history-label");
-            if (q2Lbl) q2Lbl.textContent = t.moreWorkHistoryLabel;
+            document.querySelectorAll('[id^="more-work-history-label-after-"]').forEach((lbl) => {
+                const suffix = lbl.id.replace("more-work-history-label-after-", "");
+                lbl.textContent = suffix === "2" ? t.moreWorkHistoryLabelAfter2 : t.moreWorkHistoryLabelAfterN;
+            });
 
-            const q2Hint = document.getElementById("more-work-history-hint");
-            if (q2Hint) q2Hint.textContent = t.moreWorkHistoryHint;
+            document.querySelectorAll('[id^="more-work-history-hint-after-"]').forEach((hnt) => {
+                const suffix = hnt.id.replace("more-work-history-hint-after-", "");
+                hnt.textContent = suffix === "2" ? t.moreWorkHistoryHintAfter2 : t.moreWorkHistoryHintAfterN;
+            });
 
             const stLbl = document.getElementById("street-address-label");
             if (stLbl) stLbl.textContent = t.streetLabel;
@@ -2393,7 +2510,9 @@
 
             applyWorkingHoursLang(safeLang);
             applyYesNoLang("id_has_work_history", safeLang);
-            applyYesNoLang("id_more_work_history", safeLang);
+            document.querySelectorAll('[id^="id_more_work_history_after_"]').forEach((sel) => {
+                applyYesNoLang(sel.id, safeLang);
+            });
 
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
                 if (lbl.dataset.orig) lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang, true);
