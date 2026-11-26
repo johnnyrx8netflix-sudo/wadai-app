@@ -723,9 +723,8 @@
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
         ];
 
-        /* よく出る日本語表記・選択肢の多言語辞書 */
+        /* よく出る日本語表記・選択肢の多言語辞書（氏名／名前は元の表記を維持） */
         const PHRASE_MAP = [
-            { keys: ["氏名", "名前", "フルネーム"], pt: "Nome completo", en: "Full name" },
             { keys: ["性別"], pt: "Sexo / Gênero", en: "Gender" },
             { keys: ["男性", "男"], pt: "Masculino", en: "Male" },
             { keys: ["女性", "女"], pt: "Feminino", en: "Female" },
@@ -784,11 +783,27 @@
             return /[\u3040-\u30ff\u4e00-\u9faf]/.test(str || "");
         }
 
-        function translateSinglePhrase(rawStr, lang) {
+        /* 名前・氏名欄かどうかを判定（名前表記は消さない・変えない） */
+        function isNameLabelOrBox(target) {
+            if (!target) return false;
+            const box = target.closest ? target.closest(".field[data-field]") : null;
+            const fieldName = box ? (box.dataset.field || "").toLowerCase() : "";
+            const forAttr = (target.getAttribute && target.getAttribute("for")) ? target.getAttribute("for").toLowerCase() : "";
+            const origText = (target.dataset && target.dataset.orig) ? target.dataset.orig : (target.textContent || "");
+            return (
+                fieldName.includes("name") ||
+                fieldName.includes("shimei") ||
+                forAttr.includes("name") ||
+                forAttr.includes("shimei") ||
+                /氏名|名前|フルネーム/.test(origText)
+            );
+        }
+
+        function translateSinglePhrase(rawStr, lang, preserveName = false) {
             if (!rawStr) return rawStr;
-            if (lang === "ja") return rawStr;
             const trimmed = rawStr.trim();
             if (!trimmed || /^-+$/.test(trimmed)) return "";
+            if (preserveName || lang === "ja") return trimmed;
 
             const parenMatch = trimmed.match(/[（(]([^）)]+)[）)]/);
             if (parenMatch) {
@@ -815,7 +830,7 @@
                 return trimmed;
             }
 
-            return lang === "pt" ? withoutParen || trimmed : withoutParen || trimmed;
+            return withoutParen || trimmed;
         }
 
         const JP_LEVEL_CARDS = [
@@ -1383,11 +1398,11 @@
             }
         }
 
-        /* モダン選択式UIではない一般入力・セレクト欄にもアイコンを付ける */
+        /* モダン選択式UIではない一般入力・セレクト欄にアイコンを1つだけ付ける */
         function ensureStandardFieldIcons() {
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
                 if (box.dataset.permanentlyHidden === "true" || box.dataset.mcInitialized === "true") return;
-                const lbl = box.querySelector(":scope > label");
+                const lbl = box.querySelector(":scope > label, :scope > .std-field-header > label");
                 if (!lbl || lbl.classList.contains("hidden")) return;
 
                 const kind = getChoiceKind(box);
@@ -1404,6 +1419,8 @@
                     header.appendChild(badge);
                     header.appendChild(lbl);
                 } else {
+                    const extraHeaders = Array.from(box.querySelectorAll(":scope > .std-field-header")).slice(1);
+                    extraHeaders.forEach((eh) => eh.remove());
                     const badge = header.querySelector(".mc-icon-badge");
                     if (badge) {
                         badge.innerHTML = buildIconSvg(kind);
@@ -1559,12 +1576,18 @@
             const multiBadgeEl = box.querySelector(".mc-multi-badge");
             if (!sel) return;
 
+            if (origLabel) origLabel.classList.add("hidden");
+
             if (titleEl) {
                 if (kind === "listen") titleEl.textContent = t.jpListenTitle;
                 else if (kind === "speak") titleEl.textContent = t.jpSpeakTitle;
                 else if (kind === "level") titleEl.textContent = t.jpLevelTitle;
                 else if (isOvertimeField(box)) titleEl.textContent = t.overtimeLabel;
-                else if (origLabel) titleEl.textContent = origLabel.textContent;
+                else if (origLabel && origLabel.dataset.orig) {
+                    titleEl.textContent = pickLangPart(origLabel.dataset.orig, safeLang, true, isNameLabelOrBox(origLabel));
+                } else if (origLabel) {
+                    titleEl.textContent = origLabel.textContent;
+                }
             }
 
             if (multiBadgeEl) {
@@ -3022,7 +3045,7 @@
             updateFieldFillHighlight(addressInput);
         }
 
-        function pickLangPart(rawText, lang, isLabel = false) {
+        function pickLangPart(rawText, lang, isLabel = false, preserveName = false) {
             if (!rawText) return rawText;
             const trimmedRaw = rawText.trim();
 
@@ -3045,13 +3068,33 @@
                 const picked = parts.length === 2
                     ? (lang === "ja" ? parts[0] : parts[1]).trim()
                     : (parts[idx] || parts[0]).trim();
-                return translateSinglePhrase(picked, lang);
+                return translateSinglePhrase(picked, lang, preserveName);
             }
 
-            return translateSinglePhrase(baseText, lang);
+            return translateSinglePhrase(baseText, lang, preserveName);
+        }
+
+        /* 1つのフィールド内で重複しているラベル要素を1つに整理する */
+        function deduplicateFieldLabels() {
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
+                const labels = Array.from(box.querySelectorAll("label"));
+                if (labels.length <= 1) return;
+
+                const primary = labels.find((l) => l.closest(".std-field-header")) || labels[0];
+                const primaryNorm = stripLeadingNumber((primary.dataset.orig || primary.textContent || "").trim());
+
+                labels.forEach((lbl) => {
+                    if (lbl === primary) return;
+                    const norm = stripLeadingNumber((lbl.dataset.orig || lbl.textContent || "").trim());
+                    if (!norm || norm === primaryNorm || labels.length > 1) {
+                        lbl.remove();
+                    }
+                });
+            });
         }
 
         function snapshotOriginalTexts() {
+            deduplicateFieldLabels();
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
                 if (!lbl.dataset.orig) {
                     lbl.dataset.orig = stripLeadingNumber(lbl.textContent);
@@ -3073,6 +3116,8 @@
         function applyLang(lang) {
             const safeLang = uiTexts[lang] ? lang : "ja";
             const t = uiTexts[safeLang];
+
+            deduplicateFieldLabels();
 
             document.getElementById("form-title").textContent = t.title;
             document.getElementById("lang-switch-btn").textContent = t.switchLang;
@@ -3155,14 +3200,17 @@
             });
 
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
-                if (lbl.dataset.orig) lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang, true);
+                if (lbl.dataset.orig) {
+                    const keepName = isNameLabelOrBox(lbl);
+                    lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang, true, keepName);
+                }
             });
 
             document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
                 if (opt.dataset && opt.dataset[safeLang]) {
                     opt.textContent = opt.dataset[safeLang];
                 } else if (opt.dataset.orig !== undefined) {
-                    opt.textContent = pickLangPart(opt.dataset.orig, safeLang, false);
+                    opt.textContent = pickLangPart(opt.dataset.orig, safeLang, false, false);
                 }
             });
 
@@ -3170,7 +3218,7 @@
                 if (ctrl.id === "id_street_address") {
                     ctrl.placeholder = t.streetPlaceholder;
                 } else if (ctrl.dataset.origPlaceholder) {
-                    ctrl.placeholder = pickLangPart(ctrl.dataset.origPlaceholder, safeLang, false);
+                    ctrl.placeholder = pickLangPart(ctrl.dataset.origPlaceholder, safeLang, false, isNameLabelOrBox(ctrl));
                 }
             });
 
@@ -3383,6 +3431,7 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            deduplicateFieldLabels();
             hideRetirementOtherFields();
             ensureStreetAddressField();
             ensureWorkingHoursField();
