@@ -1,11 +1,12 @@
 import json
 import urllib.request
 from django.db import transaction
+from django.db.models import Q
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET
 from .forms import SkillSheetApplicationForm
-from .models import Staff, SkillSheet
+from .models import SkillSheet, Staff
 
 
 def skill_sheet_apply(request):
@@ -72,6 +73,58 @@ def skill_sheet_apply(request):
         form = SkillSheetApplicationForm()
 
     return render(request, "hr/skill_sheet_apply.html", {"form": form, "submitted": submitted})
+
+
+def skill_sheet_list(request):
+    q = (request.GET.get("q") or "").strip()
+    selected_nationality = (request.GET.get("nationality") or "").strip()
+    selected_status = (request.GET.get("status") or "").strip()
+
+    sheets = SkillSheet.objects.select_related("staff").order_by("-staff__created_at", "-pk")
+
+    if q:
+        sheets = sheets.filter(
+            Q(staff__full_name__icontains=q)
+            | Q(staff__phone__icontains=q)
+            | Q(staff__address__icontains=q)
+            | Q(wh1_company__icontains=q)
+            | Q(wh2_company__icontains=q)
+            | Q(wh3_company__icontains=q)
+        )
+
+    if selected_nationality:
+        sheets = sheets.filter(staff__nationality=selected_nationality)
+
+    if selected_status:
+        sheets = sheets.filter(staff__status=selected_status)
+
+    nationality_choices = getattr(Staff, "NATIONALITY_CHOICES", ())
+    status_choices = getattr(Staff, "STATUS_CHOICES", ())
+
+    return render(
+        request,
+        "hr/skill_sheet_list.html",
+        {
+            "sheets": sheets,
+            "q": q,
+            "selected_nationality": selected_nationality,
+            "selected_status": selected_status,
+            "nationality_choices": nationality_choices,
+            "status_choices": status_choices,
+        },
+    )
+
+
+def skill_sheet_detail(request, pk):
+    sheet = get_object_or_404(SkillSheet.objects.select_related("staff"), pk=pk)
+    return render(
+        request,
+        "hr/skill_sheet_detail.html",
+        {
+            "sheet": sheet,
+            "staff": sheet.staff,
+        },
+    )
 
 
 @require_GET
