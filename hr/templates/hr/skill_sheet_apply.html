@@ -1172,14 +1172,6 @@
             );
         }
 
-        function isVisaFieldBox(box) {
-            if (!box) return false;
-            const fn = (box.dataset.field || "").toLowerCase();
-            const lbl = box.querySelector("label");
-            const txt = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
-            return fn.includes("visa") || fn.includes("zairyu") || txt.includes("ビザ") || txt.includes("在留");
-        }
-
         function clearValidationErrorsInContainer(container) {
             if (!container) return;
             container.querySelectorAll(".field.req-error").forEach((b) => b.classList.remove("req-error"));
@@ -1237,7 +1229,6 @@
             return "default";
         }
 
-        /* 追加されたアイコン要素はすべて削除する */
         function removeAllAddedIcons() {
             document.querySelectorAll("#skillsheet-form .mc-icon-badge, #skillsheet-form .std-field-header").forEach((el) => {
                 el.remove();
@@ -1421,6 +1412,7 @@
 
             if (multiBadgeEl) {
                 multiBadgeEl.textContent = t.multiBadge;
+                multiBadgeEl.classList.toggle("hidden", !isMulti);
             }
 
             if (descEl) {
@@ -1501,7 +1493,7 @@
                 box.querySelectorAll(":scope > .mc-header, :scope > .mc-desc, :scope > .mc-ui-wrap, :scope > .std-field-header").forEach((el) => el.remove());
 
                 const kind = getChoiceKind(box);
-                const isMulti = isJobTypeField(box) || isWorkingHoursField(box) || sel.multiple;
+                const isMulti = !isAvailabilityField(box) && (isJobTypeField(box) || isWorkingHoursField(box) || sel.multiple);
                 box.dataset.mcInitialized = "true";
                 box.dataset.choiceKind = kind;
                 box.dataset.isMulti = isMulti ? "true" : "false";
