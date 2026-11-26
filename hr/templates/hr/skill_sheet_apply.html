@@ -259,71 +259,22 @@
             cursor: not-allowed;
         }
 
-        /* 選択肢5個以下のタップ式カードボタン */
-        .choice-group {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            margin-top: 8px;
-        }
-        .choice-group.cols-3 {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-        .choice-btn {
-            min-height: 54px;
-            padding: 12px 10px;
-            border-radius: 14px;
-            border: 1.5px solid #cbd5e1;
-            background-color: #ffffff;
-            color: #1e293b;
-            font-size: 0.98rem;
-            font-weight: 700;
-            line-height: 1.3;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
-            transition: all 0.14s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            word-break: break-word;
-        }
-        .choice-group.is-unselected .choice-btn {
-            background-color: #fff5f5;
-            border-color: #fca5a5;
-            color: #7f1d1d;
-        }
-        .choice-btn:hover {
-            border-color: #0284c7;
-            background-color: #f0f9ff;
-        }
-        .choice-btn.is-selected {
-            background-color: #e0f2fe;
-            border-color: #0284c7;
-            color: #0369a1;
-            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.16);
-        }
-
-        /* 日本語スキル（理解・会話・レベル目安）専用デザイン */
-        .field.jp-skill-box {
+        /* 統一されたモダン選択式UI（日本語スキル＆全選択項目共通） */
+        .field.modern-choice-box {
             background: #ffffff;
-            border: none;
-            border-bottom: 1px solid #e2e8f0;
-            border-radius: 0;
-            padding: 20px 6px 24px;
-            margin-bottom: 8px;
-            box-shadow: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px 18px 20px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
         }
-        .field.jp-skill-box:last-of-type {
-            border-bottom: none;
-        }
-        .jp-skill-header {
+        .mc-header {
             display: flex;
             align-items: center;
             gap: 12px;
             margin-bottom: 6px;
         }
-        .jp-icon-badge {
+        .mc-icon-badge {
             width: 34px;
             height: 34px;
             border-radius: 8px;
@@ -334,7 +285,7 @@
             justify-content: center;
             flex-shrink: 0;
         }
-        .jp-icon-badge svg {
+        .mc-icon-badge svg {
             width: 18px;
             height: 18px;
             stroke: currentColor;
@@ -343,30 +294,45 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
-        .jp-skill-title {
+        .mc-title-wrap {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .mc-title {
             margin: 0 !important;
-            font-size: 1.05rem !important;
+            font-size: 1.02rem !important;
             font-weight: 800 !important;
             color: #0f172a !important;
         }
-        .jp-skill-desc {
-            font-size: 0.88rem;
+        .mc-multi-badge {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #0369a1;
+            background: #e0f2fe;
+            border: 1px solid #bae6fd;
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+        .mc-desc {
+            font-size: 0.86rem;
             color: #64748b;
             margin: 0 0 14px 46px;
             line-height: 1.45;
         }
-        .jp-pill-row {
+        .mc-pill-row {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             margin-left: 46px;
         }
-        .jp-pill-btn {
-            min-width: 78px;
-            height: 44px;
-            padding: 0 18px;
+        .mc-pill-btn {
+            min-width: 84px;
+            min-height: 44px;
+            padding: 8px 18px;
             border-radius: 10px;
-            border: 1px solid #cbd5e1;
+            border: 1.5px solid #cbd5e1;
             background: #ffffff;
             color: #334155;
             font-size: 0.94rem;
@@ -376,25 +342,47 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
+            text-align: center;
+            line-height: 1.3;
         }
-        .jp-pill-btn:hover {
+        .mc-pill-row.is-unselected .mc-pill-btn {
+            border-color: #fca5a5;
+            background: #fffafa;
+            color: #7f1d1d;
+        }
+        .mc-pill-btn:hover {
             border-color: #3b82f6;
             background: #f8fafc;
         }
-        .jp-pill-btn.is-selected {
+        .mc-pill-btn.is-selected {
             border-color: #2563eb;
             background: #eff6ff;
             color: #1d4ed8;
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
         }
+        .mc-check-mark {
+            display: none;
+            font-size: 0.85rem;
+            font-weight: 900;
+        }
+        .mc-pill-btn.is-selected .mc-check-mark {
+            display: inline;
+        }
+
+        /* 日本語レベル（目安）5段階メーターカード */
         .jp-level-grid {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 12px;
+            gap: 10px;
+        }
+        .jp-level-grid.is-unselected .jp-level-card {
+            border-color: #fca5a5;
+            background: #fffafa;
         }
         .jp-level-card {
             background: #ffffff;
-            border: 1px solid #cbd5e1;
+            border: 1.5px solid #cbd5e1;
             border-radius: 12px;
             padding: 14px 8px;
             cursor: pointer;
@@ -534,8 +522,9 @@
                 padding: 18px 12px;
                 border-radius: 10px;
             }
-            .field {
-                padding: 10px;
+            .field,
+            .field.modern-choice-box {
+                padding: 14px 12px;
             }
             input, select, textarea, input[type="date"] {
                 min-height: 44px;
@@ -543,17 +532,14 @@
                 font-size: 0.95rem;
                 line-height: 1.4;
             }
-            .choice-group,
-            .choice-group.cols-3 {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-            .jp-skill-desc,
-            .jp-pill-row {
+            .mc-desc,
+            .mc-pill-row {
                 margin-left: 0;
             }
-            .jp-pill-btn {
+            .mc-pill-btn {
                 flex: 1 1 calc(50% - 6px);
                 min-width: 0;
+                padding: 10px 10px;
             }
             .step-pills {
                 grid-template-columns: repeat(2, 1fr);
@@ -721,7 +707,10 @@
             "visa_type",
             "drivers_license",
             "commute_method",
-            "preferred_working_hours"
+            "preferred_working_hours",
+            "preferred_job_type",
+            "desired_job_type",
+            "job_type"
         ];
 
         const uiTexts = {
@@ -753,7 +742,7 @@
                 streetPlaceholder: "例：1-2-3 ○○マンション 101号室",
                 streetHint: "番地・部屋番号などを入力してください",
                 workingHoursLabel: "希望勤務時間",
-                workingHoursHint: "希望する勤務時間を選択してください",
+                workingHoursHint: "希望する勤務時間を選んでください。",
                 shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
                 jpListenTitle: "日本語を理解する",
@@ -762,6 +751,9 @@
                 jpSpeakDesc: "日本語でどの程度会話ができるか選んでください。",
                 jpLevelTitle: "日本語レベル（目安）",
                 jpLevelDesc: "自分の日本語力に近い目安を選んでください。",
+                multiBadge: "複数選択可",
+                multiDesc: "当てはまるものをすべて選んでください（複数選択できます）。",
+                singleDesc: "当てはまるものを1つ選んでください。",
                 hasWorkHistoryLabel: "職歴はありますか？",
                 hasWorkHistoryHint: "「はい」を選ぶと会社①の入力欄が表示されます。「いいえ」の場合は職歴なしで送信へ進めます。",
                 moreWorkHistoryLabel: "追加の職歴はありますか？",
@@ -799,7 +791,7 @@
                 streetPlaceholder: "Ex.: Rua Exemplo, 123, Apto 12",
                 streetHint: "Digite o número da casa/prédio e complemento",
                 workingHoursLabel: "Horário de trabalho desejado",
-                workingHoursHint: "Selecione o horário de trabalho desejado",
+                workingHoursHint: "Selecione o horário de trabalho desejado.",
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
                 jpListenTitle: "Compreensão de japonês",
@@ -808,6 +800,9 @@
                 jpSpeakDesc: "Selecione o quanto você consegue conversar em japonês.",
                 jpLevelTitle: "Nível de japonês (referência)",
                 jpLevelDesc: "Selecione a faixa mais próxima do seu nível de japonês.",
+                multiBadge: "Múltipla escolha",
+                multiDesc: "Selecione todas as opções desejadas (pode escolher mais de uma).",
+                singleDesc: "Selecione uma opção.",
                 hasWorkHistoryLabel: "Possui experiência profissional (histórico de trabalho)?",
                 hasWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ① ou 'Não' para seguir sem histórico.",
                 moreWorkHistoryLabel: "Deseja adicionar mais experiência profissional?",
@@ -845,7 +840,7 @@
                 streetPlaceholder: "e.g., 1-2-3 Sample St, Apt 101",
                 streetHint: "Enter street number, building name, or room number",
                 workingHoursLabel: "Preferred working hours",
-                workingHoursHint: "Select your preferred working hours",
+                workingHoursHint: "Select your preferred working hours.",
                 shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
                 jpListenTitle: "Japanese Listening",
@@ -854,6 +849,9 @@
                 jpSpeakDesc: "Select how well you can hold a conversation in Japanese.",
                 jpLevelTitle: "Japanese Level (Guide)",
                 jpLevelDesc: "Select the level closest to your Japanese ability.",
+                multiBadge: "Multiple choice",
+                multiDesc: "Select all that apply (you can choose multiple options).",
+                singleDesc: "Please select one option.",
                 hasWorkHistoryLabel: "Do you have work experience?",
                 hasWorkHistoryHint: "Select 'Yes' to show Company ①, or 'No' to continue without work history.",
                 moreWorkHistoryLabel: "Do you have additional work experience to add?",
@@ -899,7 +897,25 @@
             return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
         }
 
-        function getJpSkillType(box) {
+        function isJobTypeField(box) {
+            if (!box) return false;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            return (
+                fieldName.includes("job_type") ||
+                fieldName.includes("desired_job") ||
+                fieldName.includes("preferred_job") ||
+                fieldName.includes("shokushu") ||
+                rawLbl.includes("希望職種") ||
+                rawLbl.includes("職種") ||
+                rawLbl.includes("job type") ||
+                rawLbl.includes("tipo de trabalho") ||
+                rawLbl.includes("função")
+            );
+        }
+
+        function getChoiceKind(box) {
             if (!box) return null;
             const fieldName = (box.dataset.field || "").toLowerCase();
             const lbl = box.querySelector("label");
@@ -916,7 +932,6 @@
             ) {
                 return "listen";
             }
-
             if (
                 fieldName.includes("speak") ||
                 fieldName.includes("conversation") ||
@@ -927,7 +942,6 @@
             ) {
                 return "speak";
             }
-
             if (
                 fieldName.includes("japanese_level") ||
                 fieldName.includes("jp_level") ||
@@ -939,18 +953,38 @@
             ) {
                 return "level";
             }
-
-            return null;
+            if (fieldName.includes("gender") || rawLbl.includes("性別")) return "gender";
+            if (fieldName.includes("marital") || rawLbl.includes("婚姻") || rawLbl.includes("配偶者")) return "marital";
+            if (fieldName.includes("license") || rawLbl.includes("免許")) return "license";
+            if (fieldName.includes("commute") || rawLbl.includes("通勤")) return "commute";
+            if (fieldName.includes("working_hours") || fieldName.includes("shift") || rawLbl.includes("勤務時間") || rawLbl.includes("シフト")) return "shift";
+            if (isJobTypeField(box)) return "job";
+            if (fieldName.includes("work_history") || rawLbl.includes("職歴")) return "history";
+            return "default";
         }
 
-        function buildJpIconSvg(type) {
-            if (type === "listen") {
-                return `<svg viewBox="0 0 24 24"><path d="M16 8a5 5 0 0 0-8 4v1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v1a2 2 0 0 0 4 0v-6a5 5 0 0 0-1-3z"/><path d="M19 6a8 8 0 0 0-14 5"/></svg>`;
+        function buildIconSvg(kind) {
+            switch (kind) {
+                case "listen":
+                    return `<svg viewBox="0 0 24 24"><path d="M16 8a5 5 0 0 0-8 4v1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v1a2 2 0 0 0 4 0v-6a5 5 0 0 0-1-3z"/><path d="M19 6a8 8 0 0 0-14 5"/></svg>`;
+                case "speak":
+                    return `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
+                case "level":
+                    return `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
+                case "gender":
+                case "marital":
+                    return `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+                case "license":
+                case "commute":
+                    return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="14" x2="13" y2="14"/></svg>`;
+                case "shift":
+                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>`;
+                case "job":
+                case "history":
+                    return `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`;
+                default:
+                    return `<svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
             }
-            if (type === "speak") {
-                return `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
-            }
-            return `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
         }
 
         function findBestSelectOptionForCard(sel, cardSpec) {
@@ -972,33 +1006,126 @@
             return null;
         }
 
-        function refreshJpSkillUi(lang) {
+        /* すべての選択式（靴のサイズ・選択肢7個以上の長大リストを除く）をモダンUI化 */
+        function shouldConvertFieldToModernChoice(box, sel) {
+            if (!box || !sel) return false;
+            if (sel.id === "id_shoe_size_select") return false;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            if (fieldName.includes("shoe") || fieldName.includes("nationality") || fieldName.includes("visa")) {
+                return false;
+            }
+            const validOpts = Array.from(sel.options).filter((o) => {
+                const v = (o.value || "").trim();
+                const t = ((o.dataset.orig || o.textContent) || "").trim();
+                return v !== "" && !/^-+$/.test(t);
+            });
+            return validOpts.length >= 1 && validOpts.length <= 12;
+        }
+
+        function getSelectedValuesForBox(box) {
+            if (!box) return [];
+            const sel = box.querySelector("select");
+            if (!sel) return [];
+
+            if (box.dataset.isMulti === "true") {
+                try {
+                    const parsed = JSON.parse(box.dataset.selectedList || "[]");
+                    if (Array.isArray(parsed)) return parsed;
+                } catch (e) {}
+                return Array.from(sel.selectedOptions)
+                    .map((o) => o.value)
+                    .filter((v) => v !== "");
+            }
+
+            const single = (sel.value || "").trim();
+            return single ? [single] : [];
+        }
+
+        function setSelectedValuesForBox(box, values) {
+            if (!box) return;
+            const sel = box.querySelector("select");
+            if (!sel) return;
+
+            const cleanVals = Array.from(new Set(values.filter((v) => (v || "").trim() !== "")));
+            box.dataset.selectedList = JSON.stringify(cleanVals);
+
+            if (box.dataset.isMulti === "true") {
+                if (sel.multiple) {
+                    Array.from(sel.options).forEach((o) => {
+                        o.selected = cleanVals.includes(o.value);
+                    });
+                } else {
+                    sel.value = cleanVals[0] || "";
+                }
+
+                // 複数選択のカンマ区切り値も合わせて送信できるよう補助hiddenを生成
+                let multiHidden = box.querySelector("input.multi-choice-hidden");
+                if (!multiHidden) {
+                    multiHidden = document.createElement("input");
+                    multiHidden.type = "hidden";
+                    multiHidden.className = "multi-choice-hidden";
+                    multiHidden.name = `${sel.name}_multi`;
+                    sel.insertAdjacentElement("afterend", multiHidden);
+                }
+                const labels = cleanVals.map((val) => {
+                    const opt = Array.from(sel.options).find((o) => o.value === val);
+                    return opt ? ((opt.dataset.orig || opt.textContent) || val).trim() : val;
+                });
+                multiHidden.value = labels.join(", ");
+            } else {
+                sel.value = cleanVals[0] || "";
+            }
+
+            updateFieldFillHighlight(sel);
+            refreshModernChoiceBox(box, localStorage.getItem("skillsheet_lang") || "ja");
+            sel.dispatchEvent(new Event("change", { bubbles: true }));
+            sel.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+
+        function refreshModernChoiceBox(box, lang) {
+            if (!box || box.dataset.mcInitialized !== "true") return;
             const safeLang = uiTexts[lang] ? lang : "ja";
             const t = uiTexts[safeLang] || uiTexts.ja;
+            const kind = box.dataset.choiceKind || "default";
+            const isMulti = box.dataset.isMulti === "true";
+            const sel = box.querySelector("select");
+            const origLabel = box.querySelector("label");
+            const titleEl = box.querySelector(".mc-title");
+            const descEl = box.querySelector(".mc-desc");
+            const multiBadgeEl = box.querySelector(".mc-multi-badge");
+            if (!sel) return;
 
-            document.querySelectorAll("#skillsheet-form .field.jp-skill-box").forEach((box) => {
-                const skillType = box.dataset.jpSkillType;
-                const sel = box.querySelector("select");
-                const titleEl = box.querySelector(".jp-skill-title");
-                const descEl = box.querySelector(".jp-skill-desc");
-                const uiWrap = box.querySelector(".jp-skill-ui");
-                if (!sel || !uiWrap) return;
+            if (titleEl) {
+                if (kind === "listen") titleEl.textContent = t.jpListenTitle;
+                else if (kind === "speak") titleEl.textContent = t.jpSpeakTitle;
+                else if (kind === "level") titleEl.textContent = t.jpLevelTitle;
+                else if (origLabel) titleEl.textContent = origLabel.textContent;
+            }
 
-                if (titleEl) {
-                    if (skillType === "listen") titleEl.textContent = t.jpListenTitle;
-                    else if (skillType === "speak") titleEl.textContent = t.jpSpeakTitle;
-                    else if (skillType === "level") titleEl.textContent = t.jpLevelTitle;
+            if (multiBadgeEl) {
+                multiBadgeEl.textContent = t.multiBadge;
+            }
+
+            if (descEl) {
+                if (kind === "listen") descEl.textContent = t.jpListenDesc;
+                else if (kind === "speak") descEl.textContent = t.jpSpeakDesc;
+                else if (kind === "level") descEl.textContent = t.jpLevelDesc;
+                else if (kind === "shift") descEl.textContent = t.workingHoursHint;
+                else if (kind === "history") {
+                    descEl.textContent = box.id === "more-work-history-box" ? t.moreWorkHistoryHint : t.hasWorkHistoryHint;
+                } else {
+                    descEl.textContent = isMulti ? t.multiDesc : t.singleDesc;
                 }
-                if (descEl) {
-                    if (skillType === "listen") descEl.textContent = t.jpListenDesc;
-                    else if (skillType === "speak") descEl.textContent = t.jpSpeakDesc;
-                    else if (skillType === "level") descEl.textContent = t.jpLevelDesc;
-                }
+            }
 
-                const currentVal = (sel.value || "").trim();
+            const selectedVals = getSelectedValuesForBox(box);
+            const hasSelection = selectedVals.length > 0;
 
-                if (skillType === "level") {
-                    uiWrap.querySelectorAll(".jp-level-card").forEach((card, idx) => {
+            if (kind === "level") {
+                const grid = box.querySelector(".jp-level-grid");
+                if (grid) {
+                    grid.classList.toggle("is-unselected", !hasSelection);
+                    grid.querySelectorAll(".jp-level-card").forEach((card, idx) => {
                         const spec = JP_LEVEL_CARDS[idx];
                         if (!spec) return;
                         const pctEl = card.querySelector(".jp-level-pct");
@@ -1009,262 +1136,195 @@
                         const matchedOpt = findBestSelectOptionForCard(sel, spec);
                         const cardVal = matchedOpt ? matchedOpt.value : card.dataset.value;
                         card.dataset.value = cardVal;
-                        const selected = Boolean(currentVal && cardVal === currentVal);
+                        const selected = selectedVals.includes(cardVal);
                         card.classList.toggle("is-selected", selected);
                         card.setAttribute("aria-pressed", selected ? "true" : "false");
                     });
-                } else {
-                    uiWrap.querySelectorAll(".jp-pill-btn").forEach((btn) => {
+                }
+            } else {
+                const row = box.querySelector(".mc-pill-row");
+                if (row) {
+                    row.classList.toggle("is-unselected", !hasSelection);
+                    row.querySelectorAll(".mc-pill-btn").forEach((btn) => {
                         const opt = Array.from(sel.options).find((o) => o.value === btn.dataset.value);
-                        if (opt) btn.textContent = opt.textContent;
-                        const selected = Boolean(currentVal && btn.dataset.value === currentVal);
+                        const textSpan = btn.querySelector(".mc-btn-text");
+                        if (opt && textSpan) {
+                            textSpan.textContent = opt.textContent;
+                        }
+                        const selected = selectedVals.includes(btn.dataset.value);
                         btn.classList.toggle("is-selected", selected);
                         btn.setAttribute("aria-pressed", selected ? "true" : "false");
                     });
                 }
-            });
+            }
         }
 
-        function initJpSkillSections() {
+        function initAllModernChoiceFields() {
             const lang = localStorage.getItem("skillsheet_lang") || "ja";
             const t = uiTexts[lang] || uiTexts.ja;
 
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                const skillType = getJpSkillType(box);
                 const sel = box.querySelector("select");
-                if (!skillType || !sel) return;
-
-                if (!box.dataset.jpInitialized) {
-                    box.dataset.jpInitialized = "true";
-                    box.dataset.jpSkillType = skillType;
-                    box.classList.add("jp-skill-box");
-
-                    const origLabel = box.querySelector("label");
-                    if (origLabel) origLabel.classList.add("hidden");
-
-                    const header = document.createElement("div");
-                    header.className = "jp-skill-header";
-
-                    const badge = document.createElement("span");
-                    badge.className = "jp-icon-badge";
-                    badge.innerHTML = buildJpIconSvg(skillType);
-
-                    const title = document.createElement("div");
-                    title.className = "jp-skill-title";
-                    if (skillType === "listen") title.textContent = t.jpListenTitle;
-                    else if (skillType === "speak") title.textContent = t.jpSpeakTitle;
-                    else title.textContent = t.jpLevelTitle;
-
-                    header.appendChild(badge);
-                    header.appendChild(title);
-
-                    const desc = document.createElement("p");
-                    desc.className = "jp-skill-desc";
-                    if (skillType === "listen") desc.textContent = t.jpListenDesc;
-                    else if (skillType === "speak") desc.textContent = t.jpSpeakDesc;
-                    else desc.textContent = t.jpLevelDesc;
-
-                    const uiWrap = document.createElement("div");
-                    uiWrap.className = "jp-skill-ui";
-
-                    sel.classList.add("hidden");
-
-                    if (skillType === "level") {
-                        const grid = document.createElement("div");
-                        grid.className = "jp-level-grid";
-
-                        const validOpts = Array.from(sel.options).filter((o) => {
-                            const v = (o.value || "").trim();
-                            const txt = ((o.dataset.orig || o.textContent) || "").trim();
-                            return v !== "" && !/^-+$/.test(txt);
-                        });
-
-                        JP_LEVEL_CARDS.forEach((spec, idx) => {
-                            const matchedOpt = findBestSelectOptionForCard(sel, spec) || validOpts[idx];
-                            const optValue = matchedOpt ? matchedOpt.value : String(spec.bars);
-
-                            const card = document.createElement("button");
-                            card.type = "button";
-                            card.className = "jp-level-card";
-                            card.dataset.value = optValue;
-                            card.setAttribute("aria-pressed", "false");
-
-                            const pct = document.createElement("div");
-                            pct.className = "jp-level-pct";
-                            pct.textContent = spec.pct[lang] || spec.pct.ja;
-
-                            const bars = document.createElement("div");
-                            bars.className = "jp-level-bars";
-                            for (let b = 1; b <= 5; b++) {
-                                const bar = document.createElement("span");
-                                bar.className = "jp-level-bar" + (b <= spec.bars ? " on" : "");
-                                bars.appendChild(bar);
-                            }
-
-                            const name = document.createElement("div");
-                            name.className = "jp-level-name";
-                            name.textContent = spec.name[lang] || spec.name.ja;
-
-                            card.appendChild(pct);
-                            card.appendChild(bars);
-                            card.appendChild(name);
-
-                            card.addEventListener("click", () => {
-                                sel.value = card.dataset.value;
-                                updateFieldFillHighlight(sel);
-                                refreshJpSkillUi(localStorage.getItem("skillsheet_lang") || "ja");
-                                sel.dispatchEvent(new Event("change", { bubbles: true }));
-                                sel.dispatchEvent(new Event("input", { bubbles: true }));
-                            });
-
-                            grid.appendChild(card);
-                        });
-
-                        uiWrap.appendChild(grid);
-                    } else {
-                        const row = document.createElement("div");
-                        row.className = "jp-pill-row";
-
-                        const validOpts = Array.from(sel.options).filter((o) => {
-                            const v = (o.value || "").trim();
-                            const txt = ((o.dataset.orig || o.textContent) || "").trim();
-                            return v !== "" && !/^-+$/.test(txt);
-                        });
-
-                        validOpts.forEach((opt) => {
-                            const btn = document.createElement("button");
-                            btn.type = "button";
-                            btn.className = "jp-pill-btn";
-                            btn.dataset.value = opt.value;
-                            btn.textContent = opt.textContent;
-                            btn.setAttribute("aria-pressed", "false");
-
-                            btn.addEventListener("click", () => {
-                                sel.value = opt.value;
-                                updateFieldFillHighlight(sel);
-                                refreshJpSkillUi(localStorage.getItem("skillsheet_lang") || "ja");
-                                sel.dispatchEvent(new Event("change", { bubbles: true }));
-                                sel.dispatchEvent(new Event("input", { bubbles: true }));
-                            });
-
-                            row.appendChild(btn);
-                        });
-
-                        uiWrap.appendChild(row);
-                    }
-
-                    const insertAfterTarget = origLabel || sel;
-                    insertAfterTarget.insertAdjacentElement("afterend", header);
-                    header.insertAdjacentElement("afterend", desc);
-                    desc.insertAdjacentElement("afterend", uiWrap);
+                if (!sel || !shouldConvertFieldToModernChoice(box, sel)) return;
+                if (box.dataset.mcInitialized === "true") {
+                    refreshModernChoiceBox(box, lang);
+                    return;
                 }
 
-                sel.addEventListener("change", () => {
-                    refreshJpSkillUi(localStorage.getItem("skillsheet_lang") || "ja");
-                });
-            });
+                const kind = getChoiceKind(box);
+                const isMulti = isJobTypeField(box) || sel.multiple;
+                box.dataset.mcInitialized = "true";
+                box.dataset.choiceKind = kind;
+                box.dataset.isMulti = isMulti ? "true" : "false";
+                box.classList.add("modern-choice-box");
 
-            refreshJpSkillUi(lang);
-        }
+                // 初期選択値を記録
+                const initialVals = Array.from(sel.selectedOptions)
+                    .map((o) => o.value)
+                    .filter((v) => v !== "");
+                box.dataset.selectedList = JSON.stringify(initialVals);
 
-        /* 選択肢5個以下のセレクトを角丸タップボタンに変換 */
-        function shouldConvertToChoiceButtons(sel) {
-            if (!sel || sel.id === "id_shoe_size_select") return false;
-            const parentBox = sel.closest(".field");
-            if (parentBox && getJpSkillType(parentBox)) return false;
+                const origLabel = box.querySelector("label");
+                if (origLabel) origLabel.classList.add("hidden");
 
-            const validOpts = Array.from(sel.options).filter((o) => {
-                const v = (o.value || "").trim();
-                const t = ((o.dataset.orig || o.textContent) || "").trim();
-                return v !== "" && !/^-+$/.test(t);
-            });
-            return validOpts.length >= 1 && validOpts.length <= 5;
-        }
+                // 既存の重複ヒントがあれば非表示化（モダンUI側の説明文に統合）
+                box.querySelectorAll(".hint").forEach((h) => h.classList.add("hidden"));
 
-        function syncChoiceButtons(sel) {
-            if (!sel || !sel.dataset.choiceGroupId) return;
-            const group = document.getElementById(sel.dataset.choiceGroupId);
-            if (!group) return;
+                const header = document.createElement("div");
+                header.className = "mc-header";
 
-            const currentVal = (sel.value || "").trim();
-            const hasVal = Boolean(currentVal);
-            group.classList.toggle("is-unselected", !hasVal);
-            group.classList.toggle("is-selected", hasVal);
+                const badge = document.createElement("span");
+                badge.className = "mc-icon-badge";
+                badge.innerHTML = buildIconSvg(kind);
 
-            group.querySelectorAll(".choice-btn").forEach((btn) => {
-                const isMatch = btn.dataset.value === currentVal;
-                btn.classList.toggle("is-selected", isMatch);
-                btn.setAttribute("aria-pressed", isMatch ? "true" : "false");
-            });
-        }
+                const titleWrap = document.createElement("div");
+                titleWrap.className = "mc-title-wrap";
 
-        function refreshChoiceButtonLabels(sel) {
-            if (!sel || !sel.dataset.choiceGroupId) return;
-            const group = document.getElementById(sel.dataset.choiceGroupId);
-            if (!group) return;
+                const title = document.createElement("div");
+                title.className = "mc-title";
+                title.textContent = origLabel ? origLabel.textContent : "";
+                titleWrap.appendChild(title);
 
-            Array.from(sel.options).forEach((opt) => {
-                const v = (opt.value || "").trim();
-                if (!v) return;
-                const btn = group.querySelector(`.choice-btn[data-value="${CSS.escape(v)}"]`);
-                if (btn) {
-                    btn.textContent = opt.textContent;
+                if (isMulti) {
+                    const mBadge = document.createElement("span");
+                    mBadge.className = "mc-multi-badge";
+                    mBadge.textContent = t.multiBadge;
+                    titleWrap.appendChild(mBadge);
                 }
-            });
-            syncChoiceButtons(sel);
-        }
 
-        function initChoiceButtonsForSelect(sel) {
-            if (!shouldConvertToChoiceButtons(sel)) return;
+                header.appendChild(badge);
+                header.appendChild(titleWrap);
 
-            let group = sel.dataset.choiceGroupId ? document.getElementById(sel.dataset.choiceGroupId) : null;
-            const validOpts = Array.from(sel.options).filter((o) => {
-                const v = (o.value || "").trim();
-                const t = ((o.dataset.orig || o.textContent) || "").trim();
-                return v !== "" && !/^-+$/.test(t);
-            });
+                const desc = document.createElement("p");
+                desc.className = "mc-desc";
 
-            if (!group) {
-                group = document.createElement("div");
-                const groupId = `choice-group-${sel.id || sel.name || Math.random().toString(36).slice(2, 8)}`;
-                group.id = groupId;
-                group.className = "choice-group";
-                if (validOpts.length === 3) {
-                    group.classList.add("cols-3");
-                }
-                sel.dataset.choiceGroupId = groupId;
-
-                validOpts.forEach((opt) => {
-                    const btn = document.createElement("button");
-                    btn.type = "button";
-                    btn.className = "choice-btn";
-                    btn.dataset.value = opt.value;
-                    btn.textContent = opt.textContent;
-                    btn.setAttribute("aria-pressed", "false");
-
-                    btn.addEventListener("click", () => {
-                        sel.value = opt.value;
-                        updateFieldFillHighlight(sel);
-                        syncChoiceButtons(sel);
-                        sel.dispatchEvent(new Event("change", { bubbles: true }));
-                        sel.dispatchEvent(new Event("input", { bubbles: true }));
-                    });
-
-                    group.appendChild(btn);
-                });
+                const uiWrap = document.createElement("div");
+                uiWrap.className = "mc-ui-wrap";
 
                 sel.classList.add("hidden");
-                sel.insertAdjacentElement("afterend", group);
-            } else {
-                refreshChoiceButtonLabels(sel);
-            }
 
-            syncChoiceButtons(sel);
+                const validOpts = Array.from(sel.options).filter((o) => {
+                    const v = (o.value || "").trim();
+                    const txt = ((o.dataset.orig || o.textContent) || "").trim();
+                    return v !== "" && !/^-+$/.test(txt);
+                });
+
+                if (kind === "level") {
+                    const grid = document.createElement("div");
+                    grid.className = "jp-level-grid";
+
+                    JP_LEVEL_CARDS.forEach((spec, idx) => {
+                        const matchedOpt = findBestSelectOptionForCard(sel, spec) || validOpts[idx];
+                        const optValue = matchedOpt ? matchedOpt.value : String(spec.bars);
+
+                        const card = document.createElement("button");
+                        card.type = "button";
+                        card.className = "jp-level-card";
+                        card.dataset.value = optValue;
+                        card.setAttribute("aria-pressed", "false");
+
+                        const pct = document.createElement("div");
+                        pct.className = "jp-level-pct";
+                        pct.textContent = spec.pct[lang] || spec.pct.ja;
+
+                        const bars = document.createElement("div");
+                        bars.className = "jp-level-bars";
+                        for (let b = 1; b <= 5; b++) {
+                            const bar = document.createElement("span");
+                            bar.className = "jp-level-bar" + (b <= spec.bars ? " on" : "");
+                            bars.appendChild(bar);
+                        }
+
+                        const name = document.createElement("div");
+                        name.className = "jp-level-name";
+                        name.textContent = spec.name[lang] || spec.name.ja;
+
+                        card.appendChild(pct);
+                        card.appendChild(bars);
+                        card.appendChild(name);
+
+                        card.addEventListener("click", () => {
+                            setSelectedValuesForBox(box, [card.dataset.value]);
+                        });
+
+                        grid.appendChild(card);
+                    });
+
+                    uiWrap.appendChild(grid);
+                } else {
+                    const row = document.createElement("div");
+                    row.className = "mc-pill-row";
+
+                    validOpts.forEach((opt) => {
+                        const btn = document.createElement("button");
+                        btn.type = "button";
+                        btn.className = "mc-pill-btn";
+                        btn.dataset.value = opt.value;
+                        btn.setAttribute("aria-pressed", "false");
+
+                        if (isMulti) {
+                            const checkSpan = document.createElement("span");
+                            checkSpan.className = "mc-check-mark";
+                            checkSpan.textContent = "✓";
+                            btn.appendChild(checkSpan);
+                        }
+
+                        const textSpan = document.createElement("span");
+                        textSpan.className = "mc-btn-text";
+                        textSpan.textContent = opt.textContent;
+                        btn.appendChild(textSpan);
+
+                        btn.addEventListener("click", () => {
+                            const current = getSelectedValuesForBox(box);
+                            if (isMulti) {
+                                const exists = current.includes(opt.value);
+                                const next = exists
+                                    ? current.filter((v) => v !== opt.value)
+                                    : [...current, opt.value];
+                                setSelectedValuesForBox(box, next);
+                            } else {
+                                setSelectedValuesForBox(box, [opt.value]);
+                            }
+                        });
+
+                        row.appendChild(btn);
+                    });
+
+                    uiWrap.appendChild(row);
+                }
+
+                const insertTarget = origLabel || sel;
+                insertTarget.insertAdjacentElement("afterend", header);
+                header.insertAdjacentElement("afterend", desc);
+                desc.insertAdjacentElement("afterend", uiWrap);
+
+                refreshModernChoiceBox(box, lang);
+            });
         }
 
-        function initAllChoiceButtons() {
-            document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
-                initChoiceButtonsForSelect(sel);
+        function refreshAllModernChoiceFields(lang) {
+            document.querySelectorAll("#skillsheet-form .field.modern-choice-box").forEach((box) => {
+                refreshModernChoiceBox(box, lang);
             });
         }
 
@@ -1272,17 +1332,18 @@
             if (!el || el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
 
             if (el.tagName === "SELECT") {
-                const val = (el.value || "").trim();
-                const isUnselected = !val || val === "---------";
-                if (isUnselected) {
+                const box = el.closest(".field");
+                const selectedCount = box ? getSelectedValuesForBox(box).length : ((el.value || "").trim() ? 1 : 0);
+                if (selectedCount === 0) {
                     el.classList.add("is-empty", "is-unselected");
                     el.classList.remove("is-filled");
                 } else {
                     el.classList.remove("is-empty", "is-unselected");
                     el.classList.add("is-filled");
                 }
-                syncChoiceButtons(el);
-                refreshJpSkillUi(localStorage.getItem("skillsheet_lang") || "ja");
+                if (box && box.dataset.mcInitialized === "true") {
+                    refreshModernChoiceBox(box, localStorage.getItem("skillsheet_lang") || "ja");
+                }
                 return;
             }
 
@@ -1428,7 +1489,7 @@
             if (!box || box.dataset.permanentlyHidden === "true") return 0;
             const fieldName = box.dataset.field || "";
             if (STEP1_FIELDS.includes(fieldName)) return 1;
-            if (STEP2_FIELDS.includes(fieldName)) return 2;
+            if (STEP2_FIELDS.includes(fieldName) || isJobTypeField(box)) return 2;
             if (isWorkHistoryBox(box)) return 4;
             return 3;
         }
@@ -1461,6 +1522,9 @@
                 q2Box.dataset.whActive = q1Val === "yes" ? "true" : "false";
                 if (q1Val !== "yes" && q2Sel) {
                     q2Sel.value = "";
+                    if (q2Box.dataset.mcInitialized === "true") {
+                        q2Box.dataset.selectedList = "[]";
+                    }
                     updateFieldFillHighlight(q2Sel);
                 }
             }
@@ -2095,13 +2159,15 @@
                 boxMap.set(box.dataset.field, box);
             });
 
+            const step2ExtraBoxes = [];
             const step3Boxes = [];
             const step4Boxes = [];
 
             allBoxes.forEach((box) => {
                 const fieldName = box.dataset.field || "";
                 if (STEP1_FIELDS.includes(fieldName) || STEP2_FIELDS.includes(fieldName)) return;
-                if (isWorkHistoryBox(box)) step4Boxes.push(box);
+                if (isJobTypeField(box)) step2ExtraBoxes.push(box);
+                else if (isWorkHistoryBox(box)) step4Boxes.push(box);
                 else step3Boxes.push(box);
             });
 
@@ -2119,6 +2185,11 @@
                     formEl.insertBefore(box, stepNav);
                     boxMap.delete(fieldName);
                 }
+            });
+
+            step2ExtraBoxes.forEach((box) => {
+                formEl.insertBefore(box, stepNav);
+                boxMap.delete(box.dataset.field);
             });
 
             step3Boxes.forEach((box) => {
@@ -2336,10 +2407,9 @@
 
             document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
                 updateFieldFillHighlight(sel);
-                refreshChoiceButtonLabels(sel);
             });
 
-            refreshJpSkillUi(safeLang);
+            refreshAllModernChoiceFields(safeLang);
             updateStepperUI();
             updateVisaVisibility();
             hideCommuteOtherField();
@@ -2548,8 +2618,7 @@
             ensureShoeSizeSelect();
             hideCommuteOtherField();
             initFieldFillHighlight();
-            initJpSkillSections();
-            initAllChoiceButtons();
+            initAllModernChoiceFields();
             lockAgeField();
             configureNumericInputs();
 
