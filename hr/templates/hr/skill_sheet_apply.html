@@ -218,15 +218,16 @@
             font-weight: 700;
             color: #b91c1c;
         }
-        .std-field-header {
+        .field-title-row {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
-        .std-field-header label {
+        .field-title-row label {
+            display: inline-block !important;
             margin: 0 !important;
-            font-size: 1.0rem !important;
+            font-size: 1.02rem !important;
             font-weight: 800 !important;
             color: #0f172a !important;
         }
@@ -339,7 +340,8 @@
             flex-wrap: wrap;
             gap: 8px;
         }
-        .mc-title {
+        .mc-title-wrap label {
+            display: inline-block !important;
             margin: 0 !important;
             font-size: 1.02rem !important;
             font-weight: 800 !important;
@@ -415,6 +417,7 @@
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 10px;
+            margin-left: 46px;
         }
         .jp-level-grid.is-unselected .jp-level-card {
             border-color: #fca5a5;
@@ -560,6 +563,7 @@
         @media (max-width: 720px) {
             .jp-level-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
+                margin-left: 0;
             }
         }
         @media (max-width: 600px) {
@@ -596,7 +600,8 @@
                 line-height: 1.4;
             }
             .mc-desc,
-            .mc-pill-row {
+            .mc-pill-row,
+            .jp-level-grid {
                 margin-left: 0;
             }
             .mc-pill-btn {
@@ -674,7 +679,7 @@
                 </div>
             </div>
 
-            <form method="post" id="skillsheet-form">
+            <form method="post" id="skillsheet-form" novalidate>
                 {% csrf_token %}
                 {% for field in form %}
                     <div class="field" data-field="{{ field.name }}">
@@ -707,6 +712,9 @@
     </div>
 
     <script>
+        // いったん必須チェック・必須バッジを解除するフラグ（戻す場合は true に変更）
+        const REQUIRED_VALIDATION_ENABLED = false;
+
         const LANG_INDEX = { ja: 0, pt: 1, en: 2 };
         let basePostalAddress = "";
         let currentStep = 1;
@@ -1161,8 +1169,7 @@
             const fieldName = (box.dataset.field || "").toLowerCase();
             const lbl = box.querySelector("label");
             const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
-            const titleText = (box.querySelector(".mc-title") ? box.querySelector(".mc-title").textContent : "").toLowerCase();
-            const combined = `${fieldName} ${rawLbl} ${titleText}`;
+            const combined = `${fieldName} ${rawLbl}`;
             return combined.includes("overtime") || combined.includes("zangyo") || combined.includes("残業");
         }
 
@@ -1171,8 +1178,7 @@
             const fieldName = (box.dataset.field || "").toLowerCase();
             const lbl = box.querySelector("label");
             const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
-            const titleText = (box.querySelector(".mc-title") ? box.querySelector(".mc-title").textContent : "").toLowerCase();
-            const combined = `${fieldName} ${rawLbl} ${titleText}`;
+            const combined = `${fieldName} ${rawLbl}`;
             return (
                 combined.includes("early_start") ||
                 combined.includes("overtime") ||
@@ -1191,8 +1197,7 @@
             const fieldName = (box.dataset.field || "").toLowerCase();
             const lbl = box.querySelector("label");
             const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
-            const titleText = (box.querySelector(".mc-title") ? box.querySelector(".mc-title").textContent : "").toLowerCase();
-            const combined = `${fieldName} ${rawLbl} ${titleText}`;
+            const combined = `${fieldName} ${rawLbl}`;
             return (
                 combined.includes("jacket") ||
                 combined.includes("pants") ||
@@ -1235,6 +1240,7 @@
         }
 
         function isExemptFromRequired(box) {
+            if (!REQUIRED_VALIDATION_ENABLED) return true;
             if (!box) return true;
             if (box.dataset.permanentlyHidden === "true" || isRemovedExtraNotesField(box)) return true;
             if (isVisaFieldBox(box)) return true;
@@ -1243,6 +1249,7 @@
         }
 
         function isBoxValueMissing(box) {
+            if (!REQUIRED_VALIDATION_ENABLED) return false;
             if (!box || isExemptFromRequired(box)) return false;
             if (box.classList.contains("hidden")) return false;
 
@@ -1274,6 +1281,7 @@
         }
 
         function showValidationErrorForBox(box, lang) {
+            if (!REQUIRED_VALIDATION_ENABLED) return;
             const t = uiTexts[lang] || uiTexts.ja;
             box.classList.add("req-error");
             if (!box.querySelector(".req-alert-msg")) {
@@ -1285,6 +1293,10 @@
         }
 
         function validateStep(stepNum, scrollToFirstError = true) {
+            if (!REQUIRED_VALIDATION_ENABLED) {
+                document.querySelectorAll("#skillsheet-form .field").forEach((b) => clearValidationErrorsInContainer(b));
+                return true;
+            }
             const lang = localStorage.getItem("skillsheet_lang") || "ja";
             const boxes = Array.from(document.querySelectorAll("#skillsheet-form .field[data-field]"));
             const missingBoxes = [];
@@ -1307,6 +1319,10 @@
         }
 
         function validateAllStepsForSubmit() {
+            if (!REQUIRED_VALIDATION_ENABLED) {
+                document.querySelectorAll("#skillsheet-form .field").forEach((b) => clearValidationErrorsInContainer(b));
+                return true;
+            }
             for (let s = 1; s <= TOTAL_STEPS; s++) {
                 if (!validateStep(s, false)) {
                     currentStep = s;
@@ -1319,20 +1335,19 @@
         }
 
         function updateRequiredBadges(lang) {
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
+                box.querySelectorAll(".req-badge").forEach((b) => b.remove());
+            });
+            if (!REQUIRED_VALIDATION_ENABLED) return;
             const t = uiTexts[lang] || uiTexts.ja;
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
                 const exempt = isExemptFromRequired(box);
                 const lbl = box.querySelector("label");
-                const mcTitle = box.querySelector(".mc-title");
-                const targetEl = (box.dataset.mcInitialized === "true" && mcTitle) ? mcTitle : lbl;
-
-                box.querySelectorAll(".req-badge").forEach((b) => b.remove());
-
-                if (!exempt && targetEl) {
+                if (!exempt && lbl) {
                     const badge = document.createElement("span");
                     badge.className = "req-badge";
                     badge.textContent = t.requiredBadge;
-                    targetEl.appendChild(badge);
+                    lbl.insertAdjacentElement("afterend", badge);
                 }
             });
         }
@@ -1424,13 +1439,12 @@
                     return `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
                 case "birth_date":
                 case "holiday":
-                    return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+                    return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
                 case "age":
                     return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
                 case "phone":
                     return `<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
                 case "postal":
-                    return `<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
                 case "address":
                 case "street":
                     return `<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
@@ -1438,958 +1452,307 @@
                 case "visa":
                     return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`;
                 case "license":
-                    return `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="14" x2="13" y2="14"/></svg>`;
+                    return `<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h4"/><path d="M14 14h4"/></svg>`;
                 case "commute":
-                    return `<svg viewBox="0 0 24 24"><path d="M5 17h14v-5l-2-5H7L5 12v5z"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>`;
+                    return `<svg viewBox="0 0 24 24"><path d="M5 17h14v-5l-2-5H7L5 12v5z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg>`;
                 case "shift":
                 case "overtime":
-                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>`;
-                case "shoe":
-                    return `<svg viewBox="0 0 24 24"><path d="M3 16v3h18v-2c0-2-2.5-3-5-3l-4-4-3 2-3-2-3 4z"/></svg>`;
-                case "clothing":
-                    return `<svg viewBox="0 0 24 24"><path d="M6 2l6 4 6-4 4 5-3 3v12H5V10L2 7l4-5z"/></svg>`;
-                case "listen":
-                    return `<svg viewBox="0 0 24 24"><path d="M16 8a5 5 0 0 0-8 4v1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v1a2 2 0 0 0 4 0v-6a5 5 0 0 0-1-3z"/><path d="M19 6a8 8 0 0 0-14 5"/></svg>`;
-                case "speak":
-                    return `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
-                case "level":
-                    return `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
+                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
                 case "job":
-                case "history":
                     return `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`;
+                case "clothing":
+                case "shoe":
+                    return `<svg viewBox="0 0 24 24"><path d="M6 4l3 2 3-1 3 1 3-2 3 4-2 3-2-1v10H7V10l-2 1-2-3 3-4z"/></svg>`;
+                case "history":
+                    return `<svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>`;
+                case "listen":
+                    return `<svg viewBox="0 0 24 24"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="2" y="13" width="4" height="7" rx="2"/><rect x="18" y="13" width="4" height="7" rx="2"/></svg>`;
+                case "speak":
+                    return `<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+                case "level":
+                    return `<svg viewBox="0 0 24 24"><path d="M5 4v16"/><path d="M5 5h12l-2 4 2 4H5"/></svg>`;
                 default:
-                    return `<svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`;
+                    return `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
             }
         }
 
-        function initStandardFieldIcons() {
-            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (box.dataset.mcInitialized === "true") return;
-                const lbl = box.querySelector("label");
-                if (!lbl) return;
+        function ensureFieldHeaderIcon(box) {
+            if (!box || box.dataset.permanentlyHidden === "true" || box.classList.contains("modern-choice-box")) return;
+            const lbl = box.querySelector(":scope > label");
+            if (!lbl) return;
 
-                const kind = getChoiceKind(box);
-                let header = box.querySelector(".std-field-header");
-                if (!header) {
-                    header = document.createElement("div");
-                    header.className = "std-field-header";
-                    const badge = document.createElement("span");
-                    badge.className = "mc-icon-badge";
-                    badge.innerHTML = buildIconSvg(kind);
-                    lbl.parentNode.insertBefore(header, lbl);
-                    header.appendChild(badge);
-                    header.appendChild(lbl);
-                } else {
-                    const badge = header.querySelector(".mc-icon-badge");
-                    if (badge) {
-                        badge.innerHTML = buildIconSvg(kind);
-                    }
-                }
-            });
-        }
-
-        function findBestSelectOptionForCard(sel, cardSpec) {
-            const options = Array.from(sel.options).filter((o) => {
-                const v = (o.value || "").trim();
-                const t = ((o.dataset.orig || o.textContent) || "").trim();
-                return v !== "" && !/^-+$/.test(t);
-            });
-            for (const key of cardSpec.keys) {
-                const lowerKey = key.toLowerCase();
-                const found = options.find((o) => {
-                    const v = (o.value || "").trim().toLowerCase();
-                    const orig = ((o.dataset.orig || o.textContent) || "").trim().toLowerCase();
-                    const txt = (o.textContent || "").trim().toLowerCase();
-                    return v.includes(lowerKey) || orig.includes(lowerKey) || txt.includes(lowerKey);
-                });
-                if (found) return found;
-            }
-            return null;
-        }
-
-        function shouldConvertFieldToModernChoice(box, sel) {
-            if (!box || !sel) return false;
-            if (sel.id === "id_shoe_size_select") return false;
-            const fieldName = (box.dataset.field || "").toLowerCase();
-            if (fieldName.includes("shoe")) {
-                return false;
-            }
-            const validOpts = Array.from(sel.options).filter((o) => {
-                const v = (o.value || "").trim();
-                const t = ((o.dataset.orig || o.textContent) || "").trim();
-                return v !== "" && !/^-+$/.test(t);
-            });
-            return validOpts.length >= 1 && validOpts.length <= 12;
-        }
-
-        function ensureOtherOptionInClothingSelects() {
-            const lang = localStorage.getItem("skillsheet_lang") || "ja";
-            const safeLang = uiTexts[lang] ? lang : "ja";
-            const t = uiTexts[safeLang] || uiTexts.ja;
-
-            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (!isClothingSizeField(box)) return;
-                const sel = box.querySelector("select");
-                if (!sel) return;
-
-                let otherOpt = Array.from(sel.options).find((o) => {
-                    const v = (o.value || "").trim().toLowerCase();
-                    const orig = ((o.dataset.orig || o.textContent) || "").trim();
-                    return v === "other" || orig === "その他" || orig.includes("その他");
-                });
-
-                if (!otherOpt) {
-                    otherOpt = document.createElement("option");
-                    otherOpt.value = "other";
-                    otherOpt.textContent = t.clothingOtherLabel;
-                    otherOpt.dataset.orig = "その他";
-                    otherOpt.dataset.ja = uiTexts.ja.clothingOtherLabel;
-                    otherOpt.dataset.pt = uiTexts.pt.clothingOtherLabel;
-                    otherOpt.dataset.en = uiTexts.en.clothingOtherLabel;
-                    sel.appendChild(otherOpt);
-                }
-
-                box.querySelectorAll(".mc-other-input-wrap, .clothing-other-hidden").forEach((el) => {
-                    el.remove();
-                });
-            });
-        }
-
-        function getSelectedValuesForBox(box) {
-            if (!box) return [];
-            const sel = box.querySelector("select");
-            if (!sel) return [];
-
-            if (box.dataset.isMulti === "true") {
-                try {
-                    const parsed = JSON.parse(box.dataset.selectedList || "[]");
-                    if (Array.isArray(parsed)) return parsed;
-                } catch (e) {}
-                return Array.from(sel.selectedOptions)
-                    .map((o) => o.value)
-                    .filter((v) => v !== "");
-            }
-
-            const single = (sel.value || "").trim();
-            return single ? [single] : [];
-        }
-
-        function setSelectedValuesForBox(box, values) {
-            if (!box) return;
-            const sel = box.querySelector("select");
-            if (!sel) return;
-
-            const cleanVals = Array.from(new Set(values.filter((v) => (v || "").trim() !== "")));
-            box.dataset.selectedList = JSON.stringify(cleanVals);
-
-            if (box.dataset.isMulti === "true") {
-                if (sel.multiple) {
-                    Array.from(sel.options).forEach((o) => {
-                        o.selected = cleanVals.includes(o.value);
-                    });
-                } else {
-                    sel.value = cleanVals[0] || "";
-                }
-
-                let multiHidden = box.querySelector("input.multi-choice-hidden");
-                if (!multiHidden) {
-                    multiHidden = document.createElement("input");
-                    multiHidden.type = "hidden";
-                    multiHidden.className = "multi-choice-hidden";
-                    multiHidden.name = `${sel.name}_multi`;
-                    sel.insertAdjacentElement("afterend", multiHidden);
-                }
-                const labels = cleanVals.map((val) => {
-                    const opt = Array.from(sel.options).find((o) => o.value === val);
-                    return opt ? ((opt.dataset.orig || opt.textContent) || val).trim() : val;
-                });
-                multiHidden.value = labels.join(", ");
-            } else {
-                sel.value = cleanVals[0] || "";
-            }
-
-            if (sel.id === "id_preferred_working_hours") {
-                syncPreferredShiftFromSelect();
-            }
-
-            if (cleanVals.length > 0) {
-                clearValidationErrorsInContainer(box);
-            }
-
-            updateFieldFillHighlight(sel);
-            refreshModernChoiceBox(box, localStorage.getItem("skillsheet_lang") || "ja");
-            sel.dispatchEvent(new Event("change", { bubbles: true }));
-            sel.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-
-        function refreshModernChoiceBox(box, lang) {
-            if (!box || box.dataset.mcInitialized !== "true") return;
-            const safeLang = uiTexts[lang] ? lang : "ja";
-            const t = uiTexts[safeLang] || uiTexts.ja;
-            const kind = box.dataset.choiceKind || "default";
-            const isMulti = box.dataset.isMulti === "true";
-            const sel = box.querySelector("select");
-            const origLabel = box.querySelector("label");
-            const titleEl = box.querySelector(".mc-title");
-            const descEl = box.querySelector(".mc-desc");
-            const multiBadgeEl = box.querySelector(".mc-multi-badge");
-            if (!sel) return;
-
-            if (titleEl) {
-                if (kind === "listen") titleEl.textContent = t.jpListenTitle;
-                else if (kind === "speak") titleEl.textContent = t.jpSpeakTitle;
-                else if (kind === "level") titleEl.textContent = t.jpLevelTitle;
-                else if (isOvertimeField(box)) titleEl.textContent = t.overtimeLabel;
-                else if (origLabel) titleEl.textContent = origLabel.textContent;
-            }
-
-            if (multiBadgeEl) {
-                multiBadgeEl.textContent = t.multiBadge;
-            }
-
-            if (descEl) {
-                if (kind === "listen") descEl.textContent = t.jpListenDesc;
-                else if (kind === "speak") descEl.textContent = t.jpSpeakDesc;
-                else if (kind === "level") descEl.textContent = t.jpLevelDesc;
-                else if (isOvertimeField(box)) descEl.textContent = t.overtimeHint;
-                else if (isAvailabilityField(box)) descEl.textContent = t.availabilityHint;
-                else if (kind === "shift") descEl.textContent = t.workingHoursHint;
-                else if (kind === "history") {
-                    if (box.id === "more-work-history-box-after-2") {
-                        descEl.textContent = t.moreWorkHistoryHintAfter2;
-                    } else if (box.id && box.id.startsWith("more-work-history-box-after-")) {
-                        descEl.textContent = t.moreWorkHistoryHintAfterN;
-                    } else {
-                        descEl.textContent = t.hasWorkHistoryHint;
-                    }
-                } else {
-                    descEl.textContent = isMulti ? t.multiDesc : t.singleDesc;
-                }
-            }
-
-            const selectedVals = getSelectedValuesForBox(box);
-            const hasSelection = selectedVals.length > 0;
-
-            if (kind === "level") {
-                const grid = box.querySelector(".jp-level-grid");
-                if (grid) {
-                    grid.classList.toggle("is-unselected", !hasSelection);
-                    grid.querySelectorAll(".jp-level-card").forEach((card, idx) => {
-                        const spec = JP_LEVEL_CARDS[idx];
-                        if (!spec) return;
-                        const pctEl = card.querySelector(".jp-level-pct");
-                        const nameEl = card.querySelector(".jp-level-name");
-                        if (pctEl) pctEl.textContent = spec.pct[safeLang] || spec.pct.ja;
-                        if (nameEl) nameEl.textContent = spec.name[safeLang] || spec.name.ja;
-
-                        const matchedOpt = findBestSelectOptionForCard(sel, spec);
-                        const cardVal = matchedOpt ? matchedOpt.value : card.dataset.value;
-                        card.dataset.value = cardVal;
-                        const selected = selectedVals.includes(cardVal);
-                        card.classList.toggle("is-selected", selected);
-                        card.setAttribute("aria-pressed", selected ? "true" : "false");
-                    });
-                }
-            } else {
-                const row = box.querySelector(".mc-pill-row");
-                if (row) {
-                    row.classList.toggle("is-unselected", !hasSelection);
-                    row.querySelectorAll(".mc-pill-btn").forEach((btn) => {
-                        const opt = Array.from(sel.options).find((o) => o.value === btn.dataset.value);
-                        const textSpan = btn.querySelector(".mc-btn-text");
-                        if (opt && textSpan) {
-                            textSpan.textContent = opt.textContent;
-                        }
-                        const selected = selectedVals.includes(btn.dataset.value);
-                        btn.classList.toggle("is-selected", selected);
-                        btn.setAttribute("aria-pressed", selected ? "true" : "false");
-                    });
-                }
-            }
-
-            updateRequiredBadges(safeLang);
-        }
-
-        function initAllModernChoiceFields() {
-            const lang = localStorage.getItem("skillsheet_lang") || "ja";
-            const t = uiTexts[lang] || uiTexts.ja;
-
-            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                const sel = box.querySelector("select");
-                if (!sel || !shouldConvertFieldToModernChoice(box, sel)) return;
-                if (box.dataset.mcInitialized === "true") {
-                    refreshModernChoiceBox(box, lang);
-                    return;
-                }
-
-                const kind = getChoiceKind(box);
-                const isMulti = isJobTypeField(box) || isWorkingHoursField(box) || sel.multiple;
-                box.dataset.mcInitialized = "true";
-                box.dataset.choiceKind = kind;
-                box.dataset.isMulti = isMulti ? "true" : "false";
-                box.classList.add("modern-choice-box");
-
-                const stdHdr = box.querySelector(".std-field-header");
-                if (stdHdr) stdHdr.remove();
-
-                const initialVals = Array.from(sel.selectedOptions)
-                    .map((o) => o.value)
-                    .filter((v) => v !== "");
-                box.dataset.selectedList = JSON.stringify(initialVals);
-
-                const origLabel = box.querySelector("label");
-                if (origLabel) origLabel.classList.add("hidden");
-
-                box.querySelectorAll(".hint").forEach((h) => h.classList.add("hidden"));
-
-                const header = document.createElement("div");
-                header.className = "mc-header";
+            let titleRow = box.querySelector(":scope > .field-title-row");
+            if (!titleRow) {
+                titleRow = document.createElement("div");
+                titleRow.className = "field-title-row";
 
                 const badge = document.createElement("span");
                 badge.className = "mc-icon-badge";
-                badge.innerHTML = buildIconSvg(kind);
+                badge.innerHTML = buildIconSvg(getChoiceKind(box));
 
-                const titleWrap = document.createElement("div");
-                titleWrap.className = "mc-title-wrap";
-
-                const title = document.createElement("div");
-                title.className = "mc-title";
-                title.textContent = isOvertimeField(box) ? t.overtimeLabel : (origLabel ? origLabel.textContent : "");
-                titleWrap.appendChild(title);
-
-                if (isMulti) {
-                    const mBadge = document.createElement("span");
-                    mBadge.className = "mc-multi-badge";
-                    mBadge.textContent = t.multiBadge;
-                    titleWrap.appendChild(mBadge);
-                }
-
-                header.appendChild(badge);
-                header.appendChild(titleWrap);
-
-                const desc = document.createElement("p");
-                desc.className = "mc-desc";
-
-                const uiWrap = document.createElement("div");
-                uiWrap.className = "mc-ui-wrap";
-
-                sel.classList.add("hidden");
-
-                const validOpts = Array.from(sel.options).filter((o) => {
-                    const v = (o.value || "").trim();
-                    const txt = ((o.dataset.orig || o.textContent) || "").trim();
-                    return v !== "" && !/^-+$/.test(txt);
-                });
-
-                if (kind === "level") {
-                    const grid = document.createElement("div");
-                    grid.className = "jp-level-grid";
-
-                    JP_LEVEL_CARDS.forEach((spec, idx) => {
-                        const matchedOpt = findBestSelectOptionForCard(sel, spec) || validOpts[idx];
-                        const optValue = matchedOpt ? matchedOpt.value : String(spec.bars);
-
-                        const card = document.createElement("button");
-                        card.type = "button";
-                        card.className = "jp-level-card";
-                        card.dataset.value = optValue;
-                        card.setAttribute("aria-pressed", "false");
-
-                        const pct = document.createElement("div");
-                        pct.className = "jp-level-pct";
-                        pct.textContent = spec.pct[lang] || spec.pct.ja;
-
-                        const bars = document.createElement("div");
-                        bars.className = "jp-level-bars";
-                        for (let b = 1; b <= 5; b++) {
-                            const bar = document.createElement("span");
-                            bar.className = "jp-level-bar" + (b <= spec.bars ? " on" : "");
-                            bars.appendChild(bar);
-                        }
-
-                        const name = document.createElement("div");
-                        name.className = "jp-level-name";
-                        name.textContent = spec.name[lang] || spec.name.ja;
-
-                        card.appendChild(pct);
-                        card.appendChild(bars);
-                        card.appendChild(name);
-
-                        card.addEventListener("click", () => {
-                            setSelectedValuesForBox(box, [card.dataset.value]);
-                        });
-
-                        grid.appendChild(card);
-                    });
-
-                    uiWrap.appendChild(grid);
-                } else {
-                    const row = document.createElement("div");
-                    row.className = "mc-pill-row";
-
-                    validOpts.forEach((opt) => {
-                        const btn = document.createElement("button");
-                        btn.type = "button";
-                        btn.className = "mc-pill-btn";
-                        btn.dataset.value = opt.value;
-                        btn.setAttribute("aria-pressed", "false");
-
-                        if (isMulti) {
-                            const checkSpan = document.createElement("span");
-                            checkSpan.className = "mc-check-mark";
-                            checkSpan.textContent = "✓";
-                            btn.appendChild(checkSpan);
-                        }
-
-                        const textSpan = document.createElement("span");
-                        textSpan.className = "mc-btn-text";
-                        textSpan.textContent = opt.textContent;
-                        btn.appendChild(textSpan);
-
-                        btn.addEventListener("click", () => {
-                            const current = getSelectedValuesForBox(box);
-                            if (isMulti) {
-                                const exists = current.includes(opt.value);
-                                const next = exists
-                                    ? current.filter((v) => v !== opt.value)
-                                    : [...current, opt.value];
-                                setSelectedValuesForBox(box, next);
-                            } else {
-                                setSelectedValuesForBox(box, [opt.value]);
-                            }
-                        });
-
-                        row.appendChild(btn);
-                    });
-
-                    uiWrap.appendChild(row);
-                }
-
-                const insertTarget = origLabel || sel;
-                insertTarget.insertAdjacentElement("afterend", header);
-                header.insertAdjacentElement("afterend", desc);
-                desc.insertAdjacentElement("afterend", uiWrap);
-
-                refreshModernChoiceBox(box, lang);
-            });
-        }
-
-        function refreshAllModernChoiceFields(lang) {
-            document.querySelectorAll("#skillsheet-form .field.modern-choice-box").forEach((box) => {
-                refreshModernChoiceBox(box, lang);
-            });
-        }
-
-        function updateFieldFillHighlight(el) {
-            if (!el || el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
-
-            const box = el.closest(".field");
-            if (el.tagName === "SELECT") {
-                const selectedCount = box ? getSelectedValuesForBox(box).length : ((el.value || "").trim() ? 1 : 0);
-                if (selectedCount === 0) {
-                    el.classList.add("is-empty", "is-unselected");
-                    el.classList.remove("is-filled");
-                } else {
-                    el.classList.remove("is-empty", "is-unselected");
-                    el.classList.add("is-filled");
-                    if (box) clearValidationErrorsInContainer(box);
-                }
-                if (box && box.dataset.mcInitialized === "true") {
-                    refreshModernChoiceBox(box, localStorage.getItem("skillsheet_lang") || "ja");
-                }
-                return;
-            }
-
-            const hasVal = Boolean((el.value || "").trim());
-            if (hasVal) {
-                el.classList.remove("is-empty");
-                el.classList.add("is-filled");
-                if (box) clearValidationErrorsInContainer(box);
+                box.insertBefore(titleRow, lbl);
+                titleRow.appendChild(badge);
+                titleRow.appendChild(lbl);
             } else {
-                el.classList.remove("is-filled");
-                el.classList.add("is-empty");
+                const badge = titleRow.querySelector(".mc-icon-badge");
+                if (badge) badge.innerHTML = buildIconSvg(getChoiceKind(box));
             }
         }
 
-        function initFieldFillHighlight() {
-            document.querySelectorAll("#skillsheet-form input, #skillsheet-form select, #skillsheet-form textarea").forEach((el) => {
-                if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
-
-                if (el.tagName === "SELECT") {
-                    Array.from(el.options).forEach((opt) => {
-                        const txt = (opt.textContent || "").trim();
-                        if (/^-+$/.test(txt)) {
-                            opt.textContent = "";
-                            opt.dataset.orig = "";
-                        }
-                    });
-                }
-
-                updateFieldFillHighlight(el);
-                el.addEventListener("input", () => updateFieldFillHighlight(el));
-                el.addEventListener("change", () => updateFieldFillHighlight(el));
-                el.addEventListener("blur", () => updateFieldFillHighlight(el));
-            });
+        function getSelectedValuesForBox(box) {
+            const sel = box.querySelector("select");
+            if (!sel) return [];
+            if (sel.multiple) {
+                return Array.from(sel.selectedOptions).map((o) => o.value).filter((v) => v !== "");
+            }
+            return sel.value && sel.value !== "" ? [sel.value] : [];
         }
 
-        function applyAvailabilityOptionsToFields() {
-            const lang = localStorage.getItem("skillsheet_lang") || "ja";
-            const safeLang = uiTexts[lang] ? lang : "ja";
+        function syncChoiceUiSelection(box, lang) {
+            const sel = box.querySelector("select");
+            if (!sel) return;
+            const selectedVals = getSelectedValuesForBox(box);
+            const hasSelection = selectedVals.length > 0;
 
-            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (!isAvailabilityField(box)) return;
-                const sel = box.querySelector("select");
-                if (!sel) return;
+            const pillRow = box.querySelector(".mc-pill-row");
+            if (pillRow) {
+                pillRow.classList.toggle("is-unselected", !hasSelection);
+                pillRow.querySelectorAll(".mc-pill-btn").forEach((btn) => {
+                    const isSel = selectedVals.includes(btn.dataset.val);
+                    btn.classList.toggle("is-selected", isSel);
+                    btn.setAttribute("aria-pressed", isSel ? "true" : "false");
+                });
+            }
 
-                const currentVal = (sel.value || "").trim();
-                const emptyOpt = document.createElement("option");
-                emptyOpt.value = "";
-                emptyOpt.textContent = "";
-                emptyOpt.dataset.orig = "";
+            const levelGrid = box.querySelector(".jp-level-grid");
+            if (levelGrid) {
+                levelGrid.classList.toggle("is-unselected", !hasSelection);
+                levelGrid.querySelectorAll(".jp-level-card").forEach((card) => {
+                    const isSel = selectedVals.includes(card.dataset.val);
+                    card.classList.toggle("is-selected", isSel);
+                    card.setAttribute("aria-pressed", isSel ? "true" : "false");
+                });
+            }
 
-                sel.innerHTML = "";
-                sel.appendChild(emptyOpt);
+            const otherWrap = box.querySelector(".mc-other-wrap");
+            const otherInp = otherWrap ? otherWrap.querySelector("input.mc-other-input") : null;
+            if (otherWrap && otherInp) {
+                const showOther = selectedVals.some((v) => {
+                    const lv = v.toLowerCase();
+                    return lv === "other" || lv === "others" || v.includes("その他");
+                });
+                otherWrap.classList.toggle("hidden", !showOther);
+            }
+        }
 
-                const optionList = isOvertimeField(box) ? OVERTIME_OPTIONS : AVAILABILITY_OPTIONS;
+        function buildModernChoiceUi(box, lang) {
+            const sel = box.querySelector("select");
+            if (!sel) return;
+            const t = uiTexts[lang] || uiTexts.ja;
+            const kind = getChoiceKind(box);
+            const isMultiple = !!sel.multiple;
 
-                optionList.forEach((item) => {
-                    const opt = document.createElement("option");
-                    opt.value = item.value;
-                    opt.textContent = item[safeLang] || item.ja;
-                    opt.dataset.orig = item.ja;
-                    opt.dataset.ja = item.ja;
-                    opt.dataset.pt = item.pt;
-                    opt.dataset.en = item.en;
-                    sel.appendChild(opt);
+            let titleText = "";
+            let descText = "";
+            if (kind === "listen") {
+                titleText = t.jpListenTitle;
+                descText = t.jpListenDesc;
+            } else if (kind === "speak") {
+                titleText = t.jpSpeakTitle;
+                descText = t.jpSpeakDesc;
+            } else if (kind === "level") {
+                titleText = t.jpLevelTitle;
+                descText = t.jpLevelDesc;
+            } else {
+                const lbl = box.querySelector("label");
+                const rawLbl = lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "";
+                const cleaned = stripLeadingNumber(rawLbl);
+                titleText = translateSinglePhrase(cleaned, lang) || cleaned;
+                descText = isMultiple ? t.multiDesc : t.singleDesc;
+            }
+
+            box.classList.add("modern-choice-box");
+            box.querySelectorAll(".mc-header, .mc-desc, .mc-pill-row, .jp-level-grid, .mc-other-wrap").forEach((el) => el.remove());
+
+            const oldLbl = box.querySelector("label");
+            if (oldLbl) oldLbl.classList.add("hidden");
+            sel.classList.add("hidden");
+
+            const header = document.createElement("div");
+            header.className = "mc-header";
+
+            const iconBadge = document.createElement("span");
+            iconBadge.className = "mc-icon-badge";
+            iconBadge.innerHTML = buildIconSvg(kind);
+
+            const titleWrap = document.createElement("div");
+            titleWrap.className = "mc-title-wrap";
+
+            const titleLabel = document.createElement("label");
+            if (sel.id) titleLabel.setAttribute("for", sel.id);
+            titleLabel.textContent = titleText;
+            titleWrap.appendChild(titleLabel);
+
+            if (isMultiple) {
+                const mBadge = document.createElement("span");
+                mBadge.className = "mc-multi-badge";
+                mBadge.textContent = t.multiBadge;
+                titleWrap.appendChild(mBadge);
+            }
+
+            header.appendChild(iconBadge);
+            header.appendChild(titleWrap);
+            box.appendChild(header);
+
+            const desc = document.createElement("p");
+            desc.className = "mc-desc";
+            desc.textContent = descText;
+            box.appendChild(desc);
+
+            const options = Array.from(sel.options).filter((o) => {
+                const v = (o.value || "").trim();
+                const txt = (o.textContent || "").trim();
+                if (!v || /^-+$/.test(txt)) return false;
+                if (txt.includes("選択してください") || txt.toLowerCase().includes("select")) return false;
+                return true;
+            });
+
+            if (kind === "level") {
+                const grid = document.createElement("div");
+                grid.className = "jp-level-grid";
+
+                JP_LEVEL_CARDS.forEach((cardSpec) => {
+                    const matchedOpt = options.find((o) => {
+                        const hay = `${o.value} ${o.textContent}`.toLowerCase();
+                        return cardSpec.keys.some((k) => hay.includes(k.toLowerCase()));
+                    });
+                    const optVal = matchedOpt ? matchedOpt.value : cardSpec.keys[0];
+
+                    const card = document.createElement("button");
+                    card.type = "button";
+                    card.className = "jp-level-card";
+                    card.dataset.val = optVal;
+
+                    const pctEl = document.createElement("span");
+                    pctEl.className = "jp-level-pct";
+                    pctEl.textContent = cardSpec.pct[lang] || cardSpec.pct.ja;
+
+                    const barsEl = document.createElement("span");
+                    barsEl.className = "jp-level-bars";
+                    for (let i = 1; i <= 5; i++) {
+                        const b = document.createElement("span");
+                        b.className = "jp-level-bar" + (i <= cardSpec.bars ? " on" : "");
+                        barsEl.appendChild(b);
+                    }
+
+                    const nameEl = document.createElement("span");
+                    nameEl.className = "jp-level-name";
+                    nameEl.textContent = cardSpec.name[lang] || cardSpec.name.ja;
+
+                    card.appendChild(pctEl);
+                    card.appendChild(barsEl);
+                    card.appendChild(nameEl);
+
+                    card.addEventListener("click", () => {
+                        Array.from(sel.options).forEach((o) => {
+                            o.selected = (o.value === optVal);
+                        });
+                        sel.value = optVal;
+                        sel.dispatchEvent(new Event("change", { bubbles: true }));
+                        syncChoiceUiSelection(box, lang);
+                    });
+
+                    grid.appendChild(card);
                 });
 
-                if (currentVal) {
-                    const lower = currentVal.toLowerCase();
-                    if (isOvertimeField(box)) {
-                        if (lower.includes("not_possible") || lower.includes("impossible") || currentVal.includes("不可")) sel.value = "not_possible";
-                        else if (lower.includes("up_to_1h") || lower.includes("1h") || currentVal.includes("1時間")) sel.value = "up_to_1h";
-                        else if (lower.includes("up_to_2h") || lower.includes("2h") || currentVal.includes("2時間")) sel.value = "up_to_2h";
-                        else if (lower.includes("3h") || currentVal.includes("3時間")) sel.value = "3h_or_more";
-                        else sel.value = currentVal;
-                    } else {
-                        if ((lower.includes("possible") && !lower.includes("impossible")) || (currentVal.includes("可能") && !currentVal.includes("不可能") && !currentVal.includes("予定"))) {
-                            sel.value = "possible";
-                        } else if (lower.includes("impossible") || lower.includes("not") || currentVal.includes("不可能") || currentVal.includes("不可")) {
-                            sel.value = "impossible";
-                        } else if (lower.includes("schedule") || currentVal.includes("予定") || currentVal.includes("条件") || currentVal.includes("相談")) {
-                            sel.value = "if_schedule_fits";
+                box.appendChild(grid);
+            } else {
+                const pillRow = document.createElement("div");
+                pillRow.className = "mc-pill-row";
+
+                options.forEach((opt) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "mc-pill-btn";
+                    btn.dataset.val = opt.value;
+
+                    const check = document.createElement("span");
+                    check.className = "mc-check-mark";
+                    check.textContent = "✓";
+
+                    const labelSpan = document.createElement("span");
+                    const rawOpt = stripLeadingNumber((opt.textContent || "").trim());
+                    labelSpan.textContent = translateSinglePhrase(rawOpt, lang) || rawOpt;
+
+                    btn.appendChild(check);
+                    btn.appendChild(labelSpan);
+
+                    btn.addEventListener("click", () => {
+                        if (isMultiple) {
+                            opt.selected = !opt.selected;
                         } else {
-                            sel.value = currentVal;
+                            Array.from(sel.options).forEach((o) => {
+                                o.selected = (o === opt);
+                            });
+                            sel.value = opt.value;
                         }
-                    }
-                }
-                updateFieldFillHighlight(sel);
-            });
-        }
-
-        function findFieldBoxByKeywords(keywords) {
-            const allBoxes = Array.from(document.querySelectorAll("#skillsheet-form .field[data-field]"));
-            for (const box of allBoxes) {
-                const fn = (box.dataset.field || "").toLowerCase();
-                if (keywords.some((k) => fn.includes(k))) return box;
-            }
-            for (const box of allBoxes) {
-                const lbl = box.querySelector("label");
-                const txt = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
-                if (keywords.some((k) => txt.includes(k))) return box;
-            }
-            return null;
-        }
-
-        function ensureAvailabilityFields() {
-            const lang = localStorage.getItem("skillsheet_lang") || "ja";
-            const t = uiTexts[lang] || uiTexts.ja;
-            const formEl = document.getElementById("skillsheet-form");
-            const stepNav = document.getElementById("step-nav");
-            const whBox = document.getElementById("working-hours-box") || document.querySelector('#skillsheet-form .field[data-field="preferred_working_hours"]');
-
-            const specs = [
-                { id: "id_early_start", name: "early_start", field: "early_start", labelKey: "earlyStartLabel", hintKey: "availabilityHint", keywords: ["early_start", "早出"] },
-                { id: "id_overtime", name: "overtime", field: "overtime", labelKey: "overtimeLabel", hintKey: "overtimeHint", keywords: ["overtime", "残業"] },
-                { id: "id_holiday_work", name: "holiday_work", field: "holiday_work", labelKey: "holidayWorkLabel", hintKey: "availabilityHint", keywords: ["holiday_work", "休日出勤"] }
-            ];
-
-            let insertAfterTarget = whBox;
-
-            specs.forEach((spec) => {
-                let box = findFieldBoxByKeywords(spec.keywords);
-                if (!box) {
-                    box = document.createElement("div");
-                    box.id = `${spec.field}-box`;
-                    box.className = "field";
-                    box.dataset.field = spec.field;
-
-                    const lbl = document.createElement("label");
-                    lbl.id = `${spec.field}-label`;
-                    lbl.setAttribute("for", spec.id);
-                    lbl.textContent = t[spec.labelKey];
-
-                    const sel = document.createElement("select");
-                    sel.id = spec.id;
-                    sel.name = spec.name;
-
-                    const hint = document.createElement("div");
-                    hint.id = `${spec.field}-hint`;
-                    hint.className = "hint";
-                    hint.textContent = t[spec.hintKey];
-
-                    box.appendChild(lbl);
-                    box.appendChild(sel);
-                    box.appendChild(hint);
-
-                    if (insertAfterTarget && insertAfterTarget.parentNode) {
-                        insertAfterTarget.insertAdjacentElement("afterend", box);
-                    } else if (formEl && stepNav) {
-                        formEl.insertBefore(box, stepNav);
-                    }
-                } else {
-                    const lbl = box.querySelector("label");
-                    if (lbl) {
-                        lbl.dataset.orig = uiTexts.ja[spec.labelKey];
-                    }
-                }
-                insertAfterTarget = box;
-            });
-
-            applyAvailabilityOptionsToFields();
-        }
-
-        function ensureClothingAndOtherFields() {
-            const lang = localStorage.getItem("skillsheet_lang") || "ja";
-            const t = uiTexts[lang] || uiTexts.ja;
-            const formEl = document.getElementById("skillsheet-form");
-            const stepNav = document.getElementById("step-nav");
-            const shoeBox = document.getElementById("shoe-size-fallback-box") || findShoeFieldBox();
-
-            const clothingSpecs = [
-                { id: "id_jacket_size", name: "jacket_size", field: "jacket_size", labelKey: "jacketSizeLabel", keywords: ["jacket", "top_size", "上着"] },
-                { id: "id_pants_size", name: "pants_size", field: "pants_size", labelKey: "pantsSizeLabel", keywords: ["pants", "bottom_size", "ズボン"] }
-            ];
-
-            let anchor = shoeBox;
-
-            clothingSpecs.forEach((spec) => {
-                let box = findFieldBoxByKeywords(spec.keywords);
-                if (!box) {
-                    box = document.createElement("div");
-                    box.id = `${spec.field}-box`;
-                    box.className = "field";
-                    box.dataset.field = spec.field;
-
-                    const lbl = document.createElement("label");
-                    lbl.id = `${spec.field}-label`;
-                    lbl.setAttribute("for", spec.id);
-                    lbl.textContent = t[spec.labelKey];
-
-                    const sel = document.createElement("select");
-                    sel.id = spec.id;
-                    sel.name = spec.name;
-
-                    const emptyOpt = document.createElement("option");
-                    emptyOpt.value = "";
-                    emptyOpt.textContent = "";
-                    emptyOpt.dataset.orig = "";
-                    sel.appendChild(emptyOpt);
-
-                    CLOTHING_SIZE_OPTIONS.forEach((optItem) => {
-                        const o = document.createElement("option");
-                        o.value = optItem.value;
-                        o.textContent = optItem[lang] || optItem.ja;
-                        o.dataset.orig = optItem.ja;
-                        o.dataset.ja = optItem.ja;
-                        o.dataset.pt = optItem.pt;
-                        o.dataset.en = optItem.en;
-                        sel.appendChild(o);
+                        sel.dispatchEvent(new Event("change", { bubbles: true }));
+                        syncChoiceUiSelection(box, lang);
                     });
 
-                    box.appendChild(lbl);
-                    box.appendChild(sel);
+                    pillRow.appendChild(btn);
+                });
 
-                    if (anchor && anchor.parentNode) {
-                        anchor.insertAdjacentElement("afterend", box);
-                    } else if (formEl && stepNav) {
-                        formEl.insertBefore(box, stepNav);
-                    }
-                }
-                anchor = box;
+                box.appendChild(pillRow);
+            }
+
+            const hasOtherOpt = options.some((o) => {
+                const lv = `${o.value} ${o.textContent}`.toLowerCase();
+                return lv.includes("other") || o.textContent.includes("その他");
             });
+            if (hasOtherOpt) {
+                const otherWrap = document.createElement("div");
+                otherWrap.className = "mc-other-wrap hidden";
+                otherWrap.style.marginTop = "12px";
+                otherWrap.style.marginLeft = "46px";
 
-            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((b) => {
-                if (isRemovedExtraNotesField(b)) {
-                    b.dataset.permanentlyHidden = "true";
-                    b.classList.add("hidden");
-                    b.remove();
-                }
-            });
-        }
+                const otherInp = document.createElement("input");
+                otherInp.type = "text";
+                otherInp.className = "mc-other-input";
+                otherInp.placeholder = t.clothingOtherLabel;
+                otherInp.addEventListener("input", () => {
+                    updateFieldColor(otherInp);
+                });
+                updateFieldColor(otherInp);
+                otherWrap.appendChild(otherInp);
+                box.appendChild(otherWrap);
+            }
 
-        function isRetirementOtherField(box) {
-            if (!box) return false;
-            const fieldName = (box.dataset.field || "").toLowerCase();
-            const lbl = box.querySelector("label");
-            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
-            const ctrl = box.querySelector("input, select, textarea");
-            const ctrlId = ((ctrl && ctrl.id) || "").toLowerCase();
-            const ctrlName = ((ctrl && ctrl.name) || "").toLowerCase();
-
-            const hasOtherKeyword =
-                fieldName.includes("other") ||
-                ctrlId.includes("other") ||
-                ctrlName.includes("other") ||
-                rawLbl.includes("その他");
-
-            const hasRetirementKeyword =
-                fieldName.includes("retire") ||
-                fieldName.includes("reason") ||
-                fieldName.includes("taishoku") ||
-                ctrlId.includes("retire") ||
-                ctrlId.includes("reason") ||
-                ctrlId.includes("taishoku") ||
-                ctrlName.includes("retire") ||
-                ctrlName.includes("reason") ||
-                ctrlName.includes("taishoku") ||
-                rawLbl.includes("退職理由");
-
-            return hasOtherKeyword && hasRetirementKeyword;
-        }
-
-        function hideRetirementOtherFields() {
-            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (isRetirementOtherField(box) || isRemovedExtraNotesField(box)) {
-                    box.dataset.permanentlyHidden = "true";
-                    box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
-                        if (ctrl.type === "hidden") return;
-                        ctrl.required = false;
-                        if (ctrl.tagName === "SELECT") {
-                            ctrl.selectedIndex = 0;
-                        } else {
-                            ctrl.value = "";
-                        }
-                        updateFieldFillHighlight(ctrl);
-                    });
-                }
-            });
-        }
-
-        function isWorkHistoryBox(box) {
-            if (!box) return false;
-            if (box.dataset.whQuestion === "true") return true;
-            const fieldName = (box.dataset.field || "").toLowerCase();
-            const lbl = box.querySelector("label");
-            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
-
-            return (
-                /^company_?\d*(?:_|$)/.test(fieldName) ||
-                /^work_?(?:history_?)?\d*(?:_|$)/.test(fieldName) ||
-                fieldName.includes("company") ||
-                fieldName.includes("work_history") ||
-                fieldName.includes("retire") ||
-                fieldName.includes("taishoku") ||
-                /[①②③④⑤⑥⑦⑧⑨⑩]/.test(rawLbl) ||
-                /会社|職歴|退職理由|時給|派遣会社/.test(rawLbl)
-            );
-        }
-
-        function getCompanyGroups() {
-            const groupsMap = new Map();
-
-            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (
-                    box.dataset.whQuestion === "true" ||
-                    box.dataset.permanentlyHidden === "true" ||
-                    isRetirementOtherField(box)
-                ) {
-                    return;
-                }
-                if (!isWorkHistoryBox(box)) return;
-
-                const fieldName = (box.dataset.field || "").toLowerCase();
-                const lbl = box.querySelector("label");
-                const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
-
-                let companyNum = 1;
-                const numMatch =
-                    fieldName.match(/^(?:company|work_?history|work)_?(\d+)(?:_|$)/) ||
-                    rawLbl.match(/(?:会社|職歴)\s*(\d+)/);
-
-                if (numMatch) {
-                    companyNum = parseInt(numMatch[1], 10);
-                } else if (rawLbl.includes("①")) {
-                    companyNum = 1;
-                } else if (rawLbl.includes("②")) {
-                    companyNum = 2;
-                } else if (rawLbl.includes("③")) {
-                    companyNum = 3;
-                } else if (rawLbl.includes("④")) {
-                    companyNum = 4;
-                } else if (rawLbl.includes("⑤")) {
-                    companyNum = 5;
-                } else if (rawLbl.includes("⑥")) {
-                    companyNum = 6;
-                } else if (rawLbl.includes("⑦")) {
-                    companyNum = 7;
-                } else if (rawLbl.includes("⑧")) {
-                    companyNum = 8;
-                } else if (rawLbl.includes("⑨")) {
-                    companyNum = 9;
-                } else if (rawLbl.includes("⑩")) {
-                    companyNum = 10;
-                }
-
-                if (!groupsMap.has(companyNum)) {
-                    groupsMap.set(companyNum, []);
-                }
-                groupsMap.get(companyNum).push(box);
-            });
-
-            return Array.from(groupsMap.entries()).sort((a, b) => a[0] - b[0]);
+            syncChoiceUiSelection(box, lang);
         }
 
         function getFieldStep(box) {
-            if (!box || box.dataset.permanentlyHidden === "true" || isRemovedExtraNotesField(box)) return 0;
-            const fieldName = box.dataset.field || "";
-            if (STEP1_FIELDS.includes(fieldName)) return 1;
-            if (
-                STEP2_FIELDS.includes(fieldName) ||
-                isJobTypeField(box) ||
-                isWorkingHoursField(box) ||
-                isAvailabilityField(box)
-            ) {
+            if (!box || box.dataset.permanentlyHidden === "true" || isRemovedExtraNotesField(box)) {
+                return 0;
+            }
+            if (isWorkHistoryBox(box)) {
+                return 4;
+            }
+            const name = box.dataset.field || "";
+            if (STEP1_FIELDS.includes(name)) {
+                return 1;
+            }
+            if (STEP2_FIELDS.includes(name) || isJobTypeField(box) || isWorkingHoursField(box) || isAvailabilityField(box)) {
                 return 2;
             }
-            if (isWorkHistoryBox(box)) return 4;
             return 3;
         }
 
-        function clearBoxValues(box) {
-            box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
-                if (ctrl.type === "hidden" && !ctrl.classList.contains("multi-choice-hidden")) return;
-                ctrl.required = false;
-                if (ctrl.tagName === "SELECT") {
-                    Array.from(ctrl.options).forEach((o) => { o.selected = false; });
-                    ctrl.selectedIndex = 0;
-                } else {
-                    ctrl.value = "";
-                }
-                updateFieldFillHighlight(ctrl);
-            });
-            if (box.dataset.mcInitialized === "true") {
-                box.dataset.selectedList = "[]";
-                refreshModernChoiceBox(box, localStorage.getItem("skillsheet_lang") || "ja");
-            }
-        }
-
-        function updateWorkHistoryFlow() {
-            hideRetirementOtherFields();
-            const groups = getCompanyGroups();
-            if (groups.length === 0) {
-                applyStepVisibility();
-                return;
-            }
-
-            const q1Sel = document.getElementById("id_has_work_history");
-            const hasAnyWork = q1Sel ? (q1Sel.value || "").trim() : "";
-
-            const firstCompanyBoxes = groups[0][1];
-            const showFirstCompany = hasAnyWork === "yes";
-            firstCompanyBoxes.forEach((box) => {
-                box.dataset.whActive = showFirstCompany ? "true" : "false";
-                if (!showFirstCompany) {
-                    clearBoxValues(box);
-                }
-            });
-
-            let prevAnsweredYes = showFirstCompany;
-
-            for (let i = 1; i < groups.length; i++) {
-                const [companyNum, boxes] = groups[i];
-                const gateBox = document.getElementById(`more-work-history-box-after-${companyNum - 1}`);
-                const gateSel = document.getElementById(`id_more_work_history_after_${companyNum - 1}`);
-
-                if (!gateBox || !gateSel) break;
-
-                if (!prevAnsweredYes) {
-                    gateBox.dataset.whActive = "false";
-                    gateSel.value = "";
-                    gateBox.dataset.selectedList = "[]";
-                    updateFieldFillHighlight(gateSel);
-
-                    boxes.forEach((box) => {
-                        box.dataset.whActive = "false";
-                        clearBoxValues(box);
-                    });
-                    prevAnsweredYes = false;
-                } else {
-                    gateBox.dataset.whActive = "true";
-                    const gateVal = (gateSel.value || "").trim();
-                    const showThisCompany = gateVal === "yes";
-
-                    boxes.forEach((box) => {
-                        box.dataset.whActive = showThisCompany ? "true" : "false";
-                        if (!showThisCompany) {
-                            clearBoxValues(box);
-                        }
-                    });
-                    prevAnsweredYes = showThisCompany;
-                }
-            }
-
-            applyStepVisibility();
-        }
-
-        function applyStepVisibility() {
-            hideRetirementOtherFields();
-
-            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (box.dataset.permanentlyHidden === "true" || isRemovedExtraNotesField(box)) {
-                    box.classList.add("hidden");
-                    return;
-                }
-
-                const step = getFieldStep(box);
-                let shouldShow = step === currentStep;
-
-                if (step === 4) {
-                    if (box.id === "has-work-history-box") {
-                        shouldShow = currentStep === 4;
-                    } else {
-                        shouldShow = currentStep === 4 && box.dataset.whActive === "true";
-                    }
-                }
-
-                if (shouldShow) {
-                    box.classList.remove("hidden");
-                } else {
-                    box.classList.add("hidden");
-                    box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
-                        if (ctrl.type !== "hidden") {
-                            ctrl.required = false;
-                        }
-                    });
-                }
-            });
-
-            updateVisaVisibility();
-            hideCommuteOtherField();
-            updateRequiredBadges(localStorage.getItem("skillsheet_lang") || "ja");
-            updateStepperUI();
-        }
-
-        function updateStepperUI() {
-            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+        function updateStepperUi(lang) {
             const t = uiTexts[lang] || uiTexts.ja;
-
             const indicator = document.getElementById("step-indicator");
             const heading = document.getElementById("step-heading");
             const fill = document.getElementById("progress-fill");
-            const prevBtn = document.getElementById("prev-btn");
-            const nextBtn = document.getElementById("next-btn");
-            const submitBtn = document.getElementById("submit-btn");
 
             if (indicator) indicator.textContent = `STEP ${currentStep} / ${TOTAL_STEPS}`;
             if (heading) heading.textContent = t.stepNames[currentStep - 1] || "";
@@ -2398,884 +1761,846 @@
             for (let i = 1; i <= TOTAL_STEPS; i++) {
                 const pill = document.getElementById(`pill-${i}`);
                 if (!pill) continue;
-                pill.textContent = t.pillNames[i - 1] || `${i}`;
+                pill.textContent = t.pillNames[i - 1] || pill.textContent;
                 pill.classList.remove("active", "done");
-                if (i === currentStep) pill.classList.add("active");
-                else if (i < currentStep) pill.classList.add("done");
+                if (i < currentStep) pill.classList.add("done");
+                else if (i === currentStep) pill.classList.add("active");
             }
+        }
+
+        function updateNavButtons(lang) {
+            const t = uiTexts[lang] || uiTexts.ja;
+            const prevBtn = document.getElementById("prev-btn");
+            const nextBtn = document.getElementById("next-btn");
+            const submitBtn = document.getElementById("submit-btn");
 
             if (prevBtn) {
                 prevBtn.textContent = t.prev;
-                if (currentStep > 1) prevBtn.classList.remove("hidden");
-                else prevBtn.classList.add("hidden");
+                prevBtn.classList.toggle("hidden", currentStep <= 1);
             }
-
-            if (nextBtn && submitBtn) {
+            if (nextBtn) {
                 nextBtn.textContent = t.next;
+                nextBtn.classList.toggle("hidden", currentStep >= TOTAL_STEPS);
+            }
+            if (submitBtn) {
                 submitBtn.textContent = t.submit;
-                if (currentStep < TOTAL_STEPS) {
-                    nextBtn.classList.remove("hidden");
-                    submitBtn.classList.add("hidden");
-                } else {
-                    nextBtn.classList.add("hidden");
-                    submitBtn.classList.remove("hidden");
-                }
+                submitBtn.classList.toggle("hidden", currentStep < TOTAL_STEPS);
             }
         }
 
-        function goToStep(stepNum) {
-            if (stepNum < 1 || stepNum > TOTAL_STEPS) return;
-            currentStep = stepNum;
-            applyStepVisibility();
-            const formScreen = document.getElementById("form-screen");
-            if (formScreen) {
-                formScreen.scrollIntoView({ behavior: "smooth", block: "start" });
+        function applyStepVisibility() {
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const boxes = Array.from(document.querySelectorAll("#skillsheet-form .field[data-field]"));
+
+            boxes.forEach((box) => {
+                if (box.dataset.permanentlyHidden === "true" || isRemovedExtraNotesField(box)) {
+                    box.classList.add("hidden");
+                    return;
+                }
+                if (isWorkHistoryBox(box)) {
+                    if (currentStep !== 4) {
+                        box.classList.add("hidden");
+                    }
+                    return;
+                }
+                const fieldStep = getFieldStep(box);
+                box.classList.toggle("hidden", fieldStep !== currentStep);
+            });
+
+            if (currentStep === 4) {
+                syncWorkHistoryVisibility();
             }
+
+            updateStepperUi(lang);
+            updateNavButtons(lang);
         }
 
         function nextStep() {
-            if (!validateStep(currentStep, true)) {
-                return;
-            }
+            if (!validateStep(currentStep, true)) return;
             if (currentStep < TOTAL_STEPS) {
-                goToStep(currentStep + 1);
+                currentStep += 1;
+                applyStepVisibility();
+                window.scrollTo({ top: 0, behavior: "smooth" });
             }
         }
 
         function prevStep() {
             if (currentStep > 1) {
-                goToStep(currentStep - 1);
+                currentStep -= 1;
+                applyStepVisibility();
+                window.scrollTo({ top: 0, behavior: "smooth" });
             }
         }
 
-        function buildYesNoSelect(id, name, lang) {
-            const safeLang = uiTexts[lang] ? lang : "ja";
-            const sel = document.createElement("select");
-            sel.id = id;
-            sel.name = name;
+        function getWorkHistoryNumber(box) {
+            const name = box.dataset.field || "";
+            const lbl = box.querySelector("label");
+            const text = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "");
+            const combined = `${name} ${text}`;
 
-            const emptyOpt = document.createElement("option");
-            emptyOpt.value = "";
-            emptyOpt.textContent = "";
-            emptyOpt.dataset.ja = "";
-            emptyOpt.dataset.pt = "";
-            emptyOpt.dataset.en = "";
-            sel.appendChild(emptyOpt);
-
-            YES_NO_OPTIONS.forEach((item) => {
-                const opt = document.createElement("option");
-                opt.value = item.value;
-                opt.textContent = item[safeLang] || item.ja;
-                opt.dataset.ja = item.ja;
-                opt.dataset.pt = item.pt;
-                opt.dataset.en = item.en;
-                sel.appendChild(opt);
-            });
-
-            return sel;
-        }
-
-        function applyYesNoLang(selId, lang) {
-            const safeLang = uiTexts[lang] ? lang : "ja";
-            const sel = document.getElementById(selId);
-            if (!sel) return;
-            Array.from(sel.options).forEach((opt) => {
-                if (opt.value === "") {
-                    opt.textContent = "";
-                } else {
-                    opt.textContent = opt.dataset[safeLang] || opt.dataset.ja || opt.textContent;
-                }
-            });
-            updateFieldFillHighlight(sel);
-        }
-
-        function ensureWorkHistoryQuestions() {
-            hideRetirementOtherFields();
-            const groups = getCompanyGroups();
-            if (groups.length === 0) return;
-
-            const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
-            const t = uiTexts[savedLang] || uiTexts.ja;
-
-            let q1Box = document.getElementById("has-work-history-box");
-            if (!q1Box) {
-                q1Box = document.createElement("div");
-                q1Box.id = "has-work-history-box";
-                q1Box.className = "field";
-                q1Box.dataset.field = "has_work_history_question";
-                q1Box.dataset.whQuestion = "true";
-
-                const lbl1 = document.createElement("label");
-                lbl1.id = "has-work-history-label";
-                lbl1.setAttribute("for", "id_has_work_history");
-                lbl1.textContent = t.hasWorkHistoryLabel;
-
-                const sel1 = buildYesNoSelect("id_has_work_history", "has_work_history_question", savedLang);
-                sel1.addEventListener("change", () => {
-                    updateFieldFillHighlight(sel1);
-                    updateWorkHistoryFlow();
-                });
-
-                const hint1 = document.createElement("div");
-                hint1.id = "has-work-history-hint";
-                hint1.className = "hint";
-                hint1.textContent = t.hasWorkHistoryHint;
-
-                q1Box.appendChild(lbl1);
-                q1Box.appendChild(sel1);
-                q1Box.appendChild(hint1);
-
-                groups[0][1][0].insertAdjacentElement("beforebegin", q1Box);
+            const circleMatch = combined.match(/[①②③④⑤⑥⑦⑧⑨⑩]/);
+            if (circleMatch) {
+                const map = { "①": 1, "②": 2, "③": 3, "④": 4, "⑤": 5, "⑥": 6, "⑦": 7, "⑧": 8, "⑨": 9, "⑩": 10 };
+                return map[circleMatch[0]] || null;
             }
 
-            for (let i = 1; i < groups.length; i++) {
-                const [companyNum, boxes] = groups[i];
-                const prevCompanyNum = companyNum - 1;
-                const gateId = `more-work-history-box-after-${prevCompanyNum}`;
-                const selId = `id_more_work_history_after_${prevCompanyNum}`;
-
-                let gateBox = document.getElementById(gateId);
-                if (!gateBox) {
-                    gateBox = document.createElement("div");
-                    gateBox.id = gateId;
-                    gateBox.className = "field hidden";
-                    gateBox.dataset.field = `more_work_history_after_${prevCompanyNum}`;
-                    gateBox.dataset.whQuestion = "true";
-
-                    const lbl = document.createElement("label");
-                    lbl.id = `more-work-history-label-after-${prevCompanyNum}`;
-                    lbl.setAttribute("for", selId);
-                    lbl.textContent = prevCompanyNum === 2 ? t.moreWorkHistoryLabelAfter2 : t.moreWorkHistoryLabelAfterN;
-
-                    const sel = buildYesNoSelect(selId, `more_work_history_after_${prevCompanyNum}`, savedLang);
-                    sel.addEventListener("change", () => {
-                        updateFieldFillHighlight(sel);
-                        updateWorkHistoryFlow();
-                    });
-
-                    const hint = document.createElement("div");
-                    hint.id = `more-work-history-hint-after-${prevCompanyNum}`;
-                    hint.className = "hint";
-                    hint.textContent = prevCompanyNum === 2 ? t.moreWorkHistoryHintAfter2 : t.moreWorkHistoryHintAfterN;
-
-                    gateBox.appendChild(lbl);
-                    gateBox.appendChild(sel);
-                    gateBox.appendChild(hint);
-
-                    boxes[0].insertAdjacentElement("beforebegin", gateBox);
-                }
+            const numMatch = combined.match(/(?:company|work_history|job_history|history|職歴|会社)[_\s-]*(\d+)/i);
+            if (numMatch) {
+                return parseInt(numMatch[1], 10);
             }
-
-            updateWorkHistoryFlow();
-        }
-
-        function findShoeFieldBox() {
-            const keywords = ["shoe", "foot", "kutu", "kutsu", "靴", "calçado", "calcado", "sapato"];
-            const allBoxes = Array.from(document.querySelectorAll("#skillsheet-form .field"));
-
-            for (const box of allBoxes) {
-                const fieldName = (box.dataset.field || "").toLowerCase();
-                if (keywords.some((k) => fieldName.includes(k))) {
-                    return box;
-                }
-            }
-
-            for (const box of allBoxes) {
-                const lbl = box.querySelector("label");
-                const lblText = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
-                if (keywords.some((k) => lblText.includes(k))) {
-                    return box;
-                }
-            }
-
-            for (const box of allBoxes) {
-                const ctrl = box.querySelector("input, select, textarea");
-                const ctrlId = ((ctrl && ctrl.id) || "").toLowerCase();
-                const ctrlName = ((ctrl && ctrl.name) || "").toLowerCase();
-                if (keywords.some((k) => ctrlId.includes(k) || ctrlName.includes(k))) {
-                    return box;
-                }
-            }
-
             return null;
         }
 
-        function syncShoeSizeFromSelect() {
-            const sel = document.getElementById("id_shoe_size_select");
-            if (!sel) return;
-            updateFieldFillHighlight(sel);
+        function isWorkHistoryBox(box) {
+            if (!box) return false;
+            if (box.dataset.whQuestion === "true") return true;
+            const name = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const text = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            return (
+                name.includes("work_history") ||
+                name.includes("job_history") ||
+                name.includes("company") ||
+                text.includes("職歴") ||
+                text.includes("会社") ||
+                /[①②③④⑤⑥⑦⑧⑨⑩]/.test(text)
+            );
+        }
 
-            const val = (sel.value || "").trim();
-            let hiddenSync = document.getElementById("id_shoe_size_sync");
-            if (!hiddenSync) {
-                hiddenSync = document.createElement("input");
-                hiddenSync.type = "hidden";
-                hiddenSync.id = "id_shoe_size_sync";
-                hiddenSync.name = "shoe_size";
-                sel.insertAdjacentElement("afterend", hiddenSync);
-            }
-            hiddenSync.value = val;
+        function isRetirementOtherField(box) {
+            if (!box) return false;
+            const name = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const text = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            return (
+                name.includes("retirement") ||
+                name.includes("taishoku") ||
+                text.includes("退職理由") ||
+                text.includes("その他（退職") ||
+                text.includes("その他(退職")
+            );
+        }
 
-            const box = findShoeFieldBox();
-            if (!box) return;
+        function setupWorkHistoryFlow() {
+            const form = document.getElementById("skillsheet-form");
+            if (!form) return;
 
-            const origControl = box.querySelector("input:not([type='hidden']):not(#id_shoe_size_sync), select:not(#id_shoe_size_select), textarea");
-            if (!origControl) return;
+            const boxes = Array.from(form.querySelectorAll(".field[data-field]"));
+            const whBoxes = boxes.filter((b) => isWorkHistoryBox(b));
+            if (whBoxes.length === 0) return;
 
-            if (origControl.tagName === "SELECT") {
-                if (!val) {
-                    origControl.value = "";
+            const grouped = new Map();
+            const unnumbered = [];
+
+            whBoxes.forEach((box) => {
+                const n = getWorkHistoryNumber(box);
+                if (n) {
+                    if (!grouped.has(n)) grouped.set(n, []);
+                    grouped.get(n).push(box);
                 } else {
-                    const matched = Array.from(origControl.options).find((opt) => {
-                        const optVal = (opt.value || "").trim();
-                        const optTxt = ((opt.dataset.orig || opt.textContent) || "").trim();
-                        return optVal === val || optTxt === val || optTxt.startsWith(`${val}cm`) || optTxt.startsWith(`${val} `);
-                    });
-                    origControl.value = matched ? matched.value : val;
+                    unnumbered.push(box);
                 }
-            } else {
-                origControl.value = val;
+            });
+
+            const companyNumbers = Array.from(grouped.keys()).sort((a, b) => a - b);
+            const firstCompanyBox = companyNumbers.length > 0 ? grouped.get(companyNumbers[0])[0] : whBoxes[0];
+
+            function createYesNoQuestion(id, afterElement, questionType, companyNum) {
+                if (document.getElementById(id)) return document.getElementById(id);
+
+                const wrap = document.createElement("div");
+                wrap.id = id;
+                wrap.className = "field";
+                wrap.dataset.field = id;
+                wrap.dataset.whQuestion = "true";
+                wrap.dataset.whType = questionType;
+                if (companyNum) wrap.dataset.companyNum = String(companyNum);
+
+                const lbl = document.createElement("label");
+                lbl.htmlFor = `${id}_select`;
+                wrap.appendChild(lbl);
+
+                const sel = document.createElement("select");
+                sel.id = `${id}_select`;
+                sel.name = `${id}_select`;
+
+                const emptyOpt = document.createElement("option");
+                emptyOpt.value = "";
+                emptyOpt.textContent = "---------";
+                sel.appendChild(emptyOpt);
+
+                YES_NO_OPTIONS.forEach((opt) => {
+                    const o = document.createElement("option");
+                    o.value = opt.value;
+                    o.textContent = opt.ja;
+                    sel.appendChild(o);
+                });
+
+                sel.addEventListener("change", () => {
+                    updateFieldColor(sel);
+                    syncWorkHistoryVisibility();
+                });
+
+                wrap.appendChild(sel);
+
+                const hint = document.createElement("div");
+                hint.className = "hint";
+                wrap.appendChild(hint);
+
+                afterElement.insertAdjacentElement("beforebegin", wrap);
+                updateFieldColor(sel);
+                return wrap;
             }
-            origControl.dispatchEvent(new Event("change", { bubbles: true }));
-            origControl.dispatchEvent(new Event("input", { bubbles: true }));
+
+            createYesNoQuestion("wh-has-history-q", firstCompanyBox, "has_history", null);
+
+            companyNumbers.forEach((num, idx) => {
+                if (num >= 2 && idx + 1 < companyNumbers.length) {
+                    const nextNum = companyNumbers[idx + 1];
+                    const nextFirstBox = grouped.get(nextNum)[0];
+                    createYesNoQuestion(`wh-more-after-${num}`, nextFirstBox, "more_history", num);
+                }
+            });
+
+            if (unnumbered.length > 0) {
+                const lastCompanyNum = companyNumbers[companyNumbers.length - 1] || 2;
+                createYesNoQuestion(`wh-more-after-${lastCompanyNum}`, unnumbered[0], "more_history", lastCompanyNum);
+            }
         }
 
-        function buildShoeSelectElement(initialVal) {
-            const sel = document.createElement("select");
-            sel.id = "id_shoe_size_select";
+        function syncWorkHistoryVisibility() {
+            const form = document.getElementById("skillsheet-form");
+            if (!form) return;
 
-            const emptyOpt = document.createElement("option");
-            emptyOpt.value = "";
-            emptyOpt.textContent = "";
-            sel.appendChild(emptyOpt);
+            const boxes = Array.from(form.querySelectorAll(".field[data-field]"));
+            const whBoxes = boxes.filter((b) => isWorkHistoryBox(b));
+            if (whBoxes.length === 0) return;
 
-            for (let halfSteps = 42; halfSteps <= 60; halfSteps++) {
-                const cmNum = halfSteps / 2;
-                const labelStr = Number.isInteger(cmNum) ? String(cmNum) : cmNum.toFixed(1);
-                const opt = document.createElement("option");
-                opt.value = labelStr;
-                opt.textContent = labelStr;
-                sel.appendChild(opt);
+            if (currentStep !== 4) {
+                whBoxes.forEach((b) => b.classList.add("hidden"));
+                return;
             }
 
-            if (initialVal) {
-                const cleaned = initialVal.replace(/cm$/i, "").trim();
-                const hasOpt = Array.from(sel.options).some((o) => o.value === cleaned);
-                if (hasOpt) {
-                    sel.value = cleaned;
+            const hasHistorySel = document.getElementById("wh-has-history-q_select");
+            const hasHistoryVal = hasHistorySel ? hasHistorySel.value : "";
+
+            const grouped = new Map();
+            const unnumbered = [];
+            whBoxes.forEach((box) => {
+                if (box.dataset.whQuestion === "true") return;
+                const n = getWorkHistoryNumber(box);
+                if (n) {
+                    if (!grouped.has(n)) grouped.set(n, []);
+                    grouped.get(n).push(box);
+                } else {
+                    unnumbered.push(box);
                 }
+            });
+
+            const companyNumbers = Array.from(grouped.keys()).sort((a, b) => a - b);
+
+            whBoxes.forEach((b) => {
+                if (b.dataset.whQuestion !== "true") {
+                    b.classList.add("hidden");
+                }
+            });
+            document.querySelectorAll('[id^="wh-more-after-"]').forEach((q) => {
+                q.classList.add("hidden");
+            });
+
+            if (hasHistoryVal !== "yes") {
+                return;
             }
 
-            sel.addEventListener("change", syncShoeSizeFromSelect);
-            sel.addEventListener("input", syncShoeSizeFromSelect);
-            return sel;
-        }
+            let activeUntilIndex = 0;
+            for (let i = 0; i < companyNumbers.length; i++) {
+                const num = companyNumbers[i];
+                (grouped.get(num) || []).forEach((b) => b.classList.remove("hidden"));
 
-        function ensureShoeSizeSelect() {
-            let sel = document.getElementById("id_shoe_size_select");
-            const box = findShoeFieldBox();
-            const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
-            const t = uiTexts[savedLang] || uiTexts.ja;
-
-            if (!sel) {
-                if (box) {
-                    const origControl = box.querySelector("input, select, textarea");
-                    const initialVal = origControl ? (origControl.value || "") : "";
-                    sel = buildShoeSelectElement(initialVal);
-
-                    if (origControl) {
-                        origControl.classList.add("hidden");
-                        origControl.required = false;
-                        origControl.insertAdjacentElement("afterend", sel);
+                if (num >= 2 && i + 1 < companyNumbers.length) {
+                    const qBox = document.getElementById(`wh-more-after-${num}`);
+                    const qSel = document.getElementById(`wh-more-after-${num}_select`);
+                    if (qBox) qBox.classList.remove("hidden");
+                    if (qSel && qSel.value === "yes") {
+                        activeUntilIndex = i + 1;
                     } else {
-                        box.appendChild(sel);
-                    }
-
-                    let hint = document.getElementById("shoe-size-hint");
-                    if (!hint) {
-                        hint = document.createElement("div");
-                        hint.id = "shoe-size-hint";
-                        hint.className = "hint";
-                        hint.textContent = t.shoeHint;
-                        sel.insertAdjacentElement("afterend", hint);
+                        break;
                     }
                 } else {
-                    const fallbackBox = document.createElement("div");
-                    fallbackBox.id = "shoe-size-fallback-box";
-                    fallbackBox.className = "field";
-                    fallbackBox.dataset.field = "shoe_size";
-
-                    const lbl = document.createElement("label");
-                    lbl.id = "shoe-size-label";
-                    lbl.setAttribute("for", "id_shoe_size_select");
-                    lbl.textContent = t.shoeLabel;
-
-                    sel = buildShoeSelectElement("");
-
-                    const hint = document.createElement("div");
-                    hint.id = "shoe-size-hint";
-                    hint.className = "hint";
-                    hint.textContent = t.shoeHint;
-
-                    fallbackBox.appendChild(lbl);
-                    fallbackBox.appendChild(sel);
-                    fallbackBox.appendChild(hint);
-
-                    const formEl = document.getElementById("skillsheet-form");
-                    const stepNav = document.getElementById("step-nav");
-                    if (formEl && stepNav) {
-                        formEl.insertBefore(fallbackBox, stepNav);
-                    }
+                    activeUntilIndex = i;
                 }
             }
 
-            updateFieldFillHighlight(sel);
-            syncShoeSizeFromSelect();
+            if (unnumbered.length > 0 && activeUntilIndex >= companyNumbers.length - 1) {
+                const lastNum = companyNumbers[companyNumbers.length - 1] || 2;
+                const qBox = document.getElementById(`wh-more-after-${lastNum}`);
+                const qSel = document.getElementById(`wh-more-after-${lastNum}_select`);
+                if (qBox) qBox.classList.remove("hidden");
+                if (qSel && qSel.value === "yes") {
+                    unnumbered.forEach((b) => b.classList.remove("hidden"));
+                }
+            }
         }
 
-        function hideCommuteOtherField() {
-            document.querySelectorAll("#skillsheet-form .field").forEach((box) => {
-                const fieldName = (box.dataset.field || "").toLowerCase();
-                const lbl = box.querySelector("label");
-                const origText = lbl ? (lbl.dataset.orig || lbl.textContent || "") : "";
-                if (
-                    fieldName === "commute_other" ||
-                    fieldName === "commute_method_other" ||
-                    fieldName === "commute_detail" ||
-                    (fieldName.includes("commute") && (fieldName.includes("other") || fieldName.includes("detail"))) ||
-                    origText.includes("通勤方法（その他詳細）") ||
-                    origText.includes("通勤方法(その他詳細)")
-                ) {
-                    box.classList.add("hidden");
-                    box.dataset.permanentlyHidden = "true";
-                    box.querySelectorAll("input, select, textarea").forEach((inp) => {
-                        inp.required = false;
-                        inp.value = "";
-                    });
+        function updateWorkHistoryLabels(lang) {
+            const t = uiTexts[lang] || uiTexts.ja;
+            const hasQ = document.getElementById("wh-has-history-q");
+            if (hasQ) {
+                const lbl = hasQ.querySelector("label");
+                const hint = hasQ.querySelector(".hint");
+                if (lbl) lbl.textContent = t.hasWorkHistoryLabel;
+                if (hint) hint.textContent = t.hasWorkHistoryHint;
+            }
+
+            document.querySelectorAll('[id^="wh-more-after-"]').forEach((qBox) => {
+                const cNum = parseInt(qBox.dataset.companyNum || "0", 10);
+                const lbl = qBox.querySelector("label");
+                const hint = qBox.querySelector(".hint");
+                if (cNum === 2) {
+                    if (lbl) lbl.textContent = t.moreWorkHistoryLabelAfter2;
+                    if (hint) hint.textContent = t.moreWorkHistoryHintAfter2;
+                } else {
+                    if (lbl) lbl.textContent = t.moreWorkHistoryLabelAfterN;
+                    if (hint) hint.textContent = t.moreWorkHistoryHintAfterN;
                 }
             });
         }
 
-        function lockAgeField() {
-            const ageInput = document.getElementById("id_age");
-            if (!ageInput) return;
-            ageInput.setAttribute("readonly", "readonly");
-            ageInput.setAttribute("inputmode", "numeric");
-            ageInput.addEventListener("keydown", (e) => {
-                if (e.key !== "Tab") {
-                    e.preventDefault();
+        function isFieldFilled(el) {
+            if (!el) return false;
+            if (el.tagName === "SELECT") {
+                return Boolean(el.value && el.value.trim() !== "");
+            }
+            if (el.type === "checkbox" || el.type === "radio") {
+                return el.checked;
+            }
+            return Boolean(el.value && el.value.trim() !== "");
+        }
+
+        function updateFieldColor(el) {
+            if (!el) return;
+            const filled = isFieldFilled(el);
+            el.classList.remove("is-empty", "is-filled", "is-unselected");
+            if (filled) {
+                el.classList.add("is-filled");
+            } else {
+                el.classList.add("is-empty");
+                if (el.tagName === "SELECT") {
+                    el.classList.add("is-unselected");
                 }
+            }
+        }
+
+        function refreshAllFieldColors() {
+            const controls = document.querySelectorAll("#skillsheet-form input, #skillsheet-form select, #skillsheet-form textarea");
+            controls.forEach((el) => {
+                if (el.type === "hidden") return;
+                updateFieldColor(el);
             });
         }
 
-        function configureNumericInputs() {
-            const phoneInput = document.getElementById("id_phone");
-            if (phoneInput) {
-                phoneInput.setAttribute("inputmode", "numeric");
-                phoneInput.setAttribute("pattern", "[0-9-]*");
-                if (phoneInput.value) {
-                    phoneInput.value = formatPhoneHyphen(phoneInput.value);
-                    updateFieldFillHighlight(phoneInput);
-                }
-                const onPhoneInput = () => {
-                    const formatted = formatPhoneHyphen(phoneInput.value);
-                    if (phoneInput.value !== formatted) {
-                        phoneInput.value = formatted;
-                    }
-                    updateFieldFillHighlight(phoneInput);
-                };
-                phoneInput.addEventListener("input", onPhoneInput);
-                phoneInput.addEventListener("change", onPhoneInput);
-                phoneInput.addEventListener("blur", onPhoneInput);
+        function translateText(rawText, lang) {
+            if (!rawText) return rawText;
+            const cleaned = stripLeadingNumber(rawText);
+            if (lang === "ja") return cleaned;
+
+            if (cleaned.includes(" / ")) {
+                const idx = LANG_INDEX[lang] ?? 0;
+                const parts = cleaned.split(" / ").map((s) => s.trim());
+                if (parts[idx]) return parts[idx];
             }
 
-            const postalInput = document.getElementById("id_postal_code");
-            if (postalInput) {
-                postalInput.setAttribute("inputmode", "numeric");
-                postalInput.setAttribute("pattern", "[0-9-]*");
-                if (postalInput.value) {
-                    postalInput.value = formatPostalHyphen(postalInput.value);
-                    updateFieldFillHighlight(postalInput);
+            const translated = translateSinglePhrase(cleaned, lang);
+            return translated || cleaned;
+        }
+
+        function findInputByField(names, labelKeywords) {
+            for (const name of names) {
+                const el = document.querySelector(`[name="${name}"], #id_${name}`);
+                if (el) return el;
+            }
+            const labels = Array.from(document.querySelectorAll("#skillsheet-form label"));
+            for (const lbl of labels) {
+                const txt = (lbl.dataset.orig || lbl.textContent || "").toLowerCase();
+                if (labelKeywords.some((k) => txt.includes(k.toLowerCase()))) {
+                    if (lbl.htmlFor) {
+                        const target = document.getElementById(lbl.htmlFor);
+                        if (target) return target;
+                    }
+                    const container = lbl.closest(".field");
+                    if (container) {
+                        const inp = container.querySelector("input, select, textarea");
+                        if (inp) return inp;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function calculateAgeFromBirthDate(dateStr) {
+            if (!dateStr) return "";
+            const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!match) return "";
+            const year = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const day = parseInt(match[3], 10);
+            const birth = new Date(year, month - 1, day);
+            if (isNaN(birth.getTime())) return "";
+
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            const mDiff = today.getMonth() - birth.getMonth();
+            if (mDiff < 0 || (mDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age >= 0 ? String(age) : "";
+        }
+
+        function syncAgeFromBirth(showMessage = false) {
+            const birthInput = findInputByField(["birth_date", "birthdate", "dob"], ["生年月日"]);
+            const ageInput = findInputByField(["age"], ["年齢"]);
+            const ageHint = document.getElementById("age-hint");
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const t = uiTexts[lang] || uiTexts.ja;
+
+            if (!birthInput || !ageInput) return;
+
+            ageInput.readOnly = true;
+            ageInput.classList.add("auto-filled");
+
+            const calculated = calculateAgeFromBirthDate(birthInput.value);
+            ageInput.value = calculated;
+            updateFieldColor(ageInput);
+
+            if (ageHint) {
+                if (calculated !== "" && showMessage) {
+                    ageHint.textContent = `${t.ageCalculated}: ${calculated}`;
+                    ageHint.className = "hint status-ok";
+                } else {
+                    ageHint.textContent = t.ageHint;
+                    ageHint.className = "hint";
                 }
             }
         }
 
-        function ensureStreetAddressField() {
-            const addressBox = document.querySelector('#skillsheet-form .field[data-field="address"]');
-            const addressInput = document.getElementById("id_address");
-            if (!addressBox || !addressInput) return;
+        function composeFullAddress(baseAddr, streetVal) {
+            const base = (baseAddr || "").trim();
+            const street = (streetVal || "").trim();
+            if (base && street) {
+                if (base.endsWith(street) || base.includes(street)) return base;
+                return `${base} ${street}`;
+            }
+            return base || street;
+        }
 
-            if (!addressInput.hasAttribute("readonly")) {
-                addressInput.setAttribute("readonly", "readonly");
+        function syncComposedAddress(addressInput, streetInput) {
+            if (!addressInput) return;
+            const streetVal = streetInput ? streetInput.value : "";
+            addressInput.value = composeFullAddress(basePostalAddress, streetVal);
+            updateFieldColor(addressInput);
+        }
+
+        async function lookupPostalCode(showMessage = false) {
+            const postalInput = findInputByField(["postal_code", "postal", "zip_code", "zip"], ["郵便番号"]);
+            const addressInput = findInputByField(["address"], ["住所"]);
+            const streetInput = document.getElementById("street-address-input");
+            const postalHint = document.getElementById("postal-hint");
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const t = uiTexts[lang] || uiTexts.ja;
+
+            if (!postalInput) return;
+
+            const formatted = formatPostalHyphen(postalInput.value);
+            if (postalInput.value !== formatted) {
+                postalInput.value = formatted;
+            }
+            updateFieldColor(postalInput);
+
+            if (addressInput) {
+                addressInput.readOnly = true;
+                addressInput.classList.add("auto-filled");
+                updateFieldColor(addressInput);
             }
 
-            if (!document.getElementById("street-address-box")) {
-                const streetBox = document.createElement("div");
+            const digits = formatted.replace(/\D/g, "");
+            if (digits.length !== 7) {
+                basePostalAddress = "";
+                if (addressInput) {
+                    syncComposedAddress(addressInput, streetInput);
+                }
+                if (postalHint) {
+                    postalHint.textContent = t.postalHint;
+                    postalHint.className = "hint";
+                }
+                return;
+            }
+
+            try {
+                const res = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${digits}`);
+                const data = await res.json();
+                if (data && data.results && data.results.length > 0) {
+                    const r = data.results[0];
+                    const fullAddr = `${r.address1 || ""}${r.address2 || ""}${r.address3 || ""}`;
+                    basePostalAddress = fullAddr;
+                    if (addressInput) {
+                        syncComposedAddress(addressInput, streetInput);
+                    }
+                    if (postalHint && showMessage) {
+                        postalHint.textContent = `${t.postalFound}: ${fullAddr}`;
+                        postalHint.className = "hint status-ok";
+                    }
+                } else if (postalHint && showMessage) {
+                    postalHint.textContent = t.postalNotFound;
+                    postalHint.className = "hint status-err";
+                }
+            } catch (e) {
+                if (postalHint && showMessage) {
+                    postalHint.textContent = t.postalErr;
+                    postalHint.className = "hint status-err";
+                }
+            }
+        }
+
+        function ensureStreetAddressField(lang) {
+            const t = uiTexts[lang] || uiTexts.ja;
+            const addressInput = findInputByField(["address"], ["住所"]);
+            if (!addressInput) return;
+
+            const addressBox = addressInput.closest(".field");
+            if (!addressBox) return;
+
+            let streetBox = document.getElementById("street-address-box");
+            if (!streetBox) {
+                streetBox = document.createElement("div");
                 streetBox.id = "street-address-box";
                 streetBox.className = "field";
                 streetBox.dataset.field = "street_address";
 
                 const lbl = document.createElement("label");
                 lbl.id = "street-address-label";
-                lbl.setAttribute("for", "id_street_address");
-                lbl.textContent = uiTexts.ja.streetLabel;
+                lbl.htmlFor = "street-address-input";
+                streetBox.appendChild(lbl);
 
                 const inp = document.createElement("input");
                 inp.type = "text";
-                inp.id = "id_street_address";
-                inp.name = "street_address";
-                inp.placeholder = uiTexts.ja.streetPlaceholder;
+                inp.id = "street-address-input";
+                inp.name = "street_address_detail";
+                inp.addEventListener("input", () => {
+                    updateFieldColor(inp);
+                    syncComposedAddress(addressInput, inp);
+                });
+                streetBox.appendChild(inp);
 
                 const hint = document.createElement("div");
                 hint.id = "street-address-hint";
                 hint.className = "hint";
-                hint.textContent = uiTexts.ja.streetHint;
-
-                streetBox.appendChild(lbl);
-                streetBox.appendChild(inp);
                 streetBox.appendChild(hint);
 
                 addressBox.insertAdjacentElement("afterend", streetBox);
-
-                inp.addEventListener("input", () => {
-                    syncCombinedAddress();
-                    updateFieldFillHighlight(inp);
-                });
-                inp.addEventListener("change", () => {
-                    syncCombinedAddress();
-                    updateFieldFillHighlight(inp);
-                });
             }
+
+            const lbl = document.getElementById("street-address-label");
+            const inp = document.getElementById("street-address-input");
+            const hint = document.getElementById("street-address-hint");
+            if (lbl) lbl.textContent = t.streetLabel;
+            if (inp) {
+                inp.placeholder = t.streetPlaceholder;
+                updateFieldColor(inp);
+            }
+            if (hint) hint.textContent = t.streetHint;
         }
 
-        function syncPreferredShiftFromSelect() {
-            const sel = document.getElementById("id_preferred_working_hours");
-            const origShiftEl = document.getElementById("id_preferred_shift");
-            const box = sel ? sel.closest(".field") : null;
-            updateFieldFillHighlight(sel);
-            if (!sel || !origShiftEl) return;
+        function ensureWorkingHoursField(lang) {
+            const t = uiTexts[lang] || uiTexts.ja;
+            const form = document.getElementById("skillsheet-form");
+            if (!form) return;
 
-            const selectedVals = box ? getSelectedValuesForBox(box) : (sel.value ? [sel.value] : []);
-            const chosenJaList = selectedVals.map((val) => {
-                const found = Array.from(sel.options).find((o) => o.value === val);
-                return found ? (found.dataset.ja || found.textContent || "").trim() : val;
-            }).filter(Boolean);
+            const existingBoxes = Array.from(form.querySelectorAll(".field[data-field]"));
+            const hasWorkingHours = existingBoxes.some((b) => isWorkingHoursField(b));
+            if (hasWorkingHours) return;
 
-            if (origShiftEl.tagName === "SELECT") {
-                if (origShiftEl.multiple) {
-                    Array.from(origShiftEl.options).forEach((opt) => {
-                        const txt = (opt.dataset.orig || opt.textContent || "").trim();
-                        opt.selected = selectedVals.includes(opt.value) || chosenJaList.some((c) => txt.includes(c));
-                    });
-                } else {
-                    const firstJa = chosenJaList[0] || "";
-                    const matched = Array.from(origShiftEl.options).find((opt) => {
-                        const txt = (opt.dataset.orig || opt.textContent || "").trim();
-                        return opt.value === selectedVals[0] || (firstJa && txt.includes(firstJa));
-                    });
-                    origShiftEl.value = matched ? matched.value : (selectedVals[0] || "");
-                }
-            } else {
-                origShiftEl.value = chosenJaList.join(", ");
-            }
-            origShiftEl.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-
-        function ensureWorkingHoursField() {
-            const legacyBox = document.querySelector('#skillsheet-form .field[data-field="preferred_shift"]');
-            if (legacyBox) {
-                legacyBox.classList.add("hidden");
-                legacyBox.dataset.permanentlyHidden = "true";
-            }
-
-            if (document.getElementById("id_preferred_working_hours")) return;
+            const commuteInput = findInputByField(["commute_method", "commute"], ["通勤"]);
+            const anchorBox = commuteInput ? commuteInput.closest(".field") : null;
+            if (!anchorBox) return;
 
             const box = document.createElement("div");
-            box.id = "working-hours-box";
+            box.id = "preferred-working-hours-box";
             box.className = "field";
             box.dataset.field = "preferred_working_hours";
 
             const lbl = document.createElement("label");
-            lbl.id = "working-hours-label";
-            lbl.setAttribute("for", "id_preferred_working_hours");
-            lbl.textContent = uiTexts.ja.workingHoursLabel;
+            lbl.id = "preferred-working-hours-label";
+            lbl.htmlFor = "preferred-working-hours-select";
+            lbl.textContent = t.workingHoursLabel;
+            box.appendChild(lbl);
 
             const sel = document.createElement("select");
-            sel.id = "id_preferred_working_hours";
+            sel.id = "preferred-working-hours-select";
             sel.name = "preferred_working_hours";
             sel.multiple = true;
+            sel.size = SHIFT_OPTIONS.length;
 
             SHIFT_OPTIONS.forEach((opt) => {
                 const o = document.createElement("option");
                 o.value = opt.value;
-                o.textContent = opt.ja;
-                o.dataset.ja = opt.ja;
-                o.dataset.pt = opt.pt;
-                o.dataset.en = opt.en;
+                o.textContent = opt[lang] || opt.ja;
                 sel.appendChild(o);
             });
 
-            sel.addEventListener("change", syncPreferredShiftFromSelect);
+            sel.addEventListener("change", () => {
+                updateFieldColor(sel);
+            });
+            box.appendChild(sel);
 
             const hint = document.createElement("div");
-            hint.id = "working-hours-hint";
+            hint.id = "preferred-working-hours-hint";
             hint.className = "hint";
-            hint.textContent = uiTexts.ja.workingHoursHint;
-
-            box.appendChild(lbl);
-            box.appendChild(sel);
+            hint.textContent = t.workingHoursHint;
             box.appendChild(hint);
 
-            const commuteBox = document.querySelector('#skillsheet-form .field[data-field="commute_method"]');
-            const formEl = document.getElementById("skillsheet-form");
-            const stepNav = document.getElementById("step-nav");
-            if (commuteBox) {
-                commuteBox.insertAdjacentElement("afterend", box);
-            } else if (formEl && stepNav) {
-                formEl.insertBefore(box, stepNav);
-            }
+            anchorBox.insertAdjacentElement("afterend", box);
+            updateFieldColor(sel);
         }
 
-        function applyWorkingHoursLang(lang) {
-            const safeLang = uiTexts[lang] ? lang : "ja";
-            const sel = document.getElementById("id_preferred_working_hours");
-            if (!sel) return;
-            Array.from(sel.options).forEach((o) => {
-                if (o.value === "") {
-                    o.textContent = "";
-                } else {
-                    o.textContent = o.dataset[safeLang] || o.dataset.ja;
+        function ensureAvailabilityFields(lang) {
+            const t = uiTexts[lang] || uiTexts.ja;
+            const form = document.getElementById("skillsheet-form");
+            if (!form) return;
+
+            const existingBoxes = Array.from(form.querySelectorAll(".field[data-field]"));
+            const workingBox = existingBoxes.find((b) => isWorkingHoursField(b));
+            const commuteInput = findInputByField(["commute_method", "commute"], ["通勤"]);
+            const anchorBox = workingBox || (commuteInput ? commuteInput.closest(".field") : null);
+            if (!anchorBox) return;
+
+            const specs = [
+                {
+                    id: "early-start-box",
+                    field: "early_start",
+                    label: t.earlyStartLabel,
+                    hint: t.availabilityHint,
+                    options: AVAILABILITY_OPTIONS
+                },
+                {
+                    id: "overtime-box",
+                    field: "overtime",
+                    label: t.overtimeLabel,
+                    hint: t.overtimeHint,
+                    options: OVERTIME_OPTIONS
+                },
+                {
+                    id: "holiday-work-box",
+                    field: "holiday_work",
+                    label: t.holidayWorkLabel,
+                    hint: t.availabilityHint,
+                    options: AVAILABILITY_OPTIONS
                 }
+            ];
+
+            let currentAnchor = anchorBox;
+
+            specs.forEach((spec) => {
+                let box = document.getElementById(spec.id);
+                if (!box) {
+                    box = document.createElement("div");
+                    box.id = spec.id;
+                    box.className = "field";
+                    box.dataset.field = spec.field;
+
+                    const lbl = document.createElement("label");
+                    lbl.id = `${spec.id}-label`;
+                    lbl.htmlFor = `${spec.id}-select`;
+                    box.appendChild(lbl);
+
+                    const sel = document.createElement("select");
+                    sel.id = `${spec.id}-select`;
+                    sel.name = spec.field;
+
+                    const emptyOpt = document.createElement("option");
+                    emptyOpt.value = "";
+                    emptyOpt.textContent = "---------";
+                    sel.appendChild(emptyOpt);
+
+                    spec.options.forEach((opt) => {
+                        const o = document.createElement("option");
+                        o.value = opt.value;
+                        o.textContent = opt[lang] || opt.ja;
+                        sel.appendChild(o);
+                    });
+
+                    sel.addEventListener("change", () => {
+                        updateFieldColor(sel);
+                    });
+                    box.appendChild(sel);
+
+                    const hint = document.createElement("div");
+                    hint.id = `${spec.id}-hint`;
+                    hint.className = "hint";
+                    box.appendChild(hint);
+
+                    currentAnchor.insertAdjacentElement("afterend", box);
+                    updateFieldColor(sel);
+                }
+
+                const lbl = document.getElementById(`${spec.id}-label`);
+                const hint = document.getElementById(`${spec.id}-hint`);
+                const sel = document.getElementById(`${spec.id}-select`);
+                if (lbl) lbl.textContent = spec.label;
+                if (hint) hint.textContent = spec.hint;
+                if (sel) {
+                    Array.from(sel.options).forEach((o) => {
+                        const matched = spec.options.find((item) => item.value === o.value);
+                        if (matched) o.textContent = matched[lang] || matched.ja;
+                    });
+                    updateFieldColor(sel);
+                }
+
+                currentAnchor = box;
             });
-            updateFieldFillHighlight(sel);
         }
 
-        function reorderFields() {
-            const formEl = document.getElementById("skillsheet-form");
-            const stepNav = document.getElementById("step-nav");
-            if (!formEl || !stepNav) return;
+        function ensureShoeSizeField(lang) {
+            const t = uiTexts[lang] || uiTexts.ja;
+            const form = document.getElementById("skillsheet-form");
+            if (!form) return;
 
-            const allBoxes = Array.from(formEl.querySelectorAll(".field[data-field]"));
-            const boxMap = new Map();
-            allBoxes.forEach((box) => {
-                boxMap.set(box.dataset.field, box);
+            const existingBoxes = Array.from(form.querySelectorAll(".field[data-field]"));
+            const hasShoe = existingBoxes.some((b) => isShoeSizeField(b));
+            if (hasShoe) return;
+
+            const clothingBoxes = existingBoxes.filter((b) => isClothingSizeField(b));
+            const anchorBox = clothingBoxes.length > 0 ? clothingBoxes[clothingBoxes.length - 1] : null;
+            if (!anchorBox) return;
+
+            const box = document.createElement("div");
+            box.id = "shoe-size-box";
+            box.className = "field";
+            box.dataset.field = "shoe_size";
+
+            const lbl = document.createElement("label");
+            lbl.id = "shoe-size-label";
+            lbl.htmlFor = "shoe-size-select";
+            lbl.textContent = t.shoeLabel;
+            box.appendChild(lbl);
+
+            const sel = document.createElement("select");
+            sel.id = "shoe-size-select";
+            sel.name = "shoe_size";
+
+            const emptyOpt = document.createElement("option");
+            emptyOpt.value = "";
+            emptyOpt.textContent = "---------";
+            sel.appendChild(emptyOpt);
+
+            for (let cm = 21.0; cm <= 30.0 + 1e-9; cm += 0.5) {
+                const valStr = cm.toFixed(1).replace(/\.0$/, "");
+                const o = document.createElement("option");
+                o.value = valStr;
+                o.textContent = `${valStr} cm`;
+                sel.appendChild(o);
+            }
+
+            sel.addEventListener("change", () => {
+                updateFieldColor(sel);
             });
+            box.appendChild(sel);
 
-            const step2ExtraBoxes = [];
-            const step3Boxes = [];
-            const step4Boxes = [];
+            const hint = document.createElement("div");
+            hint.id = "shoe-size-hint";
+            hint.className = "hint";
+            hint.textContent = t.shoeHint;
+            box.appendChild(hint);
 
-            allBoxes.forEach((box) => {
+            anchorBox.insertAdjacentElement("afterend", box);
+            updateFieldColor(sel);
+        }
+
+        function applyLanguage(lang) {
+            const t = uiTexts[lang] || uiTexts.ja;
+            document.documentElement.lang = lang;
+
+            const titleEl = document.getElementById("form-title");
+            const switchBtn = document.getElementById("lang-switch-btn");
+            const doneNotice = document.getElementById("done-notice");
+            const birthHint = document.getElementById("birth-hint");
+            const ageHint = document.getElementById("age-hint");
+            const phoneHint = document.getElementById("phone-hint");
+            const postalHint = document.getElementById("postal-hint");
+            const addressHint = document.getElementById("address-hint");
+
+            if (titleEl) titleEl.textContent = t.title;
+            if (switchBtn) switchBtn.textContent = t.switchLang;
+            if (doneNotice) doneNotice.textContent = t.done;
+            if (birthHint) birthHint.textContent = t.birthHint;
+            if (ageHint) ageHint.textContent = t.ageHint;
+            if (phoneHint) phoneHint.textContent = t.phoneHint;
+            if (postalHint) postalHint.textContent = t.postalHint;
+            if (addressHint) addressHint.textContent = t.addressHint;
+
+            ensureStreetAddressField(lang);
+            ensureWorkingHoursField(lang);
+            ensureAvailabilityFields(lang);
+            ensureShoeSizeField(lang);
+            updateWorkHistoryLabels(lang);
+
+            document.querySelectorAll("#skillsheet-form .field").forEach((box) => {
                 if (isRemovedExtraNotesField(box)) {
                     box.dataset.permanentlyHidden = "true";
                     box.classList.add("hidden");
                     return;
                 }
-                const fieldName = box.dataset.field || "";
-                if (STEP1_FIELDS.includes(fieldName) || STEP2_FIELDS.includes(fieldName)) return;
-                if (isJobTypeField(box) || isWorkingHoursField(box) || isAvailabilityField(box)) {
-                    step2ExtraBoxes.push(box);
-                } else if (isWorkHistoryBox(box)) {
-                    step4Boxes.push(box);
-                } else {
-                    step3Boxes.push(box);
-                }
-            });
 
-            STEP1_FIELDS.forEach((fieldName) => {
-                const box = boxMap.get(fieldName);
-                if (box) {
-                    formEl.insertBefore(box, stepNav);
-                    boxMap.delete(fieldName);
-                }
-            });
-
-            STEP2_FIELDS.forEach((fieldName) => {
-                const box = boxMap.get(fieldName);
-                if (box) {
-                    formEl.insertBefore(box, stepNav);
-                    boxMap.delete(fieldName);
-                }
-            });
-
-            step2ExtraBoxes.forEach((box) => {
-                formEl.insertBefore(box, stepNav);
-                boxMap.delete(box.dataset.field);
-            });
-
-            step3Boxes.forEach((box) => {
-                formEl.insertBefore(box, stepNav);
-                boxMap.delete(box.dataset.field);
-            });
-
-            step4Boxes.forEach((box) => {
-                formEl.insertBefore(box, stepNav);
-                boxMap.delete(box.dataset.field);
-            });
-
-            boxMap.forEach((box) => {
-                formEl.insertBefore(box, stepNav);
-            });
-        }
-
-        function isJapaneseNationality(natEl) {
-            if (!natEl) return false;
-            const rawVal = (natEl.value || "").trim().toLowerCase();
-            let optText = "";
-            if (natEl.tagName === "SELECT" && natEl.selectedIndex >= 0) {
-                const opt = natEl.options[natEl.selectedIndex];
-                optText = ((opt.dataset.orig || opt.textContent) || "").trim().toLowerCase();
-            }
-            const combined = `${rawVal} ${optText}`;
-            return (
-                combined.includes("日本") ||
-                combined.includes("japan") ||
-                combined.includes("japão") ||
-                combined.includes("japao") ||
-                rawVal === "jp" ||
-                rawVal === "jpn"
-            );
-        }
-
-        function updateVisaVisibility() {
-            const natEl = document.getElementById("id_nationality");
-            const visaBox = document.querySelector('#skillsheet-form .field[data-field="visa_type"]');
-            const visaInput = document.getElementById("id_visa_type");
-            if (!natEl || !visaBox) return;
-
-            if (currentStep !== 2) {
-                visaBox.classList.add("hidden");
-                return;
-            }
-
-            const hasValue = Boolean((natEl.value || "").trim());
-            const isJapanese = isJapaneseNationality(natEl);
-
-            if (!hasValue || isJapanese) {
-                visaBox.classList.add("hidden");
-                if (visaInput) {
-                    visaInput.required = false;
-                    if (isJapanese) {
-                        if (visaInput.tagName === "SELECT") {
-                            visaInput.selectedIndex = 0;
-                        } else {
-                            visaInput.value = "";
-                        }
-                        if (visaBox.dataset.mcInitialized === "true") {
-                            visaBox.dataset.selectedList = "[]";
-                        }
-                        updateFieldFillHighlight(visaInput);
+                const lbl = box.querySelector(":scope > label");
+                if (lbl && !box.dataset.whQuestion) {
+                    if (!lbl.dataset.orig) {
+                        lbl.dataset.orig = lbl.textContent;
                     }
+                    lbl.textContent = translateText(lbl.dataset.orig, lang);
                 }
-            } else {
-                visaBox.classList.remove("hidden");
-                if (visaBox.dataset.mcInitialized === "true") {
-                    refreshModernChoiceBox(visaBox, localStorage.getItem("skillsheet_lang") || "ja");
+
+                const sel = box.querySelector("select");
+                if (sel && !box.dataset.whQuestion) {
+                    Array.from(sel.options).forEach((opt) => {
+                        if (!opt.dataset.orig) {
+                            opt.dataset.orig = opt.textContent;
+                        }
+                        const rawOpt = opt.dataset.orig.trim();
+                        if (!rawOpt || /^-+$/.test(rawOpt)) {
+                            opt.textContent = "---------";
+                        } else {
+                            opt.textContent = translateText(rawOpt, lang);
+                        }
+                    });
                 }
-            }
-        }
 
-        function syncCombinedAddress() {
-            const addressInput = document.getElementById("id_address");
-            const streetInput = document.getElementById("id_street_address");
-            if (!addressInput) return;
-
-            const streetVal = streetInput ? streetInput.value.trim() : "";
-            if (basePostalAddress) {
-                addressInput.value = streetVal ? `${basePostalAddress} ${streetVal}` : basePostalAddress;
-            } else if (!addressInput.readOnly) {
-                addressInput.value = streetVal;
-            }
-            updateFieldFillHighlight(addressInput);
-        }
-
-        function setAddressLocked(locked) {
-            const addressInput = document.getElementById("id_address");
-            if (!addressInput) return;
-            if (locked) {
-                addressInput.setAttribute("readonly", "readonly");
-            } else {
-                addressInput.removeAttribute("readonly");
-            }
-            updateFieldFillHighlight(addressInput);
-        }
-
-        function pickLangPart(rawText, lang, isLabel = false) {
-            if (!rawText) return rawText;
-            const trimmedRaw = rawText.trim();
-
-            if (
-                trimmedRaw === "---------" ||
-                trimmedRaw === ""
-            ) {
-                return "";
-            }
-
-            if (/^(h|S|M|L|LL|XL|XXL|3L|4L|5L|6L|2L|%)$/i.test(trimmedRaw)) {
-                return trimmedRaw;
-            }
-
-            const baseText = isLabel ? stripLeadingNumber(trimmedRaw) : trimmedRaw;
-            const parts = baseText.split(" / ");
-
-            if (parts.length > 1) {
-                const idx = LANG_INDEX[lang] ?? 0;
-                const picked = parts.length === 2
-                    ? (lang === "ja" ? parts[0] : parts[1]).trim()
-                    : (parts[idx] || parts[0]).trim();
-                return translateSinglePhrase(picked, lang);
-            }
-
-            return translateSinglePhrase(baseText, lang);
-        }
-
-        function snapshotOriginalTexts() {
-            document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
-                if (!lbl.dataset.orig) {
-                    lbl.dataset.orig = stripLeadingNumber(lbl.textContent);
+                const inp = box.querySelector("input[placeholder], textarea[placeholder]");
+                if (inp && inp.id !== "street-address-input") {
+                    if (!inp.dataset.origPlaceholder) {
+                        inp.dataset.origPlaceholder = inp.placeholder;
+                    }
+                    inp.placeholder = translateText(inp.dataset.origPlaceholder, lang);
                 }
-            });
-            document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
-                if (!opt.dataset.orig) {
-                    const txt = (opt.textContent || "").trim();
-                    opt.dataset.orig = /^-+$/.test(txt) ? "" : opt.textContent;
-                }
-            });
-            document.querySelectorAll("#skillsheet-form input[placeholder], #skillsheet-form textarea[placeholder]").forEach((ctrl) => {
-                if (!ctrl.dataset.origPlaceholder) {
-                    ctrl.dataset.origPlaceholder = ctrl.getAttribute("placeholder") || "";
-                }
-            });
-        }
 
-        function applyLang(lang) {
-            const safeLang = uiTexts[lang] ? lang : "ja";
-            const t = uiTexts[safeLang];
-
-            document.getElementById("form-title").textContent = t.title;
-            document.getElementById("lang-switch-btn").textContent = t.switchLang;
-            document.getElementById("submit-btn").textContent = t.submit;
-
-            const doneEl = document.getElementById("done-notice");
-            if (doneEl) doneEl.textContent = t.done;
-
-            const bHint = document.getElementById("birth-hint");
-            if (bHint) bHint.textContent = t.birthHint;
-
-            const aHint = document.getElementById("age-hint");
-            if (aHint && !aHint.dataset.autoState) {
-                aHint.textContent = t.ageHint;
-                aHint.className = "hint";
-            }
-
-            const phHint = document.getElementById("phone-hint");
-            if (phHint) phHint.textContent = t.phoneHint;
-
-            const pHint = document.getElementById("postal-hint");
-            if (pHint && !pHint.dataset.autoState) {
-                pHint.textContent = t.postalHint;
-                pHint.className = "hint";
-            }
-
-            const addrHint = document.getElementById("address-hint");
-            if (addrHint && !addrHint.dataset.autoState) {
-                addrHint.textContent = t.addressHint;
-                addrHint.className = "hint";
-            }
-
-            const shoeLbl = document.getElementById("shoe-size-label");
-            if (shoeLbl) shoeLbl.textContent = t.shoeLabel;
-
-            const shoeHint = document.getElementById("shoe-size-hint");
-            if (shoeHint) shoeHint.textContent = t.shoeHint;
-
-            const jacketLbl = document.getElementById("jacket_size-label");
-            if (jacketLbl) jacketLbl.textContent = t.jacketSizeLabel;
-
-            const pantsLbl = document.getElementById("pants_size-label");
-            if (pantsLbl) pantsLbl.textContent = t.pantsSizeLabel;
-
-            const q1Lbl = document.getElementById("has-work-history-label");
-            if (q1Lbl) q1Lbl.textContent = t.hasWorkHistoryLabel;
-
-            const q1Hint = document.getElementById("has-work-history-hint");
-            if (q1Hint) q1Hint.textContent = t.hasWorkHistoryHint;
-
-            document.querySelectorAll('[id^="more-work-history-label-after-"]').forEach((lbl) => {
-                const suffix = lbl.id.replace("more-work-history-label-after-", "");
-                lbl.textContent = suffix === "2" ? t.moreWorkHistoryLabelAfter2 : t.moreWorkHistoryLabelAfterN;
-            });
-
-            document.querySelectorAll('[id^="more-work-history-hint-after-"]').forEach((hnt) => {
-                const suffix = hnt.id.replace("more-work-history-hint-after-", "");
-                hnt.textContent = suffix === "2" ? t.moreWorkHistoryHintAfter2 : t.moreWorkHistoryHintAfterN;
-            });
-
-            const stLbl = document.getElementById("street-address-label");
-            if (stLbl) stLbl.textContent = t.streetLabel;
-
-            const stInp = document.getElementById("id_street_address");
-            if (stInp) stInp.placeholder = t.streetPlaceholder;
-
-            const stHint = document.getElementById("street-address-hint");
-            if (stHint) stHint.textContent = t.streetHint;
-
-            const whLbl = document.getElementById("working-hours-label");
-            if (whLbl) whLbl.textContent = t.workingHoursLabel;
-
-            const whHint = document.getElementById("working-hours-hint");
-            if (whHint) whHint.textContent = t.workingHoursHint;
-
-            applyWorkingHoursLang(safeLang);
-            applyYesNoLang("id_has_work_history", safeLang);
-            document.querySelectorAll('[id^="id_more_work_history_after_"]').forEach((sel) => {
-                applyYesNoLang(sel.id, safeLang);
-            });
-
-            document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
-                if (lbl.dataset.orig) lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang, true);
-            });
-
-            document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
-                if (opt.dataset && opt.dataset[safeLang]) {
-                    opt.textContent = opt.dataset[safeLang];
-                } else if (opt.dataset.orig !== undefined) {
-                    opt.textContent = pickLangPart(opt.dataset.orig, safeLang, false);
+                if (sel && !box.dataset.whQuestion) {
+                    buildModernChoiceUi(box, lang);
+                } else {
+                    ensureFieldHeaderIcon(box);
                 }
             });
 
-            document.querySelectorAll("#skillsheet-form input[placeholder], #skillsheet-form textarea[placeholder]").forEach((ctrl) => {
-                if (ctrl.id === "id_street_address") {
-                    ctrl.placeholder = t.streetPlaceholder;
-                } else if (ctrl.dataset.origPlaceholder) {
-                    ctrl.placeholder = pickLangPart(ctrl.dataset.origPlaceholder, safeLang, false);
-                }
-            });
-
-            document.querySelectorAll("#skillsheet-form .req-alert-msg").forEach((msgEl) => {
-                msgEl.textContent = t.requiredAlert;
-            });
-
-            document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
-                updateFieldFillHighlight(sel);
-            });
-
-            initStandardFieldIcons();
-            refreshAllModernChoiceFields(safeLang);
-            updateRequiredBadges(safeLang);
-            updateStepperUI();
-            updateVisaVisibility();
-            hideCommuteOtherField();
-            updateWorkHistoryFlow();
+            updateRequiredBadges(lang);
+            syncAgeFromBirth(false);
+            lookupPostalCode(false);
+            applyStepVisibility();
+            refreshAllFieldColors();
         }
 
         function startForm(lang) {
             localStorage.setItem("skillsheet_lang", lang);
             currentStep = 1;
-            applyLang(lang);
-            applyStepVisibility();
             document.getElementById("lang-screen").classList.add("hidden");
             document.getElementById("form-screen").classList.remove("hidden");
+            applyLanguage(lang);
         }
 
         function backToLang() {
@@ -3283,264 +2608,70 @@
             document.getElementById("lang-screen").classList.remove("hidden");
         }
 
-        function calcAgeFromBirthDate() {
-            const birthInput = document.getElementById("id_birth_date");
-            const ageInput = document.getElementById("id_age");
-            const aHint = document.getElementById("age-hint");
-            if (!birthInput || !ageInput) return;
-
-            const val = birthInput.value.trim();
-            if (!val) {
-                ageInput.value = "";
-                ageInput.classList.remove("auto-filled");
-                updateFieldFillHighlight(ageInput);
-                if (aHint) {
-                    delete aHint.dataset.autoState;
-                    const lang = localStorage.getItem("skillsheet_lang") || "ja";
-                    aHint.textContent = (uiTexts[lang] || uiTexts.ja).ageHint;
-                    aHint.className = "hint";
-                }
-                return;
-            }
-
-            let year, month, day;
-            if (/^(\d{4})-(\d{2})-(\d{2})$/.test(val)) {
-                const parts = val.split("-");
-                year = parseInt(parts[0], 10);
-                month = parseInt(parts[1], 10);
-                day = parseInt(parts[2], 10);
-            } else {
-                const digits = val.replace(/\D/g, "");
-                if (digits.length !== 8) return;
-                year = parseInt(digits.slice(0, 4), 10);
-                month = parseInt(digits.slice(4, 6), 10);
-                day = parseInt(digits.slice(6, 8), 10);
-            }
-
-            if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return;
-
-            const birthDateObj = new Date(year, month - 1, day);
-            if (
-                birthDateObj.getFullYear() !== year ||
-                birthDateObj.getMonth() !== month - 1 ||
-                birthDateObj.getDate() !== day
-            ) {
-                return;
-            }
-
-            const today = new Date();
-            let age = today.getFullYear() - year;
-            const mDiff = (today.getMonth() + 1) - month;
-            if (mDiff < 0 || (mDiff === 0 && today.getDate() < day)) {
-                age--;
-            }
-
-            if (age >= 0 && age <= 120) {
-                ageInput.value = String(age);
-                ageInput.classList.add("auto-filled");
-                updateFieldFillHighlight(ageInput);
-                ageInput.dispatchEvent(new Event("input", { bubbles: true }));
-                ageInput.dispatchEvent(new Event("change", { bubbles: true }));
-
-                if (aHint) {
-                    const lang = localStorage.getItem("skillsheet_lang") || "ja";
-                    const t = uiTexts[lang] || uiTexts.ja;
-                    aHint.dataset.autoState = "ok";
-                    aHint.textContent = `${t.ageCalculated}: ${age}`;
-                    aHint.className = "hint status-ok";
-                }
-            }
-        }
-
-        async function handlePostalInput() {
-            const postalInput = document.getElementById("id_postal_code");
-            const addressInput = document.getElementById("id_address");
-            const pHint = document.getElementById("postal-hint");
-            const addrHint = document.getElementById("address-hint");
-            if (!postalInput || !addressInput) return;
-
-            const formatted = formatPostalHyphen(postalInput.value);
-            if (postalInput.value !== formatted) {
-                postalInput.value = formatted;
-            }
-            updateFieldFillHighlight(postalInput);
-
-            const zip = formatted.replace(/\D/g, "");
-            if (zip.length < 7) {
-                basePostalAddress = "";
-                setAddressLocked(true);
-                if (pHint) {
-                    delete pHint.dataset.autoState;
-                    const lang = localStorage.getItem("skillsheet_lang") || "ja";
-                    pHint.textContent = (uiTexts[lang] || uiTexts.ja).postalHint;
-                    pHint.className = "hint";
-                }
-                return;
-            }
-
-            const lang = localStorage.getItem("skillsheet_lang") || "ja";
-            const t = uiTexts[lang] || uiTexts.ja;
-
-            let fullAddress = "";
-            let anySuccess = false;
-
-            try {
-                const res = await fetch(`/api/postal-lookup/?zipcode=${encodeURIComponent(zip)}`);
-                if (res.ok) {
-                    anySuccess = true;
-                    const data = await res.json();
-                    if (data && data.ok && data.address) {
-                        fullAddress = data.address;
-                    }
-                }
-            } catch (e) {}
-
-            if (!fullAddress) {
-                try {
-                    const res2 = await fetch(`https://zipcloud.ibsnet.co.jp/api/api/json?zipcode=${zip}`);
-                    if (res2.ok) {
-                        anySuccess = true;
-                        const data2 = await res2.json();
-                        if (data2.results && data2.results.length > 0) {
-                            const r = data2.results[0];
-                            fullAddress = `${r.address1 || ""}${r.address2 || ""}${r.address3 || ""}`;
-                        }
-                    }
-                } catch (e2) {}
-            }
-
-            if (!fullAddress) {
-                try {
-                    const res3 = await fetch(`https://apis.postcode-jp.com/api/v5/postcodes/${zip}`);
-                    if (res3.ok) {
-                        anySuccess = true;
-                        const data3 = await res3.json();
-                        const item = Array.isArray(data3) ? data3[0] : (data3.data && data3.data[0]);
-                        if (item) {
-                            fullAddress = `${item.pref || ""}${item.city || ""}${item.town || ""}`;
-                        }
-                    }
-                } catch (e3) {}
-            }
-
-            if (fullAddress) {
-                basePostalAddress = fullAddress;
-                setAddressLocked(true);
-                syncCombinedAddress();
-                addressInput.classList.add("auto-filled");
-                updateFieldFillHighlight(addressInput);
-                addressInput.dispatchEvent(new Event("input", { bubbles: true }));
-                addressInput.dispatchEvent(new Event("change", { bubbles: true }));
-
-                if (pHint) {
-                    pHint.dataset.autoState = "ok";
-                    pHint.textContent = `${t.postalFound}: ${fullAddress}`;
-                    pHint.className = "hint status-ok";
-                }
-                if (addrHint) {
-                    addrHint.dataset.autoState = "ok";
-                    addrHint.textContent = t.addressHint;
-                    addrHint.className = "hint status-ok";
-                }
-
-                const streetInput = document.getElementById("id_street_address");
-                if (streetInput) {
-                    streetInput.focus();
-                }
-            } else {
-                basePostalAddress = "";
-                setAddressLocked(false);
-                addressInput.classList.remove("auto-filled");
-                updateFieldFillHighlight(addressInput);
-                if (pHint) {
-                    pHint.dataset.autoState = "err";
-                    pHint.textContent = anySuccess ? t.postalNotFound : t.postalErr;
-                    pHint.className = "hint status-err";
-                }
-            }
-        }
-
         document.addEventListener("DOMContentLoaded", () => {
-            hideRetirementOtherFields();
-            ensureStreetAddressField();
-            ensureWorkingHoursField();
-            ensureAvailabilityFields();
-            ensureShoeSizeSelect();
-            ensureClothingAndOtherFields();
-            snapshotOriginalTexts();
-            ensureOtherOptionInClothingSelects();
-            reorderFields();
-            hideRetirementOtherFields();
-            ensureWorkHistoryQuestions();
-            hideCommuteOtherField();
-            initFieldFillHighlight();
-            initStandardFieldIcons();
-            initAllModernChoiceFields();
-            lockAgeField();
-            configureNumericInputs();
-
-            const natEl = document.getElementById("id_nationality");
-            if (natEl) {
-                natEl.addEventListener("change", updateVisaVisibility);
-                natEl.addEventListener("input", updateVisaVisibility);
-            }
-
-            const birthInput = document.getElementById("id_birth_date");
-            if (birthInput) {
-                const digitsOnly = birthInput.value.replace(/\D/g, "");
-                if (/^\d{8}$/.test(digitsOnly)) {
-                    birthInput.value = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 6)}-${digitsOnly.slice(6, 8)}`;
-                }
-
-                birthInput.type = "date";
-                birthInput.min = "1920-01-01";
-                const now = new Date();
-                const yyyy = now.getFullYear();
-                const mm = String(now.getMonth() + 1).padStart(2, "0");
-                const dd = String(now.getDate()).padStart(2, "0");
-                birthInput.max = `${yyyy}-${mm}-${dd}`;
-
-                birthInput.addEventListener("change", () => {
-                    calcAgeFromBirthDate();
-                    updateFieldFillHighlight(birthInput);
-                });
-                birthInput.addEventListener("input", () => {
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(birthInput.value)) {
-                        calcAgeFromBirthDate();
-                    }
-                    updateFieldFillHighlight(birthInput);
-                });
-
-                if (birthInput.value) {
-                    calcAgeFromBirthDate();
-                }
-            }
-
             const savedLang = localStorage.getItem("skillsheet_lang") || "ja";
-            applyLang(savedLang);
-            applyStepVisibility();
+            setupWorkHistoryFlow();
+            applyLanguage(savedLang);
 
-            const postalInput = document.getElementById("id_postal_code");
+            const birthInput = findInputByField(["birth_date", "birthdate", "dob"], ["生年月日"]);
+            if (birthInput) {
+                birthInput.addEventListener("change", () => syncAgeFromBirth(true));
+                birthInput.addEventListener("input", () => syncAgeFromBirth(true));
+            }
+
+            const phoneInput = findInputByField(["phone", "tel", "mobile"], ["電話", "携帯"]);
+            if (phoneInput) {
+                const applyPhoneFormat = () => {
+                    const formatted = formatPhoneHyphen(phoneInput.value);
+                    if (phoneInput.value !== formatted) {
+                        phoneInput.value = formatted;
+                    }
+                    updateFieldColor(phoneInput);
+                };
+                phoneInput.addEventListener("input", applyPhoneFormat);
+                phoneInput.addEventListener("change", applyPhoneFormat);
+            }
+
+            const postalInput = findInputByField(["postal_code", "postal", "zip_code", "zip"], ["郵便番号"]);
             if (postalInput) {
-                postalInput.addEventListener("input", handlePostalInput);
-                postalInput.addEventListener("change", handlePostalInput);
-                postalInput.addEventListener("blur", handlePostalInput);
+                postalInput.addEventListener("input", () => {
+                    const formatted = formatPostalHyphen(postalInput.value);
+                    if (postalInput.value !== formatted) {
+                        postalInput.value = formatted;
+                    }
+                    updateFieldColor(postalInput);
+                    if (formatted.replace(/\D/g, "").length === 7) {
+                        lookupPostalCode(true);
+                    } else {
+                        lookupPostalCode(false);
+                    }
+                });
+                postalInput.addEventListener("change", () => lookupPostalCode(true));
+                postalInput.addEventListener("blur", () => lookupPostalCode(true));
             }
 
             const formEl = document.getElementById("skillsheet-form");
             if (formEl) {
                 formEl.addEventListener("submit", (e) => {
-                    syncCombinedAddress();
-                    syncPreferredShiftFromSelect();
-                    syncShoeSizeFromSelect();
-                    updateVisaVisibility();
-                    updateWorkHistoryFlow();
-
                     if (!validateAllStepsForSubmit()) {
                         e.preventDefault();
-                        return false;
                     }
                 });
+                formEl.addEventListener("input", (e) => {
+                    const box = e.target.closest(".field");
+                    if (box) clearValidationErrorsInContainer(box);
+                    updateFieldColor(e.target);
+                });
+                formEl.addEventListener("change", (e) => {
+                    const box = e.target.closest(".field");
+                    if (box) clearValidationErrorsInContainer(box);
+                    updateFieldColor(e.target);
+                });
+            }
+
+            const formScreen = document.getElementById("form-screen");
+            if (formScreen && !formScreen.classList.contains("hidden")) {
+                applyLanguage(savedLang);
             }
         });
     </script>
