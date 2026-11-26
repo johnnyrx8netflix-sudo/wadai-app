@@ -20,7 +20,7 @@
             box-sizing: border-box;
         }
         .wrap {
-            max-width: 820px;
+            max-width: 860px;
             width: 100%;
             margin: 0 auto;
             background: #fff;
@@ -304,6 +304,150 @@
             box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.16);
         }
 
+        /* 日本語スキル（理解・会話・レベル目安）専用デザイン */
+        .field.jp-skill-box {
+            background: #ffffff;
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
+            border-radius: 0;
+            padding: 20px 6px 24px;
+            margin-bottom: 8px;
+            box-shadow: none;
+        }
+        .field.jp-skill-box:last-of-type {
+            border-bottom: none;
+        }
+        .jp-skill-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        .jp-icon-badge {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #3b82f6;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .jp-icon-badge svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .jp-skill-title {
+            margin: 0 !important;
+            font-size: 1.05rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+        }
+        .jp-skill-desc {
+            font-size: 0.88rem;
+            color: #64748b;
+            margin: 0 0 14px 46px;
+            line-height: 1.45;
+        }
+        .jp-pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-left: 46px;
+        }
+        .jp-pill-btn {
+            min-width: 78px;
+            height: 44px;
+            padding: 0 18px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            font-size: 0.94rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.14s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .jp-pill-btn:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+        .jp-pill-btn.is-selected {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #1d4ed8;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
+        }
+        .jp-level-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .jp-level-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 14px 8px;
+            cursor: pointer;
+            transition: all 0.14s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            text-align: center;
+            min-height: 98px;
+        }
+        .jp-level-card:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+        .jp-level-card.is-selected {
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+        }
+        .jp-level-pct {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+        .jp-level-bars {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+        .jp-level-bar {
+            width: 11px;
+            height: 4px;
+            border-radius: 999px;
+            background: #cbd5e1;
+        }
+        .jp-level-bar.on {
+            background: #2563eb;
+        }
+        .jp-level-name {
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: #475569;
+            line-height: 1.25;
+        }
+        .jp-level-card.is-selected .jp-level-name {
+            color: #1d4ed8;
+            font-weight: 700;
+        }
+
         .hint {
             font-size: 0.82rem;
             color: #64748b;
@@ -377,6 +521,11 @@
         .hidden {
             display: none !important;
         }
+        @media (max-width: 720px) {
+            .jp-level-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -397,6 +546,14 @@
             .choice-group,
             .choice-group.cols-3 {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .jp-skill-desc,
+            .jp-pill-row {
+                margin-left: 0;
+            }
+            .jp-pill-btn {
+                flex: 1 1 calc(50% - 6px);
+                min-width: 0;
             }
             .step-pills {
                 grid-template-columns: repeat(2, 1fr);
@@ -514,6 +671,39 @@
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
         ];
 
+        const JP_LEVEL_CARDS = [
+            {
+                pct: { ja: "80〜100%", pt: "80〜100%", en: "80–100%" },
+                bars: 5,
+                name: { ja: "とても良い", pt: "Muito bom", en: "Very good" },
+                keys: ["80", "100", "とても良い", "very_good", "native", "fluent", "n1", "n2", "muito bom"]
+            },
+            {
+                pct: { ja: "60〜80%", pt: "60〜80%", en: "60–80%" },
+                bars: 4,
+                name: { ja: "良い", pt: "Bom", en: "Good" },
+                keys: ["60", "80", "良い", "good", "advanced", "n3", "bom"]
+            },
+            {
+                pct: { ja: "40〜60%", pt: "40〜60%", en: "40–60%" },
+                bars: 3,
+                name: { ja: "中級", pt: "Intermediário", en: "Intermediate" },
+                keys: ["40", "60", "中級", "intermediate", "intermediario", "n4"]
+            },
+            {
+                pct: { ja: "20〜40%", pt: "20〜40%", en: "20–40%" },
+                bars: 2,
+                name: { ja: "基礎", pt: "Básico", en: "Basic" },
+                keys: ["20", "40", "基礎", "basic", "basico", "n5"]
+            },
+            {
+                pct: { ja: "0〜20%", pt: "0〜20%", en: "0–20%" },
+                bars: 1,
+                name: { ja: "初級", pt: "Iniciante", en: "Beginner" },
+                keys: ["0", "20", "初級", "beginner", "none", "iniciante"]
+            }
+        ];
+
         const STEP1_FIELDS = [
             "full_name",
             "gender",
@@ -532,11 +722,6 @@
             "drivers_license",
             "commute_method",
             "preferred_working_hours"
-        ];
-
-        const FIELD_ORDER = [
-            ...STEP1_FIELDS,
-            ...STEP2_FIELDS
         ];
 
         const uiTexts = {
@@ -571,6 +756,12 @@
                 workingHoursHint: "希望する勤務時間を選択してください",
                 shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
+                jpListenTitle: "日本語を理解する",
+                jpListenDesc: "相手の話をどの程度理解できるか選んでください。",
+                jpSpeakTitle: "日本語を話す",
+                jpSpeakDesc: "日本語でどの程度会話ができるか選んでください。",
+                jpLevelTitle: "日本語レベル（目安）",
+                jpLevelDesc: "自分の日本語力に近い目安を選んでください。",
                 hasWorkHistoryLabel: "職歴はありますか？",
                 hasWorkHistoryHint: "「はい」を選ぶと会社①の入力欄が表示されます。「いいえ」の場合は職歴なしで送信へ進めます。",
                 moreWorkHistoryLabel: "追加の職歴はありますか？",
@@ -611,6 +802,12 @@
                 workingHoursHint: "Selecione o horário de trabalho desejado",
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
+                jpListenTitle: "Compreensão de japonês",
+                jpListenDesc: "Selecione o quanto você consegue entender o que os outros dizem.",
+                jpSpeakTitle: "Fala em japonês",
+                jpSpeakDesc: "Selecione o quanto você consegue conversar em japonês.",
+                jpLevelTitle: "Nível de japonês (referência)",
+                jpLevelDesc: "Selecione a faixa mais próxima do seu nível de japonês.",
                 hasWorkHistoryLabel: "Possui experiência profissional (histórico de trabalho)?",
                 hasWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ① ou 'Não' para seguir sem histórico.",
                 moreWorkHistoryLabel: "Deseja adicionar mais experiência profissional?",
@@ -651,6 +848,12 @@
                 workingHoursHint: "Select your preferred working hours",
                 shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
+                jpListenTitle: "Japanese Listening",
+                jpListenDesc: "Select how well you understand what others say in Japanese.",
+                jpSpeakTitle: "Japanese Speaking",
+                jpSpeakDesc: "Select how well you can hold a conversation in Japanese.",
+                jpLevelTitle: "Japanese Level (Guide)",
+                jpLevelDesc: "Select the level closest to your Japanese ability.",
                 hasWorkHistoryLabel: "Do you have work experience?",
                 hasWorkHistoryHint: "Select 'Yes' to show Company ①, or 'No' to continue without work history.",
                 moreWorkHistoryLabel: "Do you have additional work experience to add?",
@@ -696,9 +899,280 @@
             return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
         }
 
+        function getJpSkillType(box) {
+            if (!box) return null;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            const combined = `${fieldName} ${rawLbl}`;
+
+            if (
+                fieldName.includes("listen") ||
+                fieldName.includes("understand") ||
+                fieldName.includes("comprehension") ||
+                fieldName.includes("rikai") ||
+                rawLbl.includes("理解") ||
+                rawLbl.includes("聞く")
+            ) {
+                return "listen";
+            }
+
+            if (
+                fieldName.includes("speak") ||
+                fieldName.includes("conversation") ||
+                fieldName.includes("kaiwa") ||
+                fieldName.includes("hanasu") ||
+                rawLbl.includes("話す") ||
+                rawLbl.includes("会話")
+            ) {
+                return "speak";
+            }
+
+            if (
+                fieldName.includes("japanese_level") ||
+                fieldName.includes("jp_level") ||
+                fieldName.includes("nihongo_level") ||
+                rawLbl.includes("日本語レベル") ||
+                combined.includes("japanese level") ||
+                combined.includes("nível de japonês") ||
+                combined.includes("nivel de japones")
+            ) {
+                return "level";
+            }
+
+            return null;
+        }
+
+        function buildJpIconSvg(type) {
+            if (type === "listen") {
+                return `<svg viewBox="0 0 24 24"><path d="M16 8a5 5 0 0 0-8 4v1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v1a2 2 0 0 0 4 0v-6a5 5 0 0 0-1-3z"/><path d="M19 6a8 8 0 0 0-14 5"/></svg>`;
+            }
+            if (type === "speak") {
+                return `<svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`;
+            }
+            return `<svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`;
+        }
+
+        function findBestSelectOptionForCard(sel, cardSpec) {
+            const options = Array.from(sel.options).filter((o) => {
+                const v = (o.value || "").trim();
+                const t = ((o.dataset.orig || o.textContent) || "").trim();
+                return v !== "" && !/^-+$/.test(t);
+            });
+            for (const key of cardSpec.keys) {
+                const lowerKey = key.toLowerCase();
+                const found = options.find((o) => {
+                    const v = (o.value || "").trim().toLowerCase();
+                    const orig = ((o.dataset.orig || o.textContent) || "").trim().toLowerCase();
+                    const txt = (o.textContent || "").trim().toLowerCase();
+                    return v.includes(lowerKey) || orig.includes(lowerKey) || txt.includes(lowerKey);
+                });
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function refreshJpSkillUi(lang) {
+            const safeLang = uiTexts[lang] ? lang : "ja";
+            const t = uiTexts[safeLang] || uiTexts.ja;
+
+            document.querySelectorAll("#skillsheet-form .field.jp-skill-box").forEach((box) => {
+                const skillType = box.dataset.jpSkillType;
+                const sel = box.querySelector("select");
+                const titleEl = box.querySelector(".jp-skill-title");
+                const descEl = box.querySelector(".jp-skill-desc");
+                const uiWrap = box.querySelector(".jp-skill-ui");
+                if (!sel || !uiWrap) return;
+
+                if (titleEl) {
+                    if (skillType === "listen") titleEl.textContent = t.jpListenTitle;
+                    else if (skillType === "speak") titleEl.textContent = t.jpSpeakTitle;
+                    else if (skillType === "level") titleEl.textContent = t.jpLevelTitle;
+                }
+                if (descEl) {
+                    if (skillType === "listen") descEl.textContent = t.jpListenDesc;
+                    else if (skillType === "speak") descEl.textContent = t.jpSpeakDesc;
+                    else if (skillType === "level") descEl.textContent = t.jpLevelDesc;
+                }
+
+                const currentVal = (sel.value || "").trim();
+
+                if (skillType === "level") {
+                    uiWrap.querySelectorAll(".jp-level-card").forEach((card, idx) => {
+                        const spec = JP_LEVEL_CARDS[idx];
+                        if (!spec) return;
+                        const pctEl = card.querySelector(".jp-level-pct");
+                        const nameEl = card.querySelector(".jp-level-name");
+                        if (pctEl) pctEl.textContent = spec.pct[safeLang] || spec.pct.ja;
+                        if (nameEl) nameEl.textContent = spec.name[safeLang] || spec.name.ja;
+
+                        const matchedOpt = findBestSelectOptionForCard(sel, spec);
+                        const cardVal = matchedOpt ? matchedOpt.value : card.dataset.value;
+                        card.dataset.value = cardVal;
+                        const selected = Boolean(currentVal && cardVal === currentVal);
+                        card.classList.toggle("is-selected", selected);
+                        card.setAttribute("aria-pressed", selected ? "true" : "false");
+                    });
+                } else {
+                    uiWrap.querySelectorAll(".jp-pill-btn").forEach((btn) => {
+                        const opt = Array.from(sel.options).find((o) => o.value === btn.dataset.value);
+                        if (opt) btn.textContent = opt.textContent;
+                        const selected = Boolean(currentVal && btn.dataset.value === currentVal);
+                        btn.classList.toggle("is-selected", selected);
+                        btn.setAttribute("aria-pressed", selected ? "true" : "false");
+                    });
+                }
+            });
+        }
+
+        function initJpSkillSections() {
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const t = uiTexts[lang] || uiTexts.ja;
+
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
+                const skillType = getJpSkillType(box);
+                const sel = box.querySelector("select");
+                if (!skillType || !sel) return;
+
+                if (!box.dataset.jpInitialized) {
+                    box.dataset.jpInitialized = "true";
+                    box.dataset.jpSkillType = skillType;
+                    box.classList.add("jp-skill-box");
+
+                    const origLabel = box.querySelector("label");
+                    if (origLabel) origLabel.classList.add("hidden");
+
+                    const header = document.createElement("div");
+                    header.className = "jp-skill-header";
+
+                    const badge = document.createElement("span");
+                    badge.className = "jp-icon-badge";
+                    badge.innerHTML = buildJpIconSvg(skillType);
+
+                    const title = document.createElement("div");
+                    title.className = "jp-skill-title";
+                    if (skillType === "listen") title.textContent = t.jpListenTitle;
+                    else if (skillType === "speak") title.textContent = t.jpSpeakTitle;
+                    else title.textContent = t.jpLevelTitle;
+
+                    header.appendChild(badge);
+                    header.appendChild(title);
+
+                    const desc = document.createElement("p");
+                    desc.className = "jp-skill-desc";
+                    if (skillType === "listen") desc.textContent = t.jpListenDesc;
+                    else if (skillType === "speak") desc.textContent = t.jpSpeakDesc;
+                    else desc.textContent = t.jpLevelDesc;
+
+                    const uiWrap = document.createElement("div");
+                    uiWrap.className = "jp-skill-ui";
+
+                    sel.classList.add("hidden");
+
+                    if (skillType === "level") {
+                        const grid = document.createElement("div");
+                        grid.className = "jp-level-grid";
+
+                        const validOpts = Array.from(sel.options).filter((o) => {
+                            const v = (o.value || "").trim();
+                            const txt = ((o.dataset.orig || o.textContent) || "").trim();
+                            return v !== "" && !/^-+$/.test(txt);
+                        });
+
+                        JP_LEVEL_CARDS.forEach((spec, idx) => {
+                            const matchedOpt = findBestSelectOptionForCard(sel, spec) || validOpts[idx];
+                            const optValue = matchedOpt ? matchedOpt.value : String(spec.bars);
+
+                            const card = document.createElement("button");
+                            card.type = "button";
+                            card.className = "jp-level-card";
+                            card.dataset.value = optValue;
+                            card.setAttribute("aria-pressed", "false");
+
+                            const pct = document.createElement("div");
+                            pct.className = "jp-level-pct";
+                            pct.textContent = spec.pct[lang] || spec.pct.ja;
+
+                            const bars = document.createElement("div");
+                            bars.className = "jp-level-bars";
+                            for (let b = 1; b <= 5; b++) {
+                                const bar = document.createElement("span");
+                                bar.className = "jp-level-bar" + (b <= spec.bars ? " on" : "");
+                                bars.appendChild(bar);
+                            }
+
+                            const name = document.createElement("div");
+                            name.className = "jp-level-name";
+                            name.textContent = spec.name[lang] || spec.name.ja;
+
+                            card.appendChild(pct);
+                            card.appendChild(bars);
+                            card.appendChild(name);
+
+                            card.addEventListener("click", () => {
+                                sel.value = card.dataset.value;
+                                updateFieldFillHighlight(sel);
+                                refreshJpSkillUi(localStorage.getItem("skillsheet_lang") || "ja");
+                                sel.dispatchEvent(new Event("change", { bubbles: true }));
+                                sel.dispatchEvent(new Event("input", { bubbles: true }));
+                            });
+
+                            grid.appendChild(card);
+                        });
+
+                        uiWrap.appendChild(grid);
+                    } else {
+                        const row = document.createElement("div");
+                        row.className = "jp-pill-row";
+
+                        const validOpts = Array.from(sel.options).filter((o) => {
+                            const v = (o.value || "").trim();
+                            const txt = ((o.dataset.orig || o.textContent) || "").trim();
+                            return v !== "" && !/^-+$/.test(txt);
+                        });
+
+                        validOpts.forEach((opt) => {
+                            const btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "jp-pill-btn";
+                            btn.dataset.value = opt.value;
+                            btn.textContent = opt.textContent;
+                            btn.setAttribute("aria-pressed", "false");
+
+                            btn.addEventListener("click", () => {
+                                sel.value = opt.value;
+                                updateFieldFillHighlight(sel);
+                                refreshJpSkillUi(localStorage.getItem("skillsheet_lang") || "ja");
+                                sel.dispatchEvent(new Event("change", { bubbles: true }));
+                                sel.dispatchEvent(new Event("input", { bubbles: true }));
+                            });
+
+                            row.appendChild(btn);
+                        });
+
+                        uiWrap.appendChild(row);
+                    }
+
+                    const insertAfterTarget = origLabel || sel;
+                    insertAfterTarget.insertAdjacentElement("afterend", header);
+                    header.insertAdjacentElement("afterend", desc);
+                    desc.insertAdjacentElement("afterend", uiWrap);
+                }
+
+                sel.addEventListener("change", () => {
+                    refreshJpSkillUi(localStorage.getItem("skillsheet_lang") || "ja");
+                });
+            });
+
+            refreshJpSkillUi(lang);
+        }
+
         /* 選択肢5個以下のセレクトを角丸タップボタンに変換 */
         function shouldConvertToChoiceButtons(sel) {
             if (!sel || sel.id === "id_shoe_size_select") return false;
+            const parentBox = sel.closest(".field");
+            if (parentBox && getJpSkillType(parentBox)) return false;
+
             const validOpts = Array.from(sel.options).filter((o) => {
                 const v = (o.value || "").trim();
                 const t = ((o.dataset.orig || o.textContent) || "").trim();
@@ -808,6 +1282,7 @@
                     el.classList.add("is-filled");
                 }
                 syncChoiceButtons(el);
+                refreshJpSkillUi(localStorage.getItem("skillsheet_lang") || "ja");
                 return;
             }
 
@@ -1864,6 +2339,7 @@
                 refreshChoiceButtonLabels(sel);
             });
 
+            refreshJpSkillUi(safeLang);
             updateStepperUI();
             updateVisaVisibility();
             hideCommuteOtherField();
@@ -2072,6 +2548,7 @@
             ensureShoeSizeSelect();
             hideCommuteOtherField();
             initFieldFillHighlight();
+            initJpSkillSections();
             initAllChoiceButtons();
             lockAgeField();
             configureNumericInputs();
