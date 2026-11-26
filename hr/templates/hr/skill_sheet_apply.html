@@ -258,6 +258,52 @@
             color: #0c4a6e !important;
             cursor: not-allowed;
         }
+
+        /* 選択肢5個以下のタップ式カードボタン */
+        .choice-group {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .choice-group.cols-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .choice-btn {
+            min-height: 54px;
+            padding: 12px 10px;
+            border-radius: 14px;
+            border: 1.5px solid #cbd5e1;
+            background-color: #ffffff;
+            color: #1e293b;
+            font-size: 0.98rem;
+            font-weight: 700;
+            line-height: 1.3;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+            transition: all 0.14s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            word-break: break-word;
+        }
+        .choice-group.is-unselected .choice-btn {
+            background-color: #fff5f5;
+            border-color: #fca5a5;
+            color: #7f1d1d;
+        }
+        .choice-btn:hover {
+            border-color: #0284c7;
+            background-color: #f0f9ff;
+        }
+        .choice-btn.is-selected {
+            background-color: #e0f2fe;
+            border-color: #0284c7;
+            color: #0369a1;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.16);
+        }
+
         .hint {
             font-size: 0.82rem;
             color: #64748b;
@@ -347,6 +393,10 @@
                 padding: 10px 10px;
                 font-size: 0.95rem;
                 line-height: 1.4;
+            }
+            .choice-group,
+            .choice-group.cols-3 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
             .step-pills {
                 grid-template-columns: repeat(2, 1fr);
@@ -646,6 +696,104 @@
             return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
         }
 
+        /* 選択肢5個以下のセレクトを角丸タップボタンに変換 */
+        function shouldConvertToChoiceButtons(sel) {
+            if (!sel || sel.id === "id_shoe_size_select") return false;
+            const validOpts = Array.from(sel.options).filter((o) => {
+                const v = (o.value || "").trim();
+                const t = ((o.dataset.orig || o.textContent) || "").trim();
+                return v !== "" && !/^-+$/.test(t);
+            });
+            return validOpts.length >= 1 && validOpts.length <= 5;
+        }
+
+        function syncChoiceButtons(sel) {
+            if (!sel || !sel.dataset.choiceGroupId) return;
+            const group = document.getElementById(sel.dataset.choiceGroupId);
+            if (!group) return;
+
+            const currentVal = (sel.value || "").trim();
+            const hasVal = Boolean(currentVal);
+            group.classList.toggle("is-unselected", !hasVal);
+            group.classList.toggle("is-selected", hasVal);
+
+            group.querySelectorAll(".choice-btn").forEach((btn) => {
+                const isMatch = btn.dataset.value === currentVal;
+                btn.classList.toggle("is-selected", isMatch);
+                btn.setAttribute("aria-pressed", isMatch ? "true" : "false");
+            });
+        }
+
+        function refreshChoiceButtonLabels(sel) {
+            if (!sel || !sel.dataset.choiceGroupId) return;
+            const group = document.getElementById(sel.dataset.choiceGroupId);
+            if (!group) return;
+
+            Array.from(sel.options).forEach((opt) => {
+                const v = (opt.value || "").trim();
+                if (!v) return;
+                const btn = group.querySelector(`.choice-btn[data-value="${CSS.escape(v)}"]`);
+                if (btn) {
+                    btn.textContent = opt.textContent;
+                }
+            });
+            syncChoiceButtons(sel);
+        }
+
+        function initChoiceButtonsForSelect(sel) {
+            if (!shouldConvertToChoiceButtons(sel)) return;
+
+            let group = sel.dataset.choiceGroupId ? document.getElementById(sel.dataset.choiceGroupId) : null;
+            const validOpts = Array.from(sel.options).filter((o) => {
+                const v = (o.value || "").trim();
+                const t = ((o.dataset.orig || o.textContent) || "").trim();
+                return v !== "" && !/^-+$/.test(t);
+            });
+
+            if (!group) {
+                group = document.createElement("div");
+                const groupId = `choice-group-${sel.id || sel.name || Math.random().toString(36).slice(2, 8)}`;
+                group.id = groupId;
+                group.className = "choice-group";
+                if (validOpts.length === 3) {
+                    group.classList.add("cols-3");
+                }
+                sel.dataset.choiceGroupId = groupId;
+
+                validOpts.forEach((opt) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "choice-btn";
+                    btn.dataset.value = opt.value;
+                    btn.textContent = opt.textContent;
+                    btn.setAttribute("aria-pressed", "false");
+
+                    btn.addEventListener("click", () => {
+                        sel.value = opt.value;
+                        updateFieldFillHighlight(sel);
+                        syncChoiceButtons(sel);
+                        sel.dispatchEvent(new Event("change", { bubbles: true }));
+                        sel.dispatchEvent(new Event("input", { bubbles: true }));
+                    });
+
+                    group.appendChild(btn);
+                });
+
+                sel.classList.add("hidden");
+                sel.insertAdjacentElement("afterend", group);
+            } else {
+                refreshChoiceButtonLabels(sel);
+            }
+
+            syncChoiceButtons(sel);
+        }
+
+        function initAllChoiceButtons() {
+            document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
+                initChoiceButtonsForSelect(sel);
+            });
+        }
+
         function updateFieldFillHighlight(el) {
             if (!el || el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
 
@@ -659,6 +807,7 @@
                     el.classList.remove("is-empty", "is-unselected");
                     el.classList.add("is-filled");
                 }
+                syncChoiceButtons(el);
                 return;
             }
 
@@ -1712,6 +1861,7 @@
 
             document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
                 updateFieldFillHighlight(sel);
+                refreshChoiceButtonLabels(sel);
             });
 
             updateStepperUI();
@@ -1922,6 +2072,7 @@
             ensureShoeSizeSelect();
             hideCommuteOtherField();
             initFieldFillHighlight();
+            initAllChoiceButtons();
             lockAgeField();
             configureNumericInputs();
 
