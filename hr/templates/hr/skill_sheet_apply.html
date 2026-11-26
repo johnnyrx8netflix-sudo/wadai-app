@@ -195,6 +195,28 @@
             max-width: 100%;
             overflow: hidden;
         }
+        .field.req-error {
+            border-color: #dc2626 !important;
+            background: #fef2f2 !important;
+        }
+        .req-badge {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 6px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #b91c1c;
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+        .req-alert-msg {
+            margin-top: 8px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: #b91c1c;
+        }
         label {
             display: block;
             font-weight: 700;
@@ -373,10 +395,6 @@
         }
         .mc-pill-btn.is-selected .mc-check-mark {
             display: inline;
-        }
-        .mc-other-input-wrap {
-            margin-top: 12px;
-            margin-left: 46px;
         }
 
         /* 日本語レベル（目安）5段階メーターカード */
@@ -565,8 +583,7 @@
                 line-height: 1.4;
             }
             .mc-desc,
-            .mc-pill-row,
-            .mc-other-input-wrap {
+            .mc-pill-row {
                 margin-left: 0;
             }
             .mc-pill-btn {
@@ -719,6 +736,102 @@
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
         ];
 
+        /* よく出る日本語表記・選択肢の多言語辞書 */
+        const PHRASE_MAP = [
+            { keys: ["氏名", "名前", "フルネーム"], pt: "Nome completo", en: "Full name" },
+            { keys: ["性別"], pt: "Sexo / Gênero", en: "Gender" },
+            { keys: ["男性", "男"], pt: "Masculino", en: "Male" },
+            { keys: ["女性", "女"], pt: "Feminino", en: "Female" },
+            { keys: ["既婚", "結婚している"], pt: "Casado(a)", en: "Married" },
+            { keys: ["未婚", "独身"], pt: "Solteiro(a)", en: "Single" },
+            { keys: ["婚姻", "配偶者"], pt: "Estado civil", en: "Marital status" },
+            { keys: ["生年月日"], pt: "Data de nascimento", en: "Date of birth" },
+            { keys: ["年齢"], pt: "Idade", en: "Age" },
+            { keys: ["電話", "携帯", "連絡先"], pt: "Telefone", en: "Phone number" },
+            { keys: ["郵便番号"], pt: "CEP", en: "Postal code" },
+            { keys: ["住所"], pt: "Endereço", en: "Address" },
+            { keys: ["国籍"], pt: "Nacionalidade", en: "Nationality" },
+            { keys: ["日本", "日本人"], pt: "Japão", en: "Japan" },
+            { keys: ["ブラジル"], pt: "Brasil", en: "Brazil" },
+            { keys: ["ペルー"], pt: "Peru", en: "Peru" },
+            { keys: ["フィリピン"], pt: "Filipinas", en: "Philippines" },
+            { keys: ["ベトナム"], pt: "Vietnã", en: "Vietnam" },
+            { keys: ["中国"], pt: "China", en: "China" },
+            { keys: ["ビザ", "在留資格"], pt: "Tipo de visto", en: "Visa type" },
+            { keys: ["永住者"], pt: "Visto permanente", en: "Permanent resident" },
+            { keys: ["定住者"], pt: "Residente de longa duração", en: "Long-term resident" },
+            { keys: ["日本人の配偶者"], pt: "Cônjuge de japonês", en: "Spouse of Japanese national" },
+            { keys: ["永住者の配偶者"], pt: "Cônjuge de residente permanente", en: "Spouse of permanent resident" },
+            { keys: ["特定活動"], pt: "Atividades designadas", en: "Designated activities" },
+            { keys: ["技術・人文知識・国際業務"], pt: "Engenharia / Humanidades / Int'l", en: "Engineer / Specialist in Humanities" },
+            { keys: ["特定技能"], pt: "Habilidade específica", en: "Specified skilled worker" },
+            { keys: ["運転免許", "免許"], pt: "Carteira de motorista", en: "Driver's license" },
+            { keys: ["普通免許", "あり", "有"], pt: "Sim (Possui)", en: "Yes" },
+            { keys: ["なし", "無", "持ってない", "持っていない"], pt: "Não possui", en: "None / No" },
+            { keys: ["通勤方法", "通勤"], pt: "Meio de transporte", en: "Commute method" },
+            { keys: ["自家用車", "車", "マイカー"], pt: "Carro próprio", en: "Private car" },
+            { keys: ["自転車"], pt: "Bicicleta", en: "Bicycle" },
+            { keys: ["バイク", "原付"], pt: "Moto / Motocicleta", en: "Motorcycle" },
+            { keys: ["徒歩"], pt: "A pé", en: "On foot" },
+            { keys: ["電車", "バス", "公共交通"], pt: "Transporte público", en: "Public transit" },
+            { keys: ["送迎"], pt: "Transporte da empresa", en: "Company shuttle" },
+            { keys: ["希望職種", "職種"], pt: "Função / Trabalho desejado", en: "Desired job type" },
+            { keys: ["食品加工", "食品"], pt: "Processamento de alimentos", en: "Food processing" },
+            { keys: ["工場", "製造", "ライン"], pt: "Fábrica / Produção", en: "Factory / Manufacturing" },
+            { keys: ["組立", "組み立て"], pt: "Montagem", en: "Assembly" },
+            { keys: ["検査", "検品"], pt: "Inspeção", en: "Inspection" },
+            { keys: ["梱包", "仕分け", "倉庫", "軽作業"], pt: "Embalagem / Armazém", en: "Packing / Warehouse" },
+            { keys: ["溶接"], pt: "Solda", en: "Welding" },
+            { keys: ["塗装"], pt: "Pintura", en: "Painting" },
+            { keys: ["プレス"], pt: "Prensa", en: "Press" },
+            { keys: ["フォークリフト"], pt: "Empilhadeira", en: "Forklift" },
+            { keys: ["上着"], pt: "Jaqueta / Blusa", en: "Jacket / Top" },
+            { keys: ["ズボン"], pt: "Calça", en: "Pants / Trousers" },
+            { keys: ["靴"], pt: "Tamanho do calçado", en: "Shoe size" },
+            { keys: ["その他"], pt: "Outros", en: "Other" },
+            { keys: ["はい"], pt: "Sim", en: "Yes" },
+            { keys: ["いいえ"], pt: "Não", en: "No" }
+        ];
+
+        function hasJapaneseChars(str) {
+            return /[\u3040-\u30ff\u4e00-\u9faf]/.test(str || "");
+        }
+
+        function translateSinglePhrase(rawStr, lang) {
+            if (!rawStr) return rawStr;
+            if (lang === "ja") return rawStr;
+            const trimmed = rawStr.trim();
+            if (!trimmed || /^-+$/.test(trimmed)) return "";
+
+            // 括弧書きの多言語表記（例：「日本語（Português / English）」や「その他（Other）」）を抽出
+            const parenMatch = trimmed.match(/[（(]([^）)]+)[）)]/);
+            if (parenMatch) {
+                const inside = parenMatch[1];
+                if (inside.includes("/")) {
+                    const pParts = inside.split("/").map((s) => s.trim());
+                    if (lang === "pt" && pParts[0]) return pParts[0];
+                    if (lang === "en" && pParts[1]) return pParts[1];
+                } else if (!hasJapaneseChars(inside)) {
+                    return inside;
+                }
+            }
+
+            const withoutParen = trimmed.replace(/[（(][^）)]*[）)]/g, "").trim();
+            const targetCheck = withoutParen || trimmed;
+
+            for (const entry of PHRASE_MAP) {
+                if (entry.keys.some((k) => targetCheck === k || targetCheck.includes(k))) {
+                    return lang === "pt" ? entry.pt : entry.en;
+                }
+            }
+
+            if (!hasJapaneseChars(trimmed)) {
+                return trimmed;
+            }
+
+            return lang === "pt" ? withoutParen || trimmed : withoutParen || trimmed;
+        }
+
         const JP_LEVEL_CARDS = [
             {
                 pct: { ja: "80〜100%", pt: "80〜100%", en: "80–100%" },
@@ -786,6 +899,8 @@
                 next: "次へ",
                 submit: "送信する",
                 done: "登録が完了しました。ご入力ありがとうございます。",
+                requiredBadge: "必須",
+                requiredAlert: "この項目は入力・選択が必須です。",
                 stepNames: [
                     "基本情報",
                     "在留・通勤・希望条件",
@@ -803,7 +918,7 @@
                 phoneHint: "数字のみ入力すると自動でハイフンが入ります",
                 postalHint: "郵便番号（7桁）を入れると自動でハイフンと住所が入ります",
                 addressHint: "郵便番号から自動入力されます（訂正不可・番地は下の欄へ入力してください）",
-                streetLabel: "続きの番地・建物名 / Número e complemento / Street & Building",
+                streetLabel: "続きの番地・建物名",
                 streetPlaceholder: "例：1-2-3 ○○マンション 101号室",
                 streetHint: "番地・部屋番号などを入力してください",
                 workingHoursLabel: "希望勤務時間",
@@ -845,6 +960,8 @@
                 next: "Próximo",
                 submit: "Enviar",
                 done: "Cadastro concluído com sucesso. Obrigado!",
+                requiredBadge: "Obrigatório",
+                requiredAlert: "Este campo é obrigatório.",
                 stepNames: [
                     "Dados básicos",
                     "Visto, deslocamento e turno",
@@ -853,8 +970,8 @@
                 ],
                 pillNames: [
                     "1. Básicos",
-                    "2. Visto/Turno",
-                    "3. Idioma/Outros",
+                    "2. Visto e Turno",
+                    "3. Idioma e Outros",
                     "4. Histórico"
                 ],
                 birthHint: "Escolha a data de nascimento para preencher a idade automaticamente",
@@ -862,19 +979,19 @@
                 phoneHint: "Digite apenas números; o hífen é inserido automaticamente",
                 postalHint: "Digite o CEP (7 dígitos) para inserir o hífen e o endereço automaticamente",
                 addressHint: "Preenchido automaticamente pelo CEP (não editável; informe o número abaixo)",
-                streetLabel: "Número e complemento / 続きの番地・建物名 / Street & Building",
+                streetLabel: "Número, rua e complemento",
                 streetPlaceholder: "Ex.: Rua Exemplo, 123, Apto 12",
                 streetHint: "Digite o número da casa/prédio e complemento",
                 workingHoursLabel: "Horário de trabalho desejado",
                 workingHoursHint: "Selecione os horários desejados (múltipla escolha).",
-                earlyStartLabel: "Entrada antecipada (早出)",
+                earlyStartLabel: "Entrada antecipada",
                 overtimeLabel: "Tempo disponível para hora extra",
-                holidayWorkLabel: "Trabalho aos finais de semana/feriados (休日出勤)",
+                holidayWorkLabel: "Trabalho aos finais de semana e feriados",
                 availabilityHint: "Escolha entre Possível, Impossível ou Se o horário permitir.",
                 overtimeHint: "Selecione uma opção.",
                 clothingOtherLabel: "Outros",
-                jacketSizeLabel: "Jaqueta / Blusa (上着)",
-                pantsSizeLabel: "Calça (ズボン)",
+                jacketSizeLabel: "Jaqueta / Blusa",
+                pantsSizeLabel: "Calça",
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
                 jpListenTitle: "Compreensão de japonês",
@@ -886,10 +1003,10 @@
                 multiBadge: "Múltipla escolha",
                 multiDesc: "Selecione todas as opções desejadas (pode escolher mais de uma).",
                 singleDesc: "Selecione uma opção.",
-                hasWorkHistoryLabel: "Possui experiência profissional (histórico de trabalho)?",
-                hasWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa ① ou 'Não' para seguir sem histórico.",
-                moreWorkHistoryLabelAfter2: "Há mais experiência profissional após a Empresa ②?",
-                moreWorkHistoryHintAfter2: "Selecione 'Sim' para exibir a Empresa ③ ou 'Não' para enviar.",
+                hasWorkHistoryLabel: "Possui experiência profissional?",
+                hasWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa 1 ou 'Não' para seguir sem histórico.",
+                moreWorkHistoryLabelAfter2: "Há mais experiência profissional após a Empresa 2?",
+                moreWorkHistoryHintAfter2: "Selecione 'Sim' para exibir a Empresa 3 ou 'Não' para enviar.",
                 moreWorkHistoryLabelAfterN: "Há mais experiência profissional?",
                 moreWorkHistoryHintAfterN: "Selecione 'Sim' para exibir a próxima empresa ou 'Não' para enviar.",
                 ageCalculated: "Idade calculada automaticamente",
@@ -904,6 +1021,8 @@
                 next: "Next",
                 submit: "Submit",
                 done: "Registration completed. Thank you!",
+                requiredBadge: "Required",
+                requiredAlert: "This field is required.",
                 stepNames: [
                     "Basic Information",
                     "Visa, Commute & Shift",
@@ -912,8 +1031,8 @@
                 ],
                 pillNames: [
                     "1. Basic",
-                    "2. Visa/Shift",
-                    "3. Skills/Other",
+                    "2. Visa & Shift",
+                    "3. Skills & Other",
                     "4. History"
                 ],
                 birthHint: "Select your birth date to fill age automatically",
@@ -921,7 +1040,7 @@
                 phoneHint: "Enter digits only; hyphens are added automatically",
                 postalHint: "Enter 7-digit postal code to auto-insert hyphen and address",
                 addressHint: "Auto-filled from postal code (locked; enter street & building below)",
-                streetLabel: "Street Address & Building / 続きの番地・建物名 / Número e complemento",
+                streetLabel: "Street Address & Building",
                 streetPlaceholder: "e.g., 1-2-3 Sample St, Apt 101",
                 streetHint: "Enter street number, building name, or room number",
                 workingHoursLabel: "Preferred working hours",
@@ -946,9 +1065,9 @@
                 multiDesc: "Select all that apply (you can choose multiple options).",
                 singleDesc: "Please select one option.",
                 hasWorkHistoryLabel: "Do you have work experience?",
-                hasWorkHistoryHint: "Select 'Yes' to show Company ①, or 'No' to continue without work history.",
-                moreWorkHistoryLabelAfter2: "Do you have more work experience after Company ②?",
-                moreWorkHistoryHintAfter2: "Select 'Yes' to show Company ③, or 'No' to proceed to submit.",
+                hasWorkHistoryHint: "Select 'Yes' to show Company 1, or 'No' to continue without work history.",
+                moreWorkHistoryLabelAfter2: "Do you have more work experience after Company 2?",
+                moreWorkHistoryHintAfter2: "Select 'Yes' to show Company 3, or 'No' to proceed to submit.",
                 moreWorkHistoryLabelAfterN: "Do you have any more work experience?",
                 moreWorkHistoryHintAfterN: "Select 'Yes' to show the next company, or 'No' to proceed to submit.",
                 ageCalculated: "Age calculated automatically",
@@ -1086,6 +1205,117 @@
                 txt === "その他" ||
                 txt === "その他 / Outros / Other"
             );
+        }
+
+        function isVisaFieldBox(box) {
+            if (!box) return false;
+            const fn = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const txt = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            return fn.includes("visa") || fn.includes("zairyu") || txt.includes("ビザ") || txt.includes("在留");
+        }
+
+        function isExemptFromRequired(box) {
+            if (!box) return true;
+            if (box.dataset.permanentlyHidden === "true" || isRemovedExtraNotesField(box)) return true;
+            if (isVisaFieldBox(box)) return true;
+            if (isWorkHistoryBox(box) && box.dataset.whQuestion !== "true") return true;
+            return false;
+        }
+
+        function isBoxValueMissing(box) {
+            if (!box || isExemptFromRequired(box)) return false;
+            if (box.classList.contains("hidden")) return false;
+
+            const sel = box.querySelector("select");
+            if (sel) {
+                const selectedVals = getSelectedValuesForBox(box);
+                return selectedVals.length === 0;
+            }
+
+            const textarea = box.querySelector("textarea");
+            if (textarea) {
+                return !(textarea.value || "").trim();
+            }
+
+            const inputs = Array.from(box.querySelectorAll("input")).filter((inp) => {
+                if (inp.type === "hidden" || inp.type === "checkbox" || inp.type === "radio") return false;
+                if (inp.classList.contains("hidden")) return false;
+                return true;
+            });
+
+            if (inputs.length === 0) return false;
+            return inputs.some((inp) => !(inp.value || "").trim());
+        }
+
+        function clearValidationErrorsInContainer(container) {
+            if (!container) return;
+            container.querySelectorAll(".field.req-error").forEach((b) => b.classList.remove("req-error"));
+            container.querySelectorAll(".req-alert-msg").forEach((m) => m.remove());
+        }
+
+        function showValidationErrorForBox(box, lang) {
+            const t = uiTexts[lang] || uiTexts.ja;
+            box.classList.add("req-error");
+            if (!box.querySelector(".req-alert-msg")) {
+                const msg = document.createElement("div");
+                msg.className = "req-alert-msg";
+                msg.textContent = t.requiredAlert;
+                box.appendChild(msg);
+            }
+        }
+
+        function validateStep(stepNum, scrollToFirstError = true) {
+            const lang = localStorage.getItem("skillsheet_lang") || "ja";
+            const boxes = Array.from(document.querySelectorAll("#skillsheet-form .field[data-field]"));
+            const missingBoxes = [];
+
+            boxes.forEach((box) => {
+                clearValidationErrorsInContainer(box);
+                if (getFieldStep(box) === stepNum && !box.classList.contains("hidden") && isBoxValueMissing(box)) {
+                    missingBoxes.push(box);
+                    showValidationErrorForBox(box, lang);
+                }
+            });
+
+            if (missingBoxes.length > 0) {
+                if (scrollToFirstError) {
+                    missingBoxes[0].scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+                return false;
+            }
+            return true;
+        }
+
+        function validateAllStepsForSubmit() {
+            for (let s = 1; s <= TOTAL_STEPS; s++) {
+                if (!validateStep(s, false)) {
+                    currentStep = s;
+                    applyStepVisibility();
+                    validateStep(s, true);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function updateRequiredBadges(lang) {
+            const t = uiTexts[lang] || uiTexts.ja;
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
+                const exempt = isExemptFromRequired(box);
+                const lbl = box.querySelector("label");
+                const mcTitle = box.querySelector(".mc-title");
+                const targetEl = (box.dataset.mcInitialized === "true" && mcTitle) ? mcTitle : lbl;
+
+                box.querySelectorAll(".req-badge").forEach((b) => b.remove());
+
+                if (!exempt && targetEl) {
+                    const badge = document.createElement("span");
+                    badge.className = "req-badge";
+                    badge.textContent = t.requiredBadge;
+                    targetEl.appendChild(badge);
+                }
+            });
         }
 
         function getChoiceKind(box) {
@@ -1296,6 +1526,10 @@
                 syncPreferredShiftFromSelect();
             }
 
+            if (cleanVals.length > 0) {
+                clearValidationErrorsInContainer(box);
+            }
+
             updateFieldFillHighlight(sel);
             refreshModernChoiceBox(box, localStorage.getItem("skillsheet_lang") || "ja");
             sel.dispatchEvent(new Event("change", { bubbles: true }));
@@ -1386,6 +1620,8 @@
                     });
                 }
             }
+
+            updateRequiredBadges(safeLang);
         }
 
         function initAllModernChoiceFields() {
@@ -1558,8 +1794,8 @@
         function updateFieldFillHighlight(el) {
             if (!el || el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
 
+            const box = el.closest(".field");
             if (el.tagName === "SELECT") {
-                const box = el.closest(".field");
                 const selectedCount = box ? getSelectedValuesForBox(box).length : ((el.value || "").trim() ? 1 : 0);
                 if (selectedCount === 0) {
                     el.classList.add("is-empty", "is-unselected");
@@ -1567,6 +1803,7 @@
                 } else {
                     el.classList.remove("is-empty", "is-unselected");
                     el.classList.add("is-filled");
+                    if (box) clearValidationErrorsInContainer(box);
                 }
                 if (box && box.dataset.mcInitialized === "true") {
                     refreshModernChoiceBox(box, localStorage.getItem("skillsheet_lang") || "ja");
@@ -1578,6 +1815,7 @@
             if (hasVal) {
                 el.classList.remove("is-empty");
                 el.classList.add("is-filled");
+                if (box) clearValidationErrorsInContainer(box);
             } else {
                 el.classList.remove("is-filled");
                 el.classList.add("is-empty");
@@ -1723,7 +1961,7 @@
                 } else {
                     const lbl = box.querySelector("label");
                     if (lbl) {
-                        lbl.dataset.orig = t[spec.labelKey];
+                        lbl.dataset.orig = uiTexts.ja[spec.labelKey];
                     }
                 }
                 insertAfterTarget = box;
@@ -2049,6 +2287,7 @@
 
             updateVisaVisibility();
             hideCommuteOtherField();
+            updateRequiredBadges(localStorage.getItem("skillsheet_lang") || "ja");
             updateStepperUI();
         }
 
@@ -2106,6 +2345,9 @@
         }
 
         function nextStep() {
+            if (!validateStep(currentStep, true)) {
+                return;
+            }
             if (currentStep < TOTAL_STEPS) {
                 goToStep(currentStep + 1);
             }
@@ -2786,13 +3028,16 @@
 
             const baseText = isLabel ? stripLeadingNumber(trimmedRaw) : trimmedRaw;
             const parts = baseText.split(" / ");
-            if (parts.length === 1) return baseText.trim();
 
-            const idx = LANG_INDEX[lang] ?? 0;
-            if (parts.length === 2) {
-                return (lang === "ja" ? parts[0] : parts[1]).trim();
+            if (parts.length > 1) {
+                const idx = LANG_INDEX[lang] ?? 0;
+                const picked = parts.length === 2
+                    ? (lang === "ja" ? parts[0] : parts[1]).trim()
+                    : (parts[idx] || parts[0]).trim();
+                return translateSinglePhrase(picked, lang);
             }
-            return (parts[idx] || parts[0]).trim();
+
+            return translateSinglePhrase(baseText, lang);
         }
 
         function snapshotOriginalTexts() {
@@ -2805,6 +3050,11 @@
                 if (!opt.dataset.orig) {
                     const txt = (opt.textContent || "").trim();
                     opt.dataset.orig = /^-+$/.test(txt) ? "" : opt.textContent;
+                }
+            });
+            document.querySelectorAll("#skillsheet-form input[placeholder], #skillsheet-form textarea[placeholder]").forEach((ctrl) => {
+                if (!ctrl.dataset.origPlaceholder) {
+                    ctrl.dataset.origPlaceholder = ctrl.getAttribute("placeholder") || "";
                 }
             });
         }
@@ -2905,11 +3155,24 @@
                 }
             });
 
+            document.querySelectorAll("#skillsheet-form input[placeholder], #skillsheet-form textarea[placeholder]").forEach((ctrl) => {
+                if (ctrl.id === "id_street_address") {
+                    ctrl.placeholder = t.streetPlaceholder;
+                } else if (ctrl.dataset.origPlaceholder) {
+                    ctrl.placeholder = pickLangPart(ctrl.dataset.origPlaceholder, safeLang, false);
+                }
+            });
+
+            document.querySelectorAll("#skillsheet-form .req-alert-msg").forEach((msgEl) => {
+                msgEl.textContent = t.requiredAlert;
+            });
+
             document.querySelectorAll("#skillsheet-form select").forEach((sel) => {
                 updateFieldFillHighlight(sel);
             });
 
             refreshAllModernChoiceFields(safeLang);
+            updateRequiredBadges(safeLang);
             updateStepperUI();
             updateVisaVisibility();
             hideCommuteOtherField();
@@ -3175,12 +3438,17 @@
 
             const formEl = document.getElementById("skillsheet-form");
             if (formEl) {
-                formEl.addEventListener("submit", () => {
+                formEl.addEventListener("submit", (e) => {
                     syncCombinedAddress();
                     syncPreferredShiftFromSelect();
                     syncShoeSizeFromSelect();
                     updateVisaVisibility();
                     updateWorkHistoryFlow();
+
+                    if (!validateAllStepsForSubmit()) {
+                        e.preventDefault();
+                        return false;
+                    }
                 });
             }
         });
