@@ -693,8 +693,8 @@
             { keys: ["性別"], pt: "Sexo / Gênero", en: "Gender" },
             { keys: ["男性", "男"], pt: "Masculino", en: "Male" },
             { keys: ["女性", "女"], pt: "Feminino", en: "Female" },
-            { keys: ["既婚", "結婚している"], pt: "Casado(a)", en: "Married" },
-            { keys: ["未婚", "独身"], pt: "Solteiro(a)", en: "Single" },
+            { keys: ["既婚", "結婚している"], pt: "Casado", en: "Married" },
+            { keys: ["未婚", "独身"], pt: "Solteiro", en: "Single" },
             { keys: ["婚姻", "配偶者"], pt: "Estado civil", en: "Marital status" },
             { keys: ["生年月日"], pt: "Data de nascimento", en: "Date of birth" },
             { keys: ["年齢"], pt: "Idade", en: "Age" },
@@ -717,8 +717,8 @@
             { keys: ["技術・人文知識・国際業務"], pt: "Engenharia / Humanidades / Int'l", en: "Engineer / Specialist in Humanities" },
             { keys: ["特定技能"], pt: "Habilidade específica", en: "Specified skilled worker" },
             { keys: ["運転免許", "免許"], pt: "Carteira de motorista", en: "Driver's license" },
-            { keys: ["普通免許", "あり", "有"], pt: "Sim (Possui)", en: "Yes" },
-            { keys: ["なし", "無", "持ってない", "持っていない"], pt: "Não possui", en: "None / No" },
+            { keys: ["普通免許", "あり", "有"], pt: "Sim", en: "Yes" },
+            { keys: ["なし", "無", "持ってない", "持っていない"], pt: "Não", en: "No" },
             { keys: ["通勤方法", "通勤"], pt: "Meio de transporte", en: "Commute method" },
             { keys: ["自家用車", "車", "マイカー"], pt: "Carro próprio", en: "Private car" },
             { keys: ["自転車"], pt: "Bicicleta", en: "Bicycle" },
@@ -968,7 +968,7 @@
                 multiBadge: "Múltipla escolha",
                 multiDesc: "Selecione todas as opções desejadas (pode escolher mais de uma).",
                 singleDesc: "Selecione uma opção.",
-                hasWorkHistoryLabel: "Possui experiência profissional?",
+                hasWorkHistoryLabel: "Já trabalhou no Japão?",
                 hasWorkHistoryHint: "Selecione 'Sim' para exibir a Empresa 1 ou 'Não' para seguir sem histórico.",
                 moreWorkHistoryLabelAfter2: "Há mais experiência profissional após a Empresa 2?",
                 moreWorkHistoryHintAfter2: "Selecione 'Sim' para exibir a Empresa 3 ou 'Não' para enviar.",
@@ -1235,12 +1235,29 @@
             });
         }
 
+        function resolveOptionDisplayText(opt, lang) {
+            if (!opt) return "";
+            const safeLang = uiTexts[lang] ? lang : "ja";
+            if (opt.dataset && opt.dataset[safeLang]) {
+                return opt.dataset[safeLang];
+            }
+            const rawOrig = opt.dataset && opt.dataset.orig !== undefined ? opt.dataset.orig : (opt.textContent || "");
+            return pickLangPart(rawOrig, safeLang, false, false);
+        }
+
         function resolveBoxTitleText(box, lang) {
             const safeLang = uiTexts[lang] ? lang : "ja";
             const t = uiTexts[safeLang] || uiTexts.ja;
             const kind = box.dataset.choiceKind || "default";
             const origLabel = box.querySelector("label");
 
+            if (box.id === "has-work-history-box") return t.hasWorkHistoryLabel;
+            if (box.id === "more-work-history-box-after-2") return t.moreWorkHistoryLabelAfter2;
+            if (box.id && box.id.startsWith("more-work-history-box-after-")) return t.moreWorkHistoryLabelAfterN;
+            if (box.id === "street-address-box") return t.streetLabel;
+            if (box.id === "working-hours-box") return t.workingHoursLabel;
+            if (box.id === "early_start-box" || (box.dataset.field || "").toLowerCase() === "early_start") return t.earlyStartLabel;
+            if (box.id === "holiday_work-box" || (box.dataset.field || "").toLowerCase() === "holiday_work") return t.holidayWorkLabel;
             if (kind === "listen") return t.jpListenTitle;
             if (kind === "speak") return t.jpSpeakTitle;
             if (kind === "level") return t.jpLevelTitle;
@@ -1466,7 +1483,7 @@
                         const opt = Array.from(sel.options).find((o) => o.value === btn.dataset.value);
                         const textSpan = btn.querySelector(".mc-btn-text");
                         if (opt && textSpan) {
-                            textSpan.textContent = opt.textContent;
+                            textSpan.textContent = resolveOptionDisplayText(opt, safeLang);
                         }
                         const selected = selectedVals.includes(btn.dataset.value);
                         btn.classList.toggle("is-selected", selected);
@@ -1605,7 +1622,7 @@
 
                         const textSpan = document.createElement("span");
                         textSpan.className = "mc-btn-text";
-                        textSpan.textContent = opt.textContent;
+                        textSpan.textContent = resolveOptionDisplayText(opt, lang);
                         btn.appendChild(textSpan);
 
                         btn.addEventListener("click", () => {
@@ -3025,18 +3042,17 @@
             });
 
             document.querySelectorAll("#skillsheet-form label").forEach((lbl) => {
-                if (lbl.dataset.orig) {
+                const parentBox = lbl.closest ? lbl.closest(".field[data-field]") : null;
+                if (parentBox && parentBox.dataset.mcInitialized === "true") {
+                    lbl.textContent = resolveBoxTitleText(parentBox, safeLang);
+                } else if (lbl.dataset.orig) {
                     const keepName = isNameLabelOrBox(lbl);
                     lbl.textContent = pickLangPart(lbl.dataset.orig, safeLang, true, keepName);
                 }
             });
 
             document.querySelectorAll("#skillsheet-form select option").forEach((opt) => {
-                if (opt.dataset && opt.dataset[safeLang]) {
-                    opt.textContent = opt.dataset[safeLang];
-                } else if (opt.dataset.orig !== undefined) {
-                    opt.textContent = pickLangPart(opt.dataset.orig, safeLang, false, false);
-                }
+                opt.textContent = resolveOptionDisplayText(opt, safeLang);
             });
 
             document.querySelectorAll("#skillsheet-form input[placeholder], #skillsheet-form textarea[placeholder]").forEach((ctrl) => {
