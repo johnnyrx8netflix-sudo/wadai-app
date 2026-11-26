@@ -697,11 +697,10 @@
         ];
 
         const OVERTIME_OPTIONS = [
-            { value: "0h", ja: "0ｈ", pt: "0h", en: "0h" },
-            { value: "1h", ja: "1ｈ", pt: "1h", en: "1h" },
-            { value: "2h", ja: "2ｈ", pt: "2h", en: "2h" },
-            { value: "3h", ja: "3ｈ", pt: "3h", en: "3h" },
-            { value: "any_hours", ja: "何時間でも可能", pt: "Qualquer horário", en: "Any hours possible" }
+            { value: "not_possible", ja: "不可", pt: "Não disponível", en: "Not available" },
+            { value: "up_to_1h", ja: "1時間まで", pt: "Até 1 hora", en: "Up to 1 hour" },
+            { value: "up_to_2h", ja: "2時間まで", pt: "Até 2 horas", en: "Up to 2 hours" },
+            { value: "3h_or_more", ja: "3時間以上", pt: "3 horas ou mais", en: "3 hours or more" }
         ];
 
         const CLOTHING_SIZE_OPTIONS = [
@@ -810,10 +809,10 @@
                 workingHoursLabel: "希望勤務時間",
                 workingHoursHint: "希望する勤務時間を選んでください（複数選択可）。",
                 earlyStartLabel: "早出",
-                overtimeLabel: "残業",
+                overtimeLabel: "残業ができる時間",
                 holidayWorkLabel: "休日出勤",
                 availabilityHint: "「可能」「不可能」「予定が合えば対応可」から選んでください。",
-                overtimeHint: "「0ｈ」「1ｈ」「2ｈ」「3ｈ」「何時間でも可能」から選んでください。",
+                overtimeHint: "当てはまるものを1つ選んでください。",
                 clothingOtherLabel: "その他",
                 jacketSizeLabel: "上着",
                 pantsSizeLabel: "ズボン",
@@ -869,10 +868,10 @@
                 workingHoursLabel: "Horário de trabalho desejado",
                 workingHoursHint: "Selecione os horários desejados (múltipla escolha).",
                 earlyStartLabel: "Entrada antecipada (早出)",
-                overtimeLabel: "Hora extra (残業)",
+                overtimeLabel: "Tempo disponível para hora extra",
                 holidayWorkLabel: "Trabalho aos finais de semana/feriados (休日出勤)",
                 availabilityHint: "Escolha entre Possível, Impossível ou Se o horário permitir.",
-                overtimeHint: "Escolha entre 0h, 1h, 2h, 3h ou Qualquer horário.",
+                overtimeHint: "Selecione uma opção.",
                 clothingOtherLabel: "Outros",
                 jacketSizeLabel: "Jaqueta / Blusa (上着)",
                 pantsSizeLabel: "Calça (ズボン)",
@@ -928,10 +927,10 @@
                 workingHoursLabel: "Preferred working hours",
                 workingHoursHint: "Select preferred working hours (multiple choice).",
                 earlyStartLabel: "Early start",
-                overtimeLabel: "Overtime",
+                overtimeLabel: "Available overtime hours",
                 holidayWorkLabel: "Weekend / Holiday work",
                 availabilityHint: "Choose Available, Not available, or If schedule fits.",
-                overtimeHint: "Choose 0h, 1h, 2h, 3h, or Any hours possible.",
+                overtimeHint: "Please select one option.",
                 clothingOtherLabel: "Other",
                 jacketSizeLabel: "Jacket / Top",
                 pantsSizeLabel: "Pants / Trousers",
@@ -1234,7 +1233,6 @@
                     sel.appendChild(otherOpt);
                 }
 
-                // ズボン・上着のあとに追加された自由入力欄は削除
                 box.querySelectorAll(".mc-other-input-wrap, .clothing-other-hidden").forEach((el) => {
                     el.remove();
                 });
@@ -1321,6 +1319,7 @@
                 if (kind === "listen") titleEl.textContent = t.jpListenTitle;
                 else if (kind === "speak") titleEl.textContent = t.jpSpeakTitle;
                 else if (kind === "level") titleEl.textContent = t.jpLevelTitle;
+                else if (isOvertimeField(box)) titleEl.textContent = t.overtimeLabel;
                 else if (origLabel) titleEl.textContent = origLabel.textContent;
             }
 
@@ -1430,7 +1429,7 @@
 
                 const title = document.createElement("div");
                 title.className = "mc-title";
-                title.textContent = origLabel ? origLabel.textContent : "";
+                title.textContent = isOvertimeField(box) ? t.overtimeLabel : (origLabel ? origLabel.textContent : "");
                 titleWrap.appendChild(title);
 
                 if (isMulti) {
@@ -1640,11 +1639,10 @@
                 if (currentVal) {
                     const lower = currentVal.toLowerCase();
                     if (isOvertimeField(box)) {
-                        if (lower.startsWith("0") || currentVal.includes("0")) sel.value = "0h";
-                        else if (lower.startsWith("1") || currentVal.includes("1")) sel.value = "1h";
-                        else if (lower.startsWith("2") || currentVal.includes("2")) sel.value = "2h";
-                        else if (lower.startsWith("3") || currentVal.includes("3")) sel.value = "3h";
-                        else if (lower.includes("any") || currentVal.includes("何時間")) sel.value = "any_hours";
+                        if (lower.includes("not_possible") || lower.includes("impossible") || currentVal.includes("不可")) sel.value = "not_possible";
+                        else if (lower.includes("up_to_1h") || lower.includes("1h") || currentVal.includes("1時間")) sel.value = "up_to_1h";
+                        else if (lower.includes("up_to_2h") || lower.includes("2h") || currentVal.includes("2時間")) sel.value = "up_to_2h";
+                        else if (lower.includes("3h") || currentVal.includes("3時間")) sel.value = "3h_or_more";
                         else sel.value = currentVal;
                     } else {
                         if ((lower.includes("possible") && !lower.includes("impossible")) || (currentVal.includes("可能") && !currentVal.includes("不可能") && !currentVal.includes("予定"))) {
@@ -1724,7 +1722,7 @@
                     }
                 } else {
                     const lbl = box.querySelector("label");
-                    if (lbl && !lbl.dataset.orig) {
+                    if (lbl) {
                         lbl.dataset.orig = t[spec.labelKey];
                     }
                 }
@@ -1794,7 +1792,6 @@
                 anchor = box;
             });
 
-            // 「ズボンのあとのその他」フィールドは削除・非表示にする
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((b) => {
                 if (isRemovedExtraNotesField(b)) {
                     b.dataset.permanentlyHidden = "true";
