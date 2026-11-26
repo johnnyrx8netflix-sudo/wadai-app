@@ -299,7 +299,6 @@
             cursor: not-allowed;
         }
 
-        /* 統一されたモダン選択式UI */
         .field.modern-choice-box {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -412,7 +411,6 @@
             display: inline;
         }
 
-        /* 日本語レベル（目安）5段階メーターカード */
         .jp-level-grid {
             display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -741,114 +739,144 @@
             { value: "3h_or_more", ja: "3時間以上", pt: "3 horas ou mais", en: "3 hours or more" }
         ];
 
-        const CLOTHING_SIZE_OPTIONS = [
-            { value: "S", ja: "S", pt: "P (S)", en: "S" },
-            { value: "M", ja: "M", pt: "M", en: "M" },
-            { value: "L", ja: "L", pt: "G (L)", en: "L" },
-            { value: "LL", ja: "LL", pt: "LL", en: "LL" },
-            { value: "3L", ja: "3L", pt: "3L", en: "3L" },
-            { value: "4L", ja: "4L", pt: "4L", en: "4L" },
-            { value: "5L", ja: "5L", pt: "5L", en: "5L" },
-            { value: "other", ja: "その他", pt: "Outros", en: "Other" }
-        ];
-
         const YES_NO_OPTIONS = [
             { value: "yes", ja: "はい", pt: "Sim", en: "Yes" },
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
         ];
 
+        // 項目名・選択肢の変換テーブル（選択言語のみを表示）
         const PHRASE_MAP = [
-            { keys: ["氏名", "名前", "フルネーム"], pt: "Nome completo", en: "Full name" },
-            { keys: ["性別"], pt: "Sexo / Gênero", en: "Gender" },
-            { keys: ["男性", "男"], pt: "Masculino", en: "Male" },
-            { keys: ["女性", "女"], pt: "Feminino", en: "Female" },
-            { keys: ["既婚", "結婚している"], pt: "Casado(a)", en: "Married" },
-            { keys: ["未婚", "独身"], pt: "Solteiro(a)", en: "Single" },
-            { keys: ["婚姻", "配偶者"], pt: "Estado civil", en: "Marital status" },
-            { keys: ["生年月日"], pt: "Data de nascimento", en: "Date of birth" },
-            { keys: ["年齢"], pt: "Idade", en: "Age" },
-            { keys: ["電話", "携帯", "連絡先"], pt: "Telefone", en: "Phone number" },
-            { keys: ["郵便番号"], pt: "CEP", en: "Postal code" },
-            { keys: ["住所"], pt: "Endereço", en: "Address" },
-            { keys: ["国籍"], pt: "Nacionalidade", en: "Nationality" },
-            { keys: ["日本", "日本人"], pt: "Japão", en: "Japan" },
-            { keys: ["ブラジル"], pt: "Brasil", en: "Brazil" },
-            { keys: ["ペルー"], pt: "Peru", en: "Peru" },
-            { keys: ["フィリピン"], pt: "Filipinas", en: "Philippines" },
-            { keys: ["ベトナム"], pt: "Vietnã", en: "Vietnam" },
-            { keys: ["中国"], pt: "China", en: "China" },
-            { keys: ["ビザ", "在留資格"], pt: "Tipo de visto", en: "Visa type" },
-            { keys: ["永住者"], pt: "Visto permanente", en: "Permanent resident" },
-            { keys: ["定住者"], pt: "Residente de longa duração", en: "Long-term resident" },
-            { keys: ["日本人の配偶者"], pt: "Cônjuge de japonês", en: "Spouse of Japanese national" },
-            { keys: ["永住者の配偶者"], pt: "Cônjuge de residente permanente", en: "Spouse of permanent resident" },
-            { keys: ["特定活動"], pt: "Atividades designadas", en: "Designated activities" },
-            { keys: ["技術・人文知識・国際業務"], pt: "Engenharia / Humanidades / Int'l", en: "Engineer / Specialist in Humanities" },
-            { keys: ["特定技能"], pt: "Habilidade específica", en: "Specified skilled worker" },
-            { keys: ["運転免許", "免許"], pt: "Carteira de motorista", en: "Driver's license" },
-            { keys: ["普通免許", "あり", "有"], pt: "Sim (Possui)", en: "Yes" },
-            { keys: ["なし", "無", "持ってない", "持っていない"], pt: "Não possui", en: "None / No" },
-            { keys: ["通勤方法", "通勤"], pt: "Meio de transporte", en: "Commute method" },
-            { keys: ["自家用車", "車", "マイカー"], pt: "Carro próprio", en: "Private car" },
-            { keys: ["自転車"], pt: "Bicicleta", en: "Bicycle" },
-            { keys: ["バイク", "原付"], pt: "Moto / Motocicleta", en: "Motorcycle" },
-            { keys: ["徒歩"], pt: "A pé", en: "On foot" },
-            { keys: ["電車", "バス", "公共交通"], pt: "Transporte público", en: "Public transit" },
-            { keys: ["送迎"], pt: "Transporte da empresa", en: "Company shuttle" },
-            { keys: ["希望職種", "職種"], pt: "Função / Trabalho desejado", en: "Desired job type" },
-            { keys: ["食品加工", "食品"], pt: "Processamento de alimentos", en: "Food processing" },
-            { keys: ["工場", "製造", "ライン"], pt: "Fábrica / Produção", en: "Factory / Manufacturing" },
-            { keys: ["組立", "組み立て"], pt: "Montagem", en: "Assembly" },
-            { keys: ["検査", "検品"], pt: "Inspeção", en: "Inspection" },
-            { keys: ["梱包", "仕分け", "倉庫", "軽作業"], pt: "Embalagem / Armazém", en: "Packing / Warehouse" },
-            { keys: ["溶接"], pt: "Solda", en: "Welding" },
-            { keys: ["塗装"], pt: "Pintura", en: "Painting" },
-            { keys: ["プレス"], pt: "Prensa", en: "Press" },
-            { keys: ["フォークリフト"], pt: "Empilhadeira", en: "Forklift" },
-            { keys: ["上着"], pt: "Jaqueta / Blusa", en: "Jacket / Top" },
-            { keys: ["ズボン"], pt: "Calça", en: "Pants / Trousers" },
-            { keys: ["靴"], pt: "Tamanho do calçado", en: "Shoe size" },
-            { keys: ["その他"], pt: "Outros", en: "Other" },
-            { keys: ["はい"], pt: "Sim", en: "Yes" },
-            { keys: ["いいえ"], pt: "Não", en: "No" }
+            { keys: ["氏名", "名前", "フルネーム"], ja: "氏名", pt: "Nome completo", en: "Full name" },
+            { keys: ["性別"], ja: "性別", pt: "Sexo", en: "Gender" },
+            { keys: ["男性", "男"], ja: "男性", pt: "Masculino", en: "Male" },
+            { keys: ["女性", "女"], ja: "女性", pt: "Feminino", en: "Female" },
+            { keys: ["既婚", "結婚している"], ja: "既婚", pt: "Casado(a)", en: "Married" },
+            { keys: ["未婚", "独身"], ja: "未婚", pt: "Solteiro(a)", en: "Single" },
+            { keys: ["婚姻", "配偶者"], ja: "婚姻状況", pt: "Estado civil", en: "Marital status" },
+            { keys: ["生年月日"], ja: "生年月日", pt: "Data de nascimento", en: "Date of birth" },
+            { keys: ["年齢"], ja: "年齢", pt: "Idade", en: "Age" },
+            { keys: ["電話", "携帯", "連絡先"], ja: "電話番号", pt: "Telefone", en: "Phone number" },
+            { keys: ["郵便番号"], ja: "郵便番号", pt: "CEP", en: "Postal code" },
+            { keys: ["番地", "建物名", "建物"], ja: "番地・建物名", pt: "Número e complemento", en: "Street & building" },
+            { keys: ["住所"], ja: "住所", pt: "Endereço", en: "Address" },
+            { keys: ["国籍"], ja: "国籍", pt: "Nacionalidade", en: "Nationality" },
+            { keys: ["日本", "日本人"], ja: "日本", pt: "Japão", en: "Japan" },
+            { keys: ["ブラジル"], ja: "ブラジル", pt: "Brasil", en: "Brazil" },
+            { keys: ["ペルー"], ja: "ペルー", pt: "Peru", en: "Peru" },
+            { keys: ["フィリピン"], ja: "フィリピン", pt: "Filipinas", en: "Philippines" },
+            { keys: ["ベトナム"], ja: "ベトナム", pt: "Vietnã", en: "Vietnam" },
+            { keys: ["中国"], ja: "中国", pt: "China", en: "China" },
+            { keys: ["ビザ", "在留資格"], ja: "在留資格", pt: "Tipo de visto", en: "Visa type" },
+            { keys: ["永住者"], ja: "永住者", pt: "Visto permanente", en: "Permanent resident" },
+            { keys: ["定住者"], ja: "定住者", pt: "Residente de longa duração", en: "Long-term resident" },
+            { keys: ["日本人の配偶者"], ja: "日本人の配偶者等", pt: "Cônjuge de japonês", en: "Spouse of Japanese national" },
+            { keys: ["永住者の配偶者"], ja: "永住者の配偶者等", pt: "Cônjuge de residente permanente", en: "Spouse of permanent resident" },
+            { keys: ["特定活動"], ja: "特定活動", pt: "Atividades designadas", en: "Designated activities" },
+            { keys: ["技術・人文知識・国際業務"], ja: "技術・人文知識・国際業務", pt: "Engenharia / Humanidades", en: "Engineer / Specialist in Humanities" },
+            { keys: ["特定技能"], ja: "特定技能", pt: "Habilidade específica", en: "Specified skilled worker" },
+            { keys: ["運転免許", "免許"], ja: "運転免許", pt: "Carteira de motorista", en: "Driver's license" },
+            { keys: ["普通免許", "あり", "有"], ja: "あり", pt: "Sim", en: "Yes" },
+            { keys: ["なし", "無", "持ってない", "持っていない"], ja: "なし", pt: "Não", en: "No" },
+            { keys: ["通勤方法（その他詳細）", "通勤方法（その他）", "通勤（その他）"], ja: "通勤方法（その他詳細）", pt: "Detalhes do transporte", en: "Commute details" },
+            { keys: ["通勤方法", "通勤"], ja: "通勤方法", pt: "Meio de transporte", en: "Commute method" },
+            { keys: ["自家用車", "車", "マイカー"], ja: "自家用車", pt: "Carro próprio", en: "Private car" },
+            { keys: ["自転車"], ja: "自転車", pt: "Bicicleta", en: "Bicycle" },
+            { keys: ["バイク", "原付"], ja: "バイク", pt: "Moto", en: "Motorcycle" },
+            { keys: ["徒歩"], ja: "徒歩", pt: "A pé", en: "On foot" },
+            { keys: ["電車", "バス", "公共交通"], ja: "公共交通機関", pt: "Transporte público", en: "Public transit" },
+            { keys: ["送迎"], ja: "送迎", pt: "Transporte da empresa", en: "Company shuttle" },
+            { keys: ["希望職種", "職種"], ja: "希望職種", pt: "Trabalho desejado", en: "Desired job type" },
+            { keys: ["食品加工", "食品"], ja: "食品加工", pt: "Processamento de alimentos", en: "Food processing" },
+            { keys: ["工場", "製造", "ライン"], ja: "工場・製造", pt: "Fábrica / Produção", en: "Factory / Manufacturing" },
+            { keys: ["組立", "組み立て"], ja: "組立", pt: "Montagem", en: "Assembly" },
+            { keys: ["検査", "検品"], ja: "検査", pt: "Inspeção", en: "Inspection" },
+            { keys: ["梱包", "仕分け", "倉庫", "軽作業"], ja: "梱包・軽作業", pt: "Embalagem / Armazém", en: "Packing / Warehouse" },
+            { keys: ["溶接"], ja: "溶接", pt: "Solda", en: "Welding" },
+            { keys: ["塗装"], ja: "塗装", pt: "Pintura", en: "Painting" },
+            { keys: ["プレス"], ja: "プレス", pt: "Prensa", en: "Press" },
+            { keys: ["フォークリフト"], ja: "フォークリフト", pt: "Empilhadeira", en: "Forklift" },
+            { keys: ["日本語 読み", "日本語読み", "読み方", "読み"], ja: "日本語（読み）", pt: "Leitura em japonês", en: "Japanese reading" },
+            { keys: ["日本語 書き", "日本語書き", "書き方", "書き"], ja: "日本語（書き）", pt: "Escrita em japonês", en: "Japanese writing" },
+            { keys: ["日本語 話す", "日本語話す", "話す", "会話"], ja: "日本語（話す）", pt: "Fala em japonês", en: "Japanese speaking" },
+            { keys: ["日本語 聞く", "日本語聞く", "理解"], ja: "日本語（理解）", pt: "Compreensão de japonês", en: "Japanese listening" },
+            { keys: ["上着"], ja: "上着", pt: "Jaqueta", en: "Jacket / Top" },
+            { keys: ["ズボン"], ja: "ズボン", pt: "Calça", en: "Pants" },
+            { keys: ["靴"], ja: "靴のサイズ", pt: "Tamanho do calçado", en: "Shoe size" },
+            { keys: ["その他"], ja: "その他", pt: "Outros", en: "Other" },
+            { keys: ["はい"], ja: "はい", pt: "Sim", en: "Yes" },
+            { keys: ["いいえ"], ja: "いいえ", pt: "Não", en: "No" }
         ];
 
         function hasJapaneseChars(str) {
             return /[\u3040-\u30ff\u4e00-\u9faf]/.test(str || "");
         }
 
-        function translateSinglePhrase(rawStr, lang) {
-            if (!rawStr) return rawStr;
-            if (lang === "ja") return rawStr;
-            const trimmed = rawStr.trim();
-            if (!trimmed || /^-+$/.test(trimmed)) return "";
+        function cleanLabelPunctuation(str) {
+            if (!str) return "";
+            return str
+                .replace(/^\s*\d+\s*[\.\．\)\）\-:：]?\s*/, "")
+                .replace(/[:：]\s*$/, "")
+                .trim();
+        }
 
-            const parenMatch = trimmed.match(/[（(]([^）)]+)[）)]/);
+        function pickLangSegment(rawStr, lang) {
+            if (!rawStr) return "";
+            const trimmed = rawStr.trim();
+            if (!trimmed.includes(" / ")) return trimmed;
+            const parts = trimmed.split(" / ").map((s) => s.trim()).filter(Boolean);
+            const idx = LANG_INDEX[lang] ?? 0;
+            if (parts[idx]) return parts[idx];
+            if (lang === "ja") {
+                const jaPart = parts.find((p) => hasJapaneseChars(p));
+                if (jaPart) return jaPart;
+            }
+            return parts[0] || trimmed;
+        }
+
+        function translatePhraseForLang(rawStr, lang) {
+            if (!rawStr) return "";
+            const step1 = pickLangSegment(rawStr, lang);
+            const cleaned = cleanLabelPunctuation(step1);
+            if (!cleaned || /^-+$/.test(cleaned)) return "";
+
+            // すでにパーセント表記や数値だけの選択肢（例: "80%" / "60〜80%" / "26.5 cm"）はそのまま活かす
+            if (/^\d+(\.\d+)?\s*(%|％|cm)?$/i.test(cleaned)) {
+                return cleaned;
+            }
+
+            const parenMatch = cleaned.match(/[（(]([^）)]+)[）)]/);
             if (parenMatch) {
                 const inside = parenMatch[1];
                 if (inside.includes("/")) {
                     const pParts = inside.split("/").map((s) => s.trim());
                     if (lang === "pt" && pParts[0]) return pParts[0];
                     if (lang === "en" && pParts[1]) return pParts[1];
-                } else if (!hasJapaneseChars(inside)) {
-                    return inside;
                 }
             }
 
-            const withoutParen = trimmed.replace(/[（(][^）)]*[）)]/g, "").trim();
-            const targetCheck = withoutParen || trimmed;
+            const withoutParen = cleaned.replace(/[（(][^）)]*[）)]/g, "").trim();
+            const targetCheck = withoutParen || cleaned;
 
             for (const entry of PHRASE_MAP) {
                 if (entry.keys.some((k) => targetCheck === k || targetCheck.includes(k))) {
-                    return lang === "pt" ? entry.pt : entry.en;
+                    const mapped = entry[lang] || entry.ja;
+                    // 「その他詳細」のように末尾に詳細がつく場合
+                    if (lang === "ja" && targetCheck.includes("詳細") && !mapped.includes("詳細")) {
+                        return `${mapped}（詳細）`;
+                    }
+                    return mapped;
                 }
             }
 
-            if (!hasJapaneseChars(trimmed)) {
-                return trimmed;
+            if (lang === "ja") {
+                return cleaned;
             }
 
-            return withoutParen || trimmed;
+            if (!hasJapaneseChars(cleaned)) {
+                return cleaned;
+            }
+
+            return cleaned;
         }
 
         const JP_LEVEL_CARDS = [
@@ -901,6 +929,8 @@
             "visa_type",
             "drivers_license",
             "commute_method",
+            "commute_other",
+            "commute_detail",
             "preferred_working_hours",
             "early_start",
             "overtime",
@@ -937,7 +967,7 @@
                 phoneHint: "数字のみ入力すると自動でハイフンが入ります",
                 postalHint: "郵便番号（7桁）を入れると自動でハイフンと住所が入ります",
                 addressHint: "郵便番号から自動入力されます（訂正不可・番地は下の欄へ入力してください）",
-                streetLabel: "続きの番地・建物名",
+                streetLabel: "番地・建物名",
                 streetPlaceholder: "例：1-2-3 ○○マンション 101号室",
                 streetHint: "番地・部屋番号などを入力してください",
                 workingHoursLabel: "希望勤務時間",
@@ -948,14 +978,16 @@
                 availabilityHint: "「可能」「不可能」「予定が合えば対応可」から選んでください。",
                 overtimeHint: "当てはまるものを1つ選んでください。",
                 clothingOtherLabel: "その他",
-                jacketSizeLabel: "上着",
-                pantsSizeLabel: "ズボン",
                 shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
-                jpListenTitle: "日本語を理解する",
+                jpListenTitle: "日本語（理解）",
                 jpListenDesc: "相手の話をどの程度理解できるか選んでください。",
-                jpSpeakTitle: "日本語を話す",
+                jpSpeakTitle: "日本語（話す）",
                 jpSpeakDesc: "日本語でどの程度会話ができるか選んでください。",
+                jpReadTitle: "日本語（読み）",
+                jpReadDesc: "日本語の文章をどの程度読めるか選んでください。",
+                jpWriteTitle: "日本語（書き）",
+                jpWriteDesc: "日本語の文章をどの程度書けるか選んでください。",
                 jpLevelTitle: "日本語レベル（目安）",
                 jpLevelDesc: "自分の日本語力に近い目安を選んでください。",
                 multiBadge: "複数選択可",
@@ -998,7 +1030,7 @@
                 phoneHint: "Digite apenas números; o hífen é inserido automaticamente",
                 postalHint: "Digite o CEP (7 dígitos) para inserir o hífen e o endereço automaticamente",
                 addressHint: "Preenchido automaticamente pelo CEP (não editável; informe o número abaixo)",
-                streetLabel: "Número, rua e complemento",
+                streetLabel: "Número e complemento",
                 streetPlaceholder: "Ex.: Rua Exemplo, 123, Apto 12",
                 streetHint: "Digite o número da casa/prédio e complemento",
                 workingHoursLabel: "Horário de trabalho desejado",
@@ -1009,14 +1041,16 @@
                 availabilityHint: "Escolha entre Possível, Impossível ou Se o horário permitir.",
                 overtimeHint: "Selecione uma opção.",
                 clothingOtherLabel: "Outros",
-                jacketSizeLabel: "Jaqueta / Blusa",
-                pantsSizeLabel: "Calça",
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
                 jpListenTitle: "Compreensão de japonês",
                 jpListenDesc: "Selecione o quanto você consegue entender o que os outros dizem.",
                 jpSpeakTitle: "Fala em japonês",
                 jpSpeakDesc: "Selecione o quanto você consegue conversar em japonês.",
+                jpReadTitle: "Leitura em japonês",
+                jpReadDesc: "Selecione o quanto você consegue ler em japonês.",
+                jpWriteTitle: "Escrita em japonês",
+                jpWriteDesc: "Selecione o quanto você consegue escrever em japonês.",
                 jpLevelTitle: "Nível de japonês (referência)",
                 jpLevelDesc: "Selecione a faixa mais próxima do seu nível de japonês.",
                 multiBadge: "Múltipla escolha",
@@ -1059,7 +1093,7 @@
                 phoneHint: "Enter digits only; hyphens are added automatically",
                 postalHint: "Enter 7-digit postal code to auto-insert hyphen and address",
                 addressHint: "Auto-filled from postal code (locked; enter street & building below)",
-                streetLabel: "Street Address & Building",
+                streetLabel: "Street & building",
                 streetPlaceholder: "e.g., 1-2-3 Sample St, Apt 101",
                 streetHint: "Enter street number, building name, or room number",
                 workingHoursLabel: "Preferred working hours",
@@ -1070,15 +1104,17 @@
                 availabilityHint: "Choose Available, Not available, or If schedule fits.",
                 overtimeHint: "Please select one option.",
                 clothingOtherLabel: "Other",
-                jacketSizeLabel: "Jacket / Top",
-                pantsSizeLabel: "Pants / Trousers",
                 shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
-                jpListenTitle: "Japanese Listening",
+                jpListenTitle: "Japanese listening",
                 jpListenDesc: "Select how well you understand what others say in Japanese.",
-                jpSpeakTitle: "Japanese Speaking",
+                jpSpeakTitle: "Japanese speaking",
                 jpSpeakDesc: "Select how well you can hold a conversation in Japanese.",
-                jpLevelTitle: "Japanese Level (Guide)",
+                jpReadTitle: "Japanese reading",
+                jpReadDesc: "Select how well you can read Japanese.",
+                jpWriteTitle: "Japanese writing",
+                jpWriteDesc: "Select how well you can write Japanese.",
+                jpLevelTitle: "Japanese level (guide)",
                 jpLevelDesc: "Select the level closest to your Japanese ability.",
                 multiBadge: "Multiple choice",
                 multiDesc: "Select all that apply (you can choose multiple options).",
@@ -1095,11 +1131,6 @@
                 postalErr: "Auto-lookup failed. Please enter address manually."
             }
         };
-
-        function stripLeadingNumber(rawText) {
-            if (!rawText) return rawText;
-            return rawText.replace(/^\s*\d+\s*[\.\．\)\）\-:：]?\s*/, "");
-        }
 
         function formatPostalHyphen(rawValue) {
             const digits = (rawValue || "").replace(/\D/g, "").slice(0, 7);
@@ -1365,7 +1396,8 @@
                 fieldName.includes("comprehension") ||
                 fieldName.includes("rikai") ||
                 rawLbl.includes("理解") ||
-                rawLbl.includes("聞く")
+                rawLbl.includes("聞く") ||
+                rawLbl.includes("listening")
             ) {
                 return "listen";
             }
@@ -1375,9 +1407,28 @@
                 fieldName.includes("kaiwa") ||
                 fieldName.includes("hanasu") ||
                 rawLbl.includes("話す") ||
-                rawLbl.includes("会話")
+                rawLbl.includes("会話") ||
+                rawLbl.includes("speaking")
             ) {
                 return "speak";
+            }
+            if (
+                fieldName.includes("read") ||
+                fieldName.includes("yomi") ||
+                rawLbl.includes("読み") ||
+                rawLbl.includes("reading") ||
+                rawLbl.includes("leitura")
+            ) {
+                return "read";
+            }
+            if (
+                fieldName.includes("write") ||
+                fieldName.includes("kaki") ||
+                rawLbl.includes("書き") ||
+                rawLbl.includes("writing") ||
+                rawLbl.includes("escrita")
+            ) {
+                return "write";
             }
             if (
                 fieldName.includes("japanese_level") ||
@@ -1469,6 +1520,10 @@
                     return `<svg viewBox="0 0 24 24"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><rect x="2" y="13" width="4" height="7" rx="2"/><rect x="18" y="13" width="4" height="7" rx="2"/></svg>`;
                 case "speak":
                     return `<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+                case "read":
+                    return `<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`;
+                case "write":
+                    return `<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
                 case "level":
                     return `<svg viewBox="0 0 24 24"><path d="M5 4v16"/><path d="M5 5h12l-2 4 2 4H5"/></svg>`;
                 default:
@@ -1560,14 +1615,19 @@
             } else if (kind === "speak") {
                 titleText = t.jpSpeakTitle;
                 descText = t.jpSpeakDesc;
+            } else if (kind === "read") {
+                titleText = t.jpReadTitle;
+                descText = t.jpReadDesc;
+            } else if (kind === "write") {
+                titleText = t.jpWriteTitle;
+                descText = t.jpWriteDesc;
             } else if (kind === "level") {
                 titleText = t.jpLevelTitle;
                 descText = t.jpLevelDesc;
             } else {
                 const lbl = box.querySelector("label");
                 const rawLbl = lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "";
-                const cleaned = stripLeadingNumber(rawLbl);
-                titleText = translateSinglePhrase(cleaned, lang) || cleaned;
+                titleText = translatePhraseForLang(rawLbl, lang) || cleanLabelPunctuation(rawLbl);
                 descText = isMultiple ? t.multiDesc : t.singleDesc;
             }
 
@@ -1681,8 +1741,14 @@
                     check.textContent = "✓";
 
                     const labelSpan = document.createElement("span");
-                    const rawOpt = stripLeadingNumber((opt.textContent || "").trim());
-                    labelSpan.textContent = translateSinglePhrase(rawOpt, lang) || rawOpt;
+                    const rawOpt = (opt.textContent || "").trim();
+                    const translatedOpt = translatePhraseForLang(rawOpt, lang);
+                    // 空文字や「%」単独になった場合は元のテキストまたは value を必ず残す
+                    if (!translatedOpt || /^%+$/.test(translatedOpt)) {
+                        labelSpan.textContent = rawOpt || opt.value;
+                    } else {
+                        labelSpan.textContent = translatedOpt;
+                    }
 
                     btn.appendChild(check);
                     btn.appendChild(labelSpan);
@@ -2101,17 +2167,8 @@
 
         function translateText(rawText, lang) {
             if (!rawText) return rawText;
-            const cleaned = stripLeadingNumber(rawText);
-            if (lang === "ja") return cleaned;
-
-            if (cleaned.includes(" / ")) {
-                const idx = LANG_INDEX[lang] ?? 0;
-                const parts = cleaned.split(" / ").map((s) => s.trim());
-                if (parts[idx]) return parts[idx];
-            }
-
-            const translated = translateSinglePhrase(cleaned, lang);
-            return translated || cleaned;
+            const translated = translatePhraseForLang(rawText, lang);
+            return translated || cleanLabelPunctuation(pickLangSegment(rawText, lang));
         }
 
         function findInputByField(names, labelKeywords) {
@@ -2568,7 +2625,8 @@
                         if (!rawOpt || /^-+$/.test(rawOpt)) {
                             opt.textContent = "---------";
                         } else {
-                            opt.textContent = translateText(rawOpt, lang);
+                            const converted = translateText(rawOpt, lang);
+                            opt.textContent = (!converted || /^%+$/.test(converted)) ? rawOpt : converted;
                         }
                     });
                 }
