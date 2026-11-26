@@ -696,6 +696,14 @@
             { value: "if_schedule_fits", ja: "予定が合えば対応可", pt: "Se o horário permitir", en: "If schedule fits" }
         ];
 
+        const OVERTIME_OPTIONS = [
+            { value: "0h", ja: "0ｈ", pt: "0h", en: "0h" },
+            { value: "1h", ja: "1ｈ", pt: "1h", en: "1h" },
+            { value: "2h", ja: "2ｈ", pt: "2h", en: "2h" },
+            { value: "3h", ja: "3ｈ", pt: "3h", en: "3h" },
+            { value: "any_hours", ja: "何時間でも可能", pt: "Qualquer horário", en: "Any hours possible" }
+        ];
+
         const CLOTHING_SIZE_OPTIONS = [
             { value: "S", ja: "S", pt: "P (S)", en: "S" },
             { value: "M", ja: "M", pt: "M", en: "M" },
@@ -805,11 +813,10 @@
                 overtimeLabel: "残業",
                 holidayWorkLabel: "休日出勤",
                 availabilityHint: "「可能」「不可能」「予定が合えば対応可」から選んでください。",
+                overtimeHint: "「0ｈ」「1ｈ」「2ｈ」「3ｈ」「何時間でも可能」から選んでください。",
                 clothingOtherLabel: "その他",
-                clothingOtherPlaceholder: "サイズを入力してください（例：6L、特注など）",
-                otherNotesLabel: "その他",
-                otherNotesPlaceholder: "ご希望や連絡事項などがあればご入力ください",
-                otherNotesHint: "その他の備考やご希望があればご入力ください",
+                jacketSizeLabel: "上着",
+                pantsSizeLabel: "ズボン",
                 shoeLabel: "靴のサイズ",
                 shoeHint: "21cm〜30cm（0.5cm刻み）から選択してください",
                 jpListenTitle: "日本語を理解する",
@@ -865,11 +872,10 @@
                 overtimeLabel: "Hora extra (残業)",
                 holidayWorkLabel: "Trabalho aos finais de semana/feriados (休日出勤)",
                 availabilityHint: "Escolha entre Possível, Impossível ou Se o horário permitir.",
+                overtimeHint: "Escolha entre 0h, 1h, 2h, 3h ou Qualquer horário.",
                 clothingOtherLabel: "Outros",
-                clothingOtherPlaceholder: "Digite o tamanho (ex.: 6L, especial)",
-                otherNotesLabel: "Outros (その他)",
-                otherNotesPlaceholder: "Observações ou pedidos adicionais",
-                otherNotesHint: "Preencha caso tenha observações adicionais",
+                jacketSizeLabel: "Jaqueta / Blusa (上着)",
+                pantsSizeLabel: "Calça (ズボン)",
                 shoeLabel: "Tamanho do calçado",
                 shoeHint: "Selecione de 21 cm a 30 cm (a cada 0,5 cm)",
                 jpListenTitle: "Compreensão de japonês",
@@ -925,11 +931,10 @@
                 overtimeLabel: "Overtime",
                 holidayWorkLabel: "Weekend / Holiday work",
                 availabilityHint: "Choose Available, Not available, or If schedule fits.",
+                overtimeHint: "Choose 0h, 1h, 2h, 3h, or Any hours possible.",
                 clothingOtherLabel: "Other",
-                clothingOtherPlaceholder: "Enter size (e.g., 6L, custom)",
-                otherNotesLabel: "Other",
-                otherNotesPlaceholder: "Any additional notes or preferences",
-                otherNotesHint: "Enter any extra notes or requests if applicable",
+                jacketSizeLabel: "Jacket / Top",
+                pantsSizeLabel: "Pants / Trousers",
                 shoeLabel: "Shoe size",
                 shoeHint: "Select from 21 cm to 30 cm (in 0.5 cm steps)",
                 jpListenTitle: "Japanese Listening",
@@ -1022,6 +1027,16 @@
             );
         }
 
+        function isOvertimeField(box) {
+            if (!box) return false;
+            const fieldName = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const rawLbl = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").toLowerCase();
+            const titleText = (box.querySelector(".mc-title") ? box.querySelector(".mc-title").textContent : "").toLowerCase();
+            const combined = `${fieldName} ${rawLbl} ${titleText}`;
+            return combined.includes("overtime") || combined.includes("zangyo") || combined.includes("残業");
+        }
+
         function isAvailabilityField(box) {
             if (!box) return false;
             const fieldName = (box.dataset.field || "").toLowerCase();
@@ -1056,6 +1071,21 @@
                 combined.includes("bottom_size") ||
                 combined.includes("上着") ||
                 combined.includes("ズボン")
+            );
+        }
+
+        function isRemovedExtraNotesField(box) {
+            if (!box || box.dataset.permanentlyHidden === "true" || isRetirementOtherField(box)) return false;
+            const fn = (box.dataset.field || "").toLowerCase();
+            const lbl = box.querySelector("label");
+            const txt = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
+            return (
+                box.id === "other-notes-box" ||
+                fn === "other" ||
+                fn === "other_notes" ||
+                fn === "remarks" ||
+                txt === "その他" ||
+                txt === "その他 / Outros / Other"
             );
         }
 
@@ -1177,7 +1207,6 @@
             return validOpts.length >= 1 && validOpts.length <= 12;
         }
 
-        /* 上着・ズボンに「その他」オプションと自由入力欄を追加 */
         function ensureOtherOptionInClothingSelects() {
             const lang = localStorage.getItem("skillsheet_lang") || "ja";
             const safeLang = uiTexts[lang] ? lang : "ja";
@@ -1205,77 +1234,11 @@
                     sel.appendChild(otherOpt);
                 }
 
-                let otherWrap = box.querySelector(".mc-other-input-wrap");
-                let otherInp = box.querySelector(".mc-other-text-input");
-                if (!otherWrap) {
-                    otherWrap = document.createElement("div");
-                    otherWrap.className = "mc-other-input-wrap hidden";
-
-                    otherInp = document.createElement("input");
-                    otherInp.type = "text";
-                    otherInp.className = "mc-other-text-input";
-                    otherInp.name = `${sel.name}_other_text`;
-                    otherInp.placeholder = t.clothingOtherPlaceholder;
-
-                    otherInp.addEventListener("input", () => {
-                        syncClothingOtherValue(box, sel, otherInp);
-                        updateFieldFillHighlight(otherInp);
-                    });
-                    otherInp.addEventListener("change", () => {
-                        syncClothingOtherValue(box, sel, otherInp);
-                        updateFieldFillHighlight(otherInp);
-                    });
-
-                    otherWrap.appendChild(otherInp);
-                    box.appendChild(otherWrap);
-                } else if (otherInp) {
-                    otherInp.placeholder = t.clothingOtherPlaceholder;
-                }
+                // ズボン・上着のあとに追加された自由入力欄は削除
+                box.querySelectorAll(".mc-other-input-wrap, .clothing-other-hidden").forEach((el) => {
+                    el.remove();
+                });
             });
-        }
-
-        function syncClothingOtherValue(box, sel, otherInp) {
-            if (!box || !sel || !otherInp) return;
-            const customText = (otherInp.value || "").trim();
-            let hiddenCustom = box.querySelector("input.clothing-other-hidden");
-            if (!hiddenCustom) {
-                hiddenCustom = document.createElement("input");
-                hiddenCustom.type = "hidden";
-                hiddenCustom.className = "clothing-other-hidden";
-                hiddenCustom.name = `${sel.name}_custom_value`;
-                sel.insertAdjacentElement("afterend", hiddenCustom);
-            }
-            hiddenCustom.value = customText ? `その他: ${customText}` : "その他";
-        }
-
-        function updateClothingOtherVisibility(box) {
-            if (!box || !isClothingSizeField(box)) return;
-            const sel = box.querySelector("select");
-            const otherWrap = box.querySelector(".mc-other-input-wrap");
-            const otherInp = box.querySelector(".mc-other-text-input");
-            if (!sel || !otherWrap) return;
-
-            const selectedVals = getSelectedValuesForBox(box);
-            const isOtherSelected = selectedVals.some((v) => {
-                const lower = (v || "").trim().toLowerCase();
-                const opt = Array.from(sel.options).find((o) => o.value === v);
-                const orig = opt ? ((opt.dataset.orig || opt.textContent) || "").trim() : "";
-                return lower === "other" || orig === "その他" || orig.includes("その他");
-            });
-
-            if (isOtherSelected) {
-                otherWrap.classList.remove("hidden");
-                if (otherInp) {
-                    syncClothingOtherValue(box, sel, otherInp);
-                    updateFieldFillHighlight(otherInp);
-                }
-            } else {
-                otherWrap.classList.add("hidden");
-                if (otherInp) {
-                    otherInp.value = "";
-                    updateFieldFillHighlight(otherInp);
-                }
-            }
         }
 
         function getSelectedValuesForBox(box) {
@@ -1335,7 +1298,6 @@
                 syncPreferredShiftFromSelect();
             }
 
-            updateClothingOtherVisibility(box);
             updateFieldFillHighlight(sel);
             refreshModernChoiceBox(box, localStorage.getItem("skillsheet_lang") || "ja");
             sel.dispatchEvent(new Event("change", { bubbles: true }));
@@ -1370,6 +1332,7 @@
                 if (kind === "listen") descEl.textContent = t.jpListenDesc;
                 else if (kind === "speak") descEl.textContent = t.jpSpeakDesc;
                 else if (kind === "level") descEl.textContent = t.jpLevelDesc;
+                else if (isOvertimeField(box)) descEl.textContent = t.overtimeHint;
                 else if (isAvailabilityField(box)) descEl.textContent = t.availabilityHint;
                 else if (kind === "shift") descEl.textContent = t.workingHoursHint;
                 else if (kind === "history") {
@@ -1424,8 +1387,6 @@
                     });
                 }
             }
-
-            updateClothingOtherVisibility(box);
         }
 
         function initAllModernChoiceFields() {
@@ -1663,7 +1624,9 @@
                 sel.innerHTML = "";
                 sel.appendChild(emptyOpt);
 
-                AVAILABILITY_OPTIONS.forEach((item) => {
+                const optionList = isOvertimeField(box) ? OVERTIME_OPTIONS : AVAILABILITY_OPTIONS;
+
+                optionList.forEach((item) => {
                     const opt = document.createElement("option");
                     opt.value = item.value;
                     opt.textContent = item[safeLang] || item.ja;
@@ -1676,14 +1639,23 @@
 
                 if (currentVal) {
                     const lower = currentVal.toLowerCase();
-                    if ((lower.includes("possible") && !lower.includes("impossible")) || (currentVal.includes("可能") && !currentVal.includes("不可能") && !currentVal.includes("予定"))) {
-                        sel.value = "possible";
-                    } else if (lower.includes("impossible") || lower.includes("not") || currentVal.includes("不可能") || currentVal.includes("不可")) {
-                        sel.value = "impossible";
-                    } else if (lower.includes("schedule") || currentVal.includes("予定") || currentVal.includes("条件") || currentVal.includes("相談")) {
-                        sel.value = "if_schedule_fits";
+                    if (isOvertimeField(box)) {
+                        if (lower.startsWith("0") || currentVal.includes("0")) sel.value = "0h";
+                        else if (lower.startsWith("1") || currentVal.includes("1")) sel.value = "1h";
+                        else if (lower.startsWith("2") || currentVal.includes("2")) sel.value = "2h";
+                        else if (lower.startsWith("3") || currentVal.includes("3")) sel.value = "3h";
+                        else if (lower.includes("any") || currentVal.includes("何時間")) sel.value = "any_hours";
+                        else sel.value = currentVal;
                     } else {
-                        sel.value = currentVal;
+                        if ((lower.includes("possible") && !lower.includes("impossible")) || (currentVal.includes("可能") && !currentVal.includes("不可能") && !currentVal.includes("予定"))) {
+                            sel.value = "possible";
+                        } else if (lower.includes("impossible") || lower.includes("not") || currentVal.includes("不可能") || currentVal.includes("不可")) {
+                            sel.value = "impossible";
+                        } else if (lower.includes("schedule") || currentVal.includes("予定") || currentVal.includes("条件") || currentVal.includes("相談")) {
+                            sel.value = "if_schedule_fits";
+                        } else {
+                            sel.value = currentVal;
+                        }
                     }
                 }
                 updateFieldFillHighlight(sel);
@@ -1712,9 +1684,9 @@
             const whBox = document.getElementById("working-hours-box") || document.querySelector('#skillsheet-form .field[data-field="preferred_working_hours"]');
 
             const specs = [
-                { id: "id_early_start", name: "early_start", field: "early_start", labelKey: "earlyStartLabel", keywords: ["early_start", "早出"] },
-                { id: "id_overtime", name: "overtime", field: "overtime", labelKey: "overtimeLabel", keywords: ["overtime", "残業"] },
-                { id: "id_holiday_work", name: "holiday_work", field: "holiday_work", labelKey: "holidayWorkLabel", keywords: ["holiday_work", "休日出勤"] }
+                { id: "id_early_start", name: "early_start", field: "early_start", labelKey: "earlyStartLabel", hintKey: "availabilityHint", keywords: ["early_start", "早出"] },
+                { id: "id_overtime", name: "overtime", field: "overtime", labelKey: "overtimeLabel", hintKey: "overtimeHint", keywords: ["overtime", "残業"] },
+                { id: "id_holiday_work", name: "holiday_work", field: "holiday_work", labelKey: "holidayWorkLabel", hintKey: "availabilityHint", keywords: ["holiday_work", "休日出勤"] }
             ];
 
             let insertAfterTarget = whBox;
@@ -1739,7 +1711,7 @@
                     const hint = document.createElement("div");
                     hint.id = `${spec.field}-hint`;
                     hint.className = "hint";
-                    hint.textContent = t.availabilityHint;
+                    hint.textContent = t[spec.hintKey];
 
                     box.appendChild(lbl);
                     box.appendChild(sel);
@@ -1822,46 +1794,14 @@
                 anchor = box;
             });
 
-            const existingOther = Array.from(document.querySelectorAll("#skillsheet-form .field[data-field]")).find((b) => {
-                if (b.dataset.permanentlyHidden === "true" || isRetirementOtherField(b)) return false;
-                const fn = (b.dataset.field || "").toLowerCase();
-                const lbl = b.querySelector("label");
-                const txt = (lbl ? ((lbl.dataset.orig || lbl.textContent) || "") : "").trim();
-                return fn === "other" || fn === "other_notes" || fn === "remarks" || txt === "その他" || txt === "その他 / Outros / Other";
-            });
-
-            if (!existingOther) {
-                const otherBox = document.createElement("div");
-                otherBox.id = "other-notes-box";
-                otherBox.className = "field";
-                otherBox.dataset.field = "other_notes";
-
-                const lbl = document.createElement("label");
-                lbl.id = "other-notes-label";
-                lbl.setAttribute("for", "id_other_notes");
-                lbl.textContent = t.otherNotesLabel;
-
-                const inp = document.createElement("input");
-                inp.type = "text";
-                inp.id = "id_other_notes";
-                inp.name = "other_notes";
-                inp.placeholder = t.otherNotesPlaceholder;
-
-                const hint = document.createElement("div");
-                hint.id = "other-notes-hint";
-                hint.className = "hint";
-                hint.textContent = t.otherNotesHint;
-
-                otherBox.appendChild(lbl);
-                otherBox.appendChild(inp);
-                otherBox.appendChild(hint);
-
-                if (anchor && anchor.parentNode) {
-                    anchor.insertAdjacentElement("afterend", otherBox);
-                } else if (formEl && stepNav) {
-                    formEl.insertBefore(otherBox, stepNav);
+            // 「ズボンのあとのその他」フィールドは削除・非表示にする
+            document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((b) => {
+                if (isRemovedExtraNotesField(b)) {
+                    b.dataset.permanentlyHidden = "true";
+                    b.classList.add("hidden");
+                    b.remove();
                 }
-            }
+            });
         }
 
         function isRetirementOtherField(box) {
@@ -1896,7 +1836,7 @@
 
         function hideRetirementOtherFields() {
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (isRetirementOtherField(box)) {
+                if (isRetirementOtherField(box) || isRemovedExtraNotesField(box)) {
                     box.dataset.permanentlyHidden = "true";
                     box.querySelectorAll("input, select, textarea").forEach((ctrl) => {
                         if (ctrl.type === "hidden") return;
@@ -1987,7 +1927,7 @@
         }
 
         function getFieldStep(box) {
-            if (!box || box.dataset.permanentlyHidden === "true") return 0;
+            if (!box || box.dataset.permanentlyHidden === "true" || isRemovedExtraNotesField(box)) return 0;
             const fieldName = box.dataset.field || "";
             if (STEP1_FIELDS.includes(fieldName)) return 1;
             if (
@@ -2082,7 +2022,7 @@
             hideRetirementOtherFields();
 
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (box.dataset.permanentlyHidden === "true") {
+                if (box.dataset.permanentlyHidden === "true" || isRemovedExtraNotesField(box)) {
                     box.classList.add("hidden");
                     return;
                 }
@@ -2698,6 +2638,11 @@
             const step4Boxes = [];
 
             allBoxes.forEach((box) => {
+                if (isRemovedExtraNotesField(box)) {
+                    box.dataset.permanentlyHidden = "true";
+                    box.classList.add("hidden");
+                    return;
+                }
                 const fieldName = box.dataset.field || "";
                 if (STEP1_FIELDS.includes(fieldName) || STEP2_FIELDS.includes(fieldName)) return;
                 if (isJobTypeField(box) || isWorkingHoursField(box) || isAvailabilityField(box)) {
@@ -2838,7 +2783,7 @@
                 return "";
             }
 
-            if (/^(h|S|M|L|LL|XL|XXL|3L|4L|5L|6L|2L|4L|5L|%)$/i.test(trimmedRaw)) {
+            if (/^(h|S|M|L|LL|XL|XXL|3L|4L|5L|6L|2L|%)$/i.test(trimmedRaw)) {
                 return trimmedRaw;
             }
 
@@ -2913,19 +2858,6 @@
 
             const pantsLbl = document.getElementById("pants_size-label");
             if (pantsLbl) pantsLbl.textContent = t.pantsSizeLabel;
-
-            const otherLbl = document.getElementById("other_notes-label");
-            if (otherLbl) otherLbl.textContent = t.otherNotesLabel;
-
-            const otherInp = document.getElementById("id_other_notes");
-            if (otherInp) otherInp.placeholder = t.otherNotesPlaceholder;
-
-            const otherHint = document.getElementById("other_notes-hint");
-            if (otherHint) otherHint.textContent = t.otherNotesHint;
-
-            document.querySelectorAll(".mc-other-text-input").forEach((inp) => {
-                inp.placeholder = t.clothingOtherPlaceholder;
-            });
 
             const q1Lbl = document.getElementById("has-work-history-label");
             if (q1Lbl) q1Lbl.textContent = t.hasWorkHistoryLabel;
@@ -3250,13 +3182,6 @@
                     syncCombinedAddress();
                     syncPreferredShiftFromSelect();
                     syncShoeSizeFromSelect();
-                    document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                        if (isClothingSizeField(box)) {
-                            const sel = box.querySelector("select");
-                            const otherInp = box.querySelector(".mc-other-text-input");
-                            if (sel && otherInp) syncClothingOtherValue(box, sel, otherInp);
-                        }
-                    });
                     updateVisaVisibility();
                     updateWorkHistoryFlow();
                 });
