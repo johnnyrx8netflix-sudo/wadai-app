@@ -723,7 +723,6 @@
             { value: "no", ja: "いいえ", pt: "Não", en: "No" }
         ];
 
-        /* よく出る日本語表記・選択肢の多言語辞書（氏名／名前は元の表記を維持） */
         const PHRASE_MAP = [
             { keys: ["性別"], pt: "Sexo / Gênero", en: "Gender" },
             { keys: ["男性", "男"], pt: "Masculino", en: "Male" },
@@ -783,7 +782,6 @@
             return /[\u3040-\u30ff\u4e00-\u9faf]/.test(str || "");
         }
 
-        /* 名前・氏名欄かどうかを判定（名前表記は消さない・変えない） */
         function isNameLabelOrBox(target) {
             if (!target) return false;
             const box = target.closest ? target.closest(".field[data-field]") : null;
@@ -1216,7 +1214,6 @@
             return fn.includes("visa") || fn.includes("zairyu") || txt.includes("ビザ") || txt.includes("在留");
         }
 
-        /* 必須チェックは完全解除 */
         function isExemptFromRequired(box) {
             return true;
         }
@@ -1231,9 +1228,7 @@
             container.querySelectorAll(".req-alert-msg").forEach((m) => m.remove());
         }
 
-        function showValidationErrorForBox(box, lang) {
-            // 必須チェック解除のためエラー表示しない
-        }
+        function showValidationErrorForBox(box, lang) {}
 
         function validateStep(stepNum, scrollToFirstError = true) {
             document.querySelectorAll("#skillsheet-form .field.req-error").forEach((b) => b.classList.remove("req-error"));
@@ -1398,33 +1393,54 @@
             }
         }
 
-        /* モダン選択式UIではない一般入力・セレクト欄にアイコンを1つだけ付ける */
-        function ensureStandardFieldIcons() {
+        /* アイコンが2重にならないよう、各ボックス内の .mc-icon-badge は常に1つだけに整理する */
+        function normalizeFieldIcons() {
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
-                if (box.dataset.permanentlyHidden === "true" || box.dataset.mcInitialized === "true") return;
-                const lbl = box.querySelector(":scope > label, :scope > .std-field-header > label");
-                if (!lbl || lbl.classList.contains("hidden")) return;
+                if (box.dataset.permanentlyHidden === "true") return;
 
                 const kind = getChoiceKind(box);
+                const svgHtml = buildIconSvg(kind);
+
+                if (box.dataset.mcInitialized === "true") {
+                    box.querySelectorAll(".std-field-header").forEach((eh) => eh.remove());
+                    const mcHeader = box.querySelector(":scope > .mc-header");
+                    if (mcHeader) {
+                        const badges = Array.from(mcHeader.querySelectorAll(".mc-icon-badge"));
+                        if (badges.length === 0) {
+                            const b = document.createElement("span");
+                            b.className = "mc-icon-badge";
+                            b.innerHTML = svgHtml;
+                            mcHeader.prepend(b);
+                        } else {
+                            badges[0].innerHTML = svgHtml;
+                            badges.slice(1).forEach((extra) => extra.remove());
+                        }
+                    }
+                    return;
+                }
+
+                const lbl = box.querySelector("label");
+                if (!lbl || lbl.classList.contains("hidden")) return;
+
                 let header = box.querySelector(":scope > .std-field-header");
                 if (!header) {
                     header = document.createElement("div");
                     header.className = "std-field-header";
-
-                    const badge = document.createElement("span");
-                    badge.className = "mc-icon-badge";
-                    badge.innerHTML = buildIconSvg(kind);
-
                     lbl.parentNode.insertBefore(header, lbl);
-                    header.appendChild(badge);
                     header.appendChild(lbl);
+                }
+
+                Array.from(box.querySelectorAll(":scope > .std-field-header")).slice(1).forEach((eh) => eh.remove());
+
+                const badges = Array.from(header.querySelectorAll(".mc-icon-badge"));
+                if (badges.length === 0) {
+                    const b = document.createElement("span");
+                    b.className = "mc-icon-badge";
+                    b.innerHTML = svgHtml;
+                    header.prepend(b);
                 } else {
-                    const extraHeaders = Array.from(box.querySelectorAll(":scope > .std-field-header")).slice(1);
-                    extraHeaders.forEach((eh) => eh.remove());
-                    const badge = header.querySelector(".mc-icon-badge");
-                    if (badge) {
-                        badge.innerHTML = buildIconSvg(kind);
-                    }
+                    badges[0].innerHTML = svgHtml;
+                    badges.slice(1).forEach((extra) => extra.remove());
                 }
             });
         }
@@ -1668,6 +1684,8 @@
                     refreshModernChoiceBox(box, lang);
                     return;
                 }
+
+                box.querySelectorAll(":scope > .mc-header, :scope > .mc-desc, :scope > .mc-ui-wrap, :scope > .std-field-header").forEach((el) => el.remove());
 
                 const kind = getChoiceKind(box);
                 const isMulti = isJobTypeField(box) || isWorkingHoursField(box) || sel.multiple;
@@ -2320,7 +2338,7 @@
 
             updateVisaVisibility();
             hideCommuteOtherField();
-            ensureStandardFieldIcons();
+            normalizeFieldIcons();
             updateRequiredBadges(localStorage.getItem("skillsheet_lang") || "ja");
             updateStepperUI();
         }
@@ -3074,7 +3092,6 @@
             return translateSinglePhrase(baseText, lang, preserveName);
         }
 
-        /* 1つのフィールド内で重複しているラベル要素を1つに整理する */
         function deduplicateFieldLabels() {
             document.querySelectorAll("#skillsheet-form .field[data-field]").forEach((box) => {
                 const labels = Array.from(box.querySelectorAll("label"));
@@ -3230,8 +3247,8 @@
                 updateFieldFillHighlight(sel);
             });
 
-            ensureStandardFieldIcons();
             refreshAllModernChoiceFields(safeLang);
+            normalizeFieldIcons();
             updateRequiredBadges(safeLang);
             updateStepperUI();
             updateVisaVisibility();
@@ -3446,7 +3463,7 @@
             hideCommuteOtherField();
             initFieldFillHighlight();
             initAllModernChoiceFields();
-            ensureStandardFieldIcons();
+            normalizeFieldIcons();
             lockAgeField();
             configureNumericInputs();
 
